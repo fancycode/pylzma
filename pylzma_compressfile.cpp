@@ -212,6 +212,7 @@ PyObject *pylzma_compressfile(PyObject *self, PyObject *args, PyObject *kwargs)
         DELETE_AND_NULL(encoder);
         DEC_AND_NULL(result);
         PyErr_NoMemory();
+        goto exit;
     }
     result->outStream = new COutStream();
     if (result->outStream == NULL)
@@ -221,6 +222,7 @@ PyObject *pylzma_compressfile(PyObject *self, PyObject *args, PyObject *kwargs)
         DELETE_AND_NULL(result->inStream);
         DEC_AND_NULL(result);
         PyErr_NoMemory();
+        goto exit;
     }
 
     Py_BEGIN_ALLOW_THREADS

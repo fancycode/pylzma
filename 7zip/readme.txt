@@ -1,5 +1,5 @@
-Modified LZMA library for NSIS
-------------------------------
+Modified LZMA library for PyLZMA
+--------------------------------
 
     Copyright (c) 1999-2003 Igor Pavlov
 
@@ -9,6 +9,12 @@ Modified LZMA library for NSIS
     of 7-Zip compression program:
 
     http://www.7-zip.org
+
+    Initial cross platform port done by the NSIS project:
+    http://nsis.sourceforge.net
+
+    Additional cross platform porting done by the PyLZMA project:
+    http://www.joachim-bauch.de
 
     Some of the files were modified and are not an
     exact replica of the original files.

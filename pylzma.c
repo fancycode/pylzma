@@ -31,6 +31,7 @@
 #include "pylzma_decompressobj.h"
 #include "pylzma_compressobj.h"
 #include "pylzma_compressfile.h"
+#include "pylzma_7zip_inarchive.h"
 
 static void insint(PyObject *d, char *name, int value)
 {
@@ -49,6 +50,8 @@ PyMethodDef methods[] = {
     //{"compressobj",   (PyCFunction)pylzma_compressobj,   METH_VARARGS | METH_KEYWORDS, (char *)&doc_compressobj},
     {"decompressobj", (PyCFunction)pylzma_decompressobj, METH_VARARGS,                 (char *)&doc_decompressobj},
     {"compressfile",  (PyCFunction)pylzma_compressfile,  METH_VARARGS | METH_KEYWORDS, (char *)&doc_compressfile},
+    // 7zip archive support
+    {"InArchive",     (PyCFunction)pylzma_7zip_inarchive, METH_VARARGS,                (char *)&doc_7zip_inarchive},
     {NULL, NULL},
 };
 
