@@ -45,7 +45,9 @@ PYTHON_LIB_DIR,
 ".",
 ];
 
-descr = "pylzma package"
+descr = "Python bindings for the LZMA library by Igor Pavlov."
+try: version = open('version.txt', 'rb').read().strip()
+except: version = 'unknown'
 modules = ['py7zlib']
 c_files = ['pylzma.c', 'pylzma_encoder.cpp', 'pylzma_decompressobj.c', 'pylzma_compressobj.cpp',
            'pylzma_compressfile.cpp', 'pylzma_decompress.c', 'pylzma_compress.cpp']
@@ -62,7 +64,7 @@ extens=[Extension('pylzma', c_files, include_dirs=include_dirs,
                   library_dirs=library_dirs, define_macros=macros)] 
 
 setup (name = "pylzma",
-       version = "0.0.1",
+       version = version,
        description = descr,
        author = "Joachim Bauch",
        author_email = "mail@joachim-bauch.de",
