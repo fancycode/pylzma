@@ -46,7 +46,7 @@ PYTHON_LIB_DIR,
 ];
 
 descr = "pylzma package"
-modules = []
+modules = ['py7zlib']
 c_files = ['pylzma.c', 'pylzma_encoder.cpp', 'pylzma_decompressobj.c', 'pylzma_compressobj.cpp',
            'pylzma_compressfile.cpp', 'pylzma_decompress.c', 'pylzma_compress.cpp']
 macros = [('COMPRESS_MF_BT', 1)]
