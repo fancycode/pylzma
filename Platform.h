@@ -64,6 +64,8 @@ typedef short VARIANT_BOOL;
 #define __cdecl
 #endif
 
+#define S_FALSE (-1)
+
 #ifndef FILETIME
 /*
 typedef struct STRUCT tagFILETIME {
@@ -149,8 +151,8 @@ BOOL FindNextChangeNotification(HANDLE x) { return TRUE; }
 #define FindNextChangeNotificationW FindNextChangeNotification
 HANDLE FindFirstChangeNotification(LPCTSTR name, BOOL sub, DWORD filter) { return 0; }
 #define FindFirstChangeNotificationW FindFirstChangeNotification
-DWORD GetCompressedFileSize(LPCTSTR x, LPDWORD y) { return 0; }
-#define GetCompressedFileSizeW GetCompressedFileSize
+DWORD GetCompressedFileSize(LPCTSTR x, LPDWORD y) { return 0; };
+DWORD GetCompressedFileSizeW(LPCWSTR x, LPDWORD y) { return 0; };
 #define TEXT(x) x
 
 typedef struct _WIN32_FIND_DATAA {
@@ -320,6 +322,13 @@ BOOL FindNextFile(HANDLE x, LPWIN32_FIND_DATA a)
 }
 
 #define FindNextFileW FindNextFile
+
+typedef enum tagSTREAM_SEEK
+{
+  STREAM_SEEK_SET = 0,
+  STREAM_SEEK_CUR = 1,
+  STREAM_SEEK_END = 2
+} STREAM_SEEK;
 
 #endif
 
