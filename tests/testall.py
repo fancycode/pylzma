@@ -88,8 +88,9 @@ class TestPyLZMA(unittest.TestCase):
         # test decompression in two steps
         decompress = pylzma.decompressobj()
         data = decompress.decompress(self.plain_with_eos[:10])
-        data += decompress.decompress(decompress.unconsumed_tail + self.plain_with_eos[10:])
+        data += decompress.decompress(self.plain_with_eos[10:])
         self.assertEqual(data, self.plain)
+        self.assertEqual(decompress.unused_data, "")
 
     def test_decompression_stream_reset(self):
         # test reset
@@ -97,8 +98,9 @@ class TestPyLZMA(unittest.TestCase):
         data = decompress.decompress(self.plain_with_eos[:10])
         decompress.reset()
         data = decompress.decompress(self.plain_with_eos[:15])
-        data += decompress.decompress(decompress.unconsumed_tail + self.plain_with_eos[15:])
+        data += decompress.decompress(self.plain_with_eos[15:])
         self.assertEqual(data, self.plain)
+        self.assertEqual(decompress.unused_data, "")
 
     def test_decompression_streaming(self):
         # test decompressing with one byte at a time...
@@ -106,10 +108,11 @@ class TestPyLZMA(unittest.TestCase):
         infile = StringIO(self.plain_with_eos)
         outfile = StringIO()
         while 1:
-            data = decompress.unconsumed_tail + infile.read(1)
+            data = infile.read(1)
             if not data: break
             outfile.write(decompress.decompress(data, 1))
         self.assertEqual(outfile.getvalue(), self.plain)
+        self.assertEqual(decompress.unused_data, "")
 
     def _test_compression_streaming(self):
         # XXX: this doesn't work, yet

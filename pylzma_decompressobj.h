@@ -31,7 +31,8 @@
 typedef struct {
     PyObject_HEAD
     lzma_stream stream;
-    PyObject *unconsumed_tail;
+    char *unconsumed_tail;
+    int unconsumed_length;
     PyObject *unused_data;
 } CDecompressionObject;
 

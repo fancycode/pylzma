@@ -49,8 +49,14 @@ static PyObject *pylzma_decomp_decompress(CDecompressionObject *self, PyObject *
     }
     
     start_total_out = self->stream.totalOut;
-    self->stream.next_in = (Byte *)data;
-    self->stream.avail_in = length;
+    if (self->unconsumed_length > 0) {
+        self->unconsumed_tail = (char *)realloc(self->unconsumed_tail, self->unconsumed_length + length);
+        self->stream.next_in = (Byte *)self->unconsumed_tail;
+        memcpy(self->stream.next_in + self->unconsumed_length, data, length);
+    } else
+        self->stream.next_in = (Byte *)data;
+    
+    self->stream.avail_in = self->unconsumed_length + length;
     
     if (max_length && max_length < length)
         length = max_length;
@@ -104,13 +110,20 @@ static PyObject *pylzma_decomp_decompress(CDecompressionObject *self, PyObject *
     /* Not all of the compressed data could be accomodated in the output buffer
     of specified size. Return the unconsumed tail in an attribute.*/
     if (max_length != 0) {
-        Py_DECREF(self->unconsumed_tail);
-        self->unconsumed_tail = PyString_FromStringAndSize((char *)self->stream.next_in, self->stream.avail_in);
-        if (!self->unconsumed_tail) {
-            PyErr_NoMemory();
-            DEC_AND_NULL(result);
-            goto exit;
-        }
+        if (self->stream.avail_in > 0)
+        {
+            if (self->stream.avail_in != self->unconsumed_length)
+                self->unconsumed_tail = (char *)realloc(self->unconsumed_tail, self->stream.avail_in);
+            
+            if (!self->unconsumed_tail) {
+                PyErr_NoMemory();
+                DEC_AND_NULL(result);
+                goto exit;
+            }
+            memcpy(self->unconsumed_tail, self->stream.next_in, self->stream.avail_in);
+        } else
+            FREE_AND_NULL(self->unconsumed_tail);
+        self->unconsumed_length = self->stream.avail_in;
     }
 
     /* The end of the compressed data has been reached, so set the
@@ -146,19 +159,17 @@ static PyObject *pylzma_decomp_reset(CDecompressionObject *self, PyObject *args)
         return NULL;
     
     lzmaInit(&self->stream);
-
-    Py_DECREF(self->unconsumed_tail);
-    self->unconsumed_tail = PyString_FromString("");
-    CHECK_NULL(self->unconsumed_tail);
-
+    FREE_AND_NULL(self->unconsumed_tail);
+    self->unconsumed_length = 0;
+    
     Py_DECREF(self->unused_data);
     self->unused_data = PyString_FromString("");
-    CHECK_NULL(self->unused_data );
+    CHECK_NULL(self->unused_data);
     
     result = Py_None;
-
-exit:    
     Py_XINCREF(result);
+    
+exit:
     return result;
 }
 
@@ -171,17 +182,14 @@ PyMethodDef pylzma_decomp_methods[] = {
 static void pylzma_decomp_dealloc(CDecompressionObject *self)
 {
     free_lzma_stream(&self->stream);
-    DEC_AND_NULL(self->unconsumed_tail);
+    FREE_AND_NULL(self->unconsumed_tail);
     DEC_AND_NULL(self->unused_data);
     PyObject_Del(self);
 }
 
 static PyObject *pylzma_decomp_getattr(CDecompressionObject *self, char *attrname)
 {
-    if (strcmp(attrname, "unconsumed_tail") == 0) {
-        Py_INCREF(self->unconsumed_tail);
-        return self->unconsumed_tail;
-    } else if (strcmp(attrname, "unused_data") == 0) {
+    if (strcmp(attrname, "unused_data") == 0) {
         Py_INCREF(self->unused_data);
         return self->unused_data;
     } else
@@ -229,20 +237,13 @@ PyObject *pylzma_decompressobj(PyObject *self, PyObject *args)
     result = PyObject_New(CDecompressionObject, &DecompressionObject_Type);
     CHECK_NULL(result);
     
-    result->unconsumed_tail = PyString_FromString("");
-    if (result->unconsumed_tail == NULL)
-    {
-        PyErr_NoMemory();
-        PyObject_Del(result);
-        result = NULL;
-        goto exit;
-    }
-    
+    result->unconsumed_tail = NULL;
+    result->unconsumed_length = 0;
+
     result->unused_data = PyString_FromString("");
     if (result->unused_data == NULL)
     {
         PyErr_NoMemory();
-        DEC_AND_NULL(result->unconsumed_tail);
         PyObject_Del(result);
         result = NULL;
         goto exit;

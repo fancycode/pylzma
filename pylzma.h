@@ -36,6 +36,7 @@
 #define CHECK_NULL(a) if ((a) == NULL) { PyErr_NoMemory(); goto exit; }
 #define DEC_AND_NULL(a) { Py_XDECREF(a); a = NULL; }
 #define DELETE_AND_NULL(a) if (a != NULL) { delete a; a = NULL; }
+#define FREE_AND_NULL(a) if (a != NULL) { free(a); a = NULL; }
 #define CHECK_RANGE(x, a, b, msg) if ((x) < (a) || (x) > (b)) { PyErr_SetString(PyExc_ValueError, msg); return NULL; }
 
 #endif
