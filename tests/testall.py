@@ -23,6 +23,7 @@ import md5, random
 import pylzma
 import unittest
 from binascii import unhexlify
+from cStringIO import StringIO
 
 class TestPyLZMA(unittest.TestCase):
     
@@ -97,6 +98,19 @@ class TestPyLZMA(unittest.TestCase):
         data = decompress.decompress(original[:15])
         data += decompress.decompress(decompress.unconsumed_tail + original[15:])
         self.assertEqual(data, 'hello, this is a test string')
+
+    def test_decompression_streaming(self):
+        # test decompressing with one byte at a time...
+        original = '5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c127731a214ff7031c000'
+        original = unhexlify(original)
+        decompress = pylzma.decompressobj()
+        infile = StringIO(original)
+        outfile = StringIO()
+        while 1:
+            data = decompress.unconsumed_tail + infile.read(1)
+            if not data: break
+            outfile.write(decompress.decompress(data, 1))
+        self.assertEqual(outfile.getvalue(), 'hello, this is a test string')
 
 if __name__ == "__main__":
     unittest.main()
