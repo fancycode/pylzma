@@ -87,6 +87,7 @@ class CMatchFinderBinTree:
       UINT32 keepAddBufferAfter);
   STDMETHOD_(UINT32, GetLongestMatch)(UINT32 *distances);
   STDMETHOD_(void, DummyLongestMatch)();
+  STDMETHOD_(void, ResetStreamEndReached)();
 
   // IMatchFinderSetCallback
   STDMETHOD(SetCallback)(IMatchFinderCallback *callback);

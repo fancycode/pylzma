@@ -25,147 +25,33 @@
 #define BLOCK_SIZE 65536
 
 #include "pylzma.h"
+#include "pylzma_streams.h"
+#include "pylzma_encoder.h"
+
 #include "Platform.h"  
-#include <7zip/7zip/IStream.h>
-#include <7zip/7zip/Compress/LZMA/LZMAEncoder.h>
-#include <7zip/Common/MyCom.h>
 #include <7zip/LzmaDecode.h>
 
 #define CHECK_NULL(a) if ((a) == NULL) { PyErr_NoMemory(); goto exit; }
 #define DEC_AND_NULL(a) { Py_XDECREF(a); a = NULL; }
+#define DELETE_AND_NULL(a) if (a != NULL) { delete a; a = NULL; }
+#define CHECK_RANGE(x, a, b, msg) if ((x) < (a) || (x) > (b)) { PyErr_SetString(PyExc_ValueError, msg); return NULL; }
 
-class CInStream :
-    public ISequentialInStream,
-    public CMyUnknownImp
+static void free_lzma_stream(lzma_stream *stream)
 {
-private:
-    BYTE *next_in;
-    UINT avail_in;
-    UINT pos;
-
-public:
-    MY_UNKNOWN_IMP
-
-    CInStream(BYTE *data, int length)
-    {
-        next_in = data;
-        avail_in = length;
-        pos = 0;
-    }
+    if (stream->dynamicData)
+        lzmafree(stream->dynamicData);
+    stream->dynamicData = NULL;
     
-    STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize)
-    {
-        return ReadPart(data, size, processedSize);
-    }
-    
-    STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize)
-    {
-        if (processedSize)
-            *processedSize = 0;
-        
-        while (size)
-        {
-            if (!avail_in)
-                return S_OK;
-            
-            UINT32 len = size < avail_in ? size : avail_in;
-            memcpy(data, next_in, len);
-            avail_in -= len;
-            size -= len;
-            next_in += len;
-            data = PBYTE(data) + len;
-            if (processedSize)
-                *processedSize += len;
-        }
-        
-        return S_OK;
-    }    
-};
+    if (stream->dictionary)
+        lzmafree(stream->dictionary);
+    stream->dictionary = NULL;
+}
 
-class COutStream :
-    public ISequentialOutStream,
-    public CMyUnknownImp
+static int set_encoder_properties(NCompress::NLZMA::CEncoder *encoder, int dictionary, int posBits,
+    int literalContextBits, int literalPosBits, int algorithm, int fastBytes, int eos)
 {
-private:
-    BYTE *buffer;
-    BYTE *next_out;
-    UINT avail_out;
-    UINT count;
-
-public:
-    MY_UNKNOWN_IMP
-
-    COutStream()
-    {
-        buffer = (BYTE *)malloc(BLOCK_SIZE);
-        next_out = buffer;
-        avail_out = BLOCK_SIZE;
-        count = 0;
-    }
-    
-    virtual ~COutStream()
-    {
-        if (buffer)
-            free(buffer);
-        buffer = NULL;
-    }
-    
-    char *getData()
-    {
-        return (char *)buffer;
-    }
-    
-    int getLength()
-    {
-        return count;
-    }
-
-    STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize)
-    {
-        return WritePart(data, size, processedSize);
-    }
-    
-    STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize)
-    {
-        if (processedSize)
-            *processedSize = 0;
-        
-        while (size)
-        {
-            if (!avail_out)
-            {
-                buffer = (BYTE *)realloc(buffer, count + BLOCK_SIZE);
-                avail_out += BLOCK_SIZE;
-                next_out = &buffer[count];
-            }
-            
-            UINT32 len = size < avail_out ? size : avail_out;
-            memcpy(next_out, data, len);
-            avail_out -= len;
-            size -= len;
-            next_out += len;
-            count += len;
-            data = PBYTE(data) + len;
-            if (processedSize)
-                *processedSize += len;
-        }
-        
-        return S_OK;
-    }    
-};
-
-static PyObject *perform_compression(char *data, int length, int dictionary, int fastBytes, int literalContextBits,
-				     int literalPosBits, int posBits, int algorithm, int eos)
-{
-    PyObject *result = NULL;
-    NCompress::NLZMA::CEncoder *encoder;
-    CInStream *inStream = new CInStream((BYTE *)data, length);
-    COutStream *outStream = new COutStream();
-    int res;
-
-    encoder = new NCompress::NLZMA::CEncoder();
     encoder->SetWriteEndMarkerMode(eos ? true : false);
-
+    
     PROPID propIDs[] = 
     {
         NCoderPropID::kDictionarySize,
@@ -195,39 +81,8 @@ static PyObject *perform_compression(char *data, int length, int dictionary, int
     // NCoderProp::kNumFastBytes;
     props[5].vt = VT_UI4;
     props[5].ulVal = fastBytes;
-    if ((res = encoder->SetCoderProperties(propIDs, props, kNumProps)) != 0)
-    {
-        PyErr_Format(PyExc_TypeError, "Can't set coder properties: %d", res);
-        goto exit;
-    }
     
-    Py_BEGIN_ALLOW_THREADS
-    encoder->SetStreams(inStream, outStream, 0, 0);
-    encoder->WriteCoderProperties(outStream);
-    encoder->CodeReal(inStream, outStream, NULL, 0, 0);
-    Py_END_ALLOW_THREADS
-    
-    result = PyString_FromStringAndSize((const char *)outStream->getData(), outStream->getLength());
-    
-exit:
-    if (encoder != NULL)
-        delete encoder;
-    if (inStream != NULL)
-        delete inStream;
-    if (outStream != NULL)
-        delete outStream;
-    return result;
-}
-
-static void free_lzma_stream(lzma_stream *stream)
-{
-    if (stream->dynamicData)
-        lzmafree(stream->dynamicData);
-    stream->dynamicData = NULL;
-    
-    if (stream->dictionary)
-        lzmafree(stream->dictionary);
-    stream->dictionary = NULL;
+    return encoder->SetCoderProperties(propIDs, props, kNumProps);
 }
 
 static char *doc_compress = \
@@ -235,6 +90,11 @@ static char *doc_compress = \
 
 static PyObject *pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    PyObject *result = NULL;
+    NCompress::NLZMA::CEncoder *encoder;
+    CInStream *inStream = NULL;
+    COutStream *outStream = NULL;
+    int res;    
     // possible keywords for this function
     static char *kwlist[] = {"data", "dictionary", "fastBytes", "literalContextBits",
                              "literalPosBits", "posBits", "algorithm", "eos", NULL};
@@ -252,9 +112,226 @@ static PyObject *pylzma_compress(PyObject *self, PyObject *args, PyObject *kwarg
                                                                 &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos))
         return NULL;
     
-    // XXX: verify that parameters are in the correct ranges
+    CHECK_RANGE(dictionary,         0,  28, "dictionary must be between 0 and 28");
+    CHECK_RANGE(fastBytes,          5, 255, "fastBytes must be between 5 and 255");
+    CHECK_RANGE(literalContextBits, 0,   8, "literalContextBits must be between 0 and 8");
+    CHECK_RANGE(literalPosBits,     0,   4, "literalPosBits must be between 0 and 4");
+    CHECK_RANGE(posBits,            0,   4, "posBits must be between 0 and 4");
     
-    return perform_compression(data, length, dictionary, fastBytes, literalContextBits, literalPosBits, posBits, algorithm, eos);
+    encoder = new NCompress::NLZMA::CEncoder();
+    CHECK_NULL(encoder);
+
+    if ((res = set_encoder_properties(encoder, dictionary, posBits, literalContextBits, literalPosBits, algorithm, fastBytes, eos) != 0))
+    {
+        PyErr_Format(PyExc_TypeError, "Can't set coder properties: %d", res);
+        goto exit;
+    }
+    
+    inStream = new CInStream((BYTE *)data, length);
+    CHECK_NULL(inStream);
+    outStream = new COutStream();
+    CHECK_NULL(outStream);
+    
+    Py_BEGIN_ALLOW_THREADS
+    encoder->SetStreams(inStream, outStream, 0, 0);
+    encoder->WriteCoderProperties(outStream);
+    encoder->CodeReal(inStream, outStream, NULL, 0, 0);
+    Py_END_ALLOW_THREADS
+    
+    result = PyString_FromStringAndSize((const char *)outStream->getData(), outStream->getLength());
+    
+exit:
+    DELETE_AND_NULL(encoder);
+    DELETE_AND_NULL(inStream);
+    DELETE_AND_NULL(outStream);
+    
+    return result;
+}
+
+static char *doc_comp_compress = \
+    "docstring is todo\n";
+
+static PyObject *pylzma_comp_compress(CCompressionObject *self, PyObject *args)
+{
+    PyObject *result = NULL;
+    char *data;
+    int length, bufsize=BLOCK_SIZE, finished;
+    UINT64 inSize, outSize;
+    
+    if (!PyArg_ParseTuple(args, "s#|l", &data, &length, &bufsize))
+        return NULL;
+    
+    if (!self->inStream->AppendData((BYTE *)data, length))
+    {
+        PyErr_NoMemory();
+        goto exit;
+    }
+    
+    while (true)
+    {
+        self->encoder->CodeOneBlock(&inSize, &outSize, &finished, false);
+        //printf("2: %d %d %d %d\n", inSize, outSize, finished, self->outStream->getMaxRead());
+        if (finished || self->outStream->getMaxRead() >= bufsize)
+            break;
+    }
+    
+    length = min(self->outStream->getMaxRead(), bufsize);
+    result = PyString_FromStringAndSize((const char *)self->outStream->getReadPtr(), length);
+    if (result == NULL) {
+        PyErr_NoMemory();
+        goto exit;
+    }
+    self->outStream->increaseReadPos(length);
+    
+exit:
+    return result;
+}
+
+static char *doc_comp_flush = \
+    "flush() -- Finishes the compression and returns any remaining compressed data.";
+
+static PyObject *pylzma_comp_flush(CCompressionObject *self, PyObject *args)
+{
+    PyObject *result = NULL;
+    int finished=0;
+    UINT64 inSize, outSize;
+    
+    if (!PyArg_ParseTuple(args, ""))
+        return NULL;
+    
+    printf("flush: %d\n", self->inStream->getAvailIn());
+    while (!finished)
+    {
+        self->encoder->CodeOneBlock(&inSize, &outSize, &finished, true);
+    }
+    
+    self->encoder->FinishStream();    
+    result = PyString_FromStringAndSize(NULL, self->outStream->getMaxRead());
+    self->outStream->Read(PyString_AS_STRING(result), self->outStream->getMaxRead());
+    
+    return result;
+}
+
+PyMethodDef pylzma_comp_methods[] = {
+    {"compress",   (PyCFunction)pylzma_comp_compress, METH_VARARGS, doc_comp_compress},
+    {"flush",      (PyCFunction)pylzma_comp_flush,    METH_VARARGS, doc_comp_flush},
+    {NULL, NULL},
+};
+
+static void pylzma_comp_dealloc(CCompressionObject *self)
+{
+    DELETE_AND_NULL(self->encoder);
+    DELETE_AND_NULL(self->inStream);
+    DELETE_AND_NULL(self->outStream);
+    PyObject_Del(self);
+}
+
+static PyObject *pylzma_comp_getattr(CCompressionObject *self, char *attrname)
+{
+    return Py_FindMethod(pylzma_comp_methods, (PyObject *)self, attrname);
+}
+
+static int pylzma_comp_setattr(CCompressionObject *self, char *attrname, PyObject *value)
+{
+    // disable setting of attributes
+    PyErr_Format(PyExc_AttributeError, "no attribute named '%s'", attrname);
+    return -1;
+}
+
+PyTypeObject CompressionObject_Type = {
+  //PyObject_HEAD_INIT(&PyType_Type)
+  PyObject_HEAD_INIT(NULL)
+  0,
+  "LZMACompress",                      /* char *tp_name; */
+  sizeof(CCompressionObject),          /* int tp_basicsize; */
+  0,                                   /* int tp_itemsize;       // not used much */
+  (destructor)pylzma_comp_dealloc,     /* destructor tp_dealloc; */
+  NULL,                                /* printfunc  tp_print;   */
+  (getattrfunc)pylzma_comp_getattr,    /* getattrfunc  tp_getattr; // __getattr__ */
+  (setattrfunc)pylzma_comp_setattr,    /* setattrfunc  tp_setattr;  // __setattr__ */
+  NULL,                                /* cmpfunc  tp_compare;  // __cmp__ */
+  NULL,                                /* reprfunc  tp_repr;    // __repr__ */
+  NULL,                                /* PyNumberMethods *tp_as_number; */
+  NULL,                                /* PySequenceMethods *tp_as_sequence; */
+  NULL,                                /* PyMappingMethods *tp_as_mapping; */
+  NULL,                                /* hashfunc tp_hash;     // __hash__ */
+  NULL,                                /* ternaryfunc tp_call;  // __call__ */
+  NULL,                                /* reprfunc tp_str;      // __str__ */
+};
+
+static char *doc_compressobj = \
+    "compressobj() -- Returns object that can be used for compression.";
+
+static PyObject *pylzma_compressobj(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    CCompressionObject *result=NULL;
+    NCompress::NLZMA::CPYLZMAEncoder *encoder;
+    
+    // possible keywords for this function
+    static char *kwlist[] = {"dictionary", "fastBytes", "literalContextBits",
+                             "literalPosBits", "posBits", "algorithm", "eos", NULL};
+    int dictionary = 23;         // [0,28], default 23 (8MB)
+    int fastBytes = 128;         // [5,255], default 128
+    int literalContextBits = 3;  // [0,8], default 3
+    int literalPosBits = 0;      // [0,4], default 0
+    int posBits = 2;             // [0,4], default 2
+    int eos = 1;                 // write "end of stream" marker?
+    int algorithm = 2;
+    int res;
+    
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|lllllll", kwlist, &dictionary, &fastBytes,
+                                                               &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos))
+        return NULL;
+    
+    CHECK_RANGE(dictionary,         0,  28, "dictionary must be between 0 and 28");
+    CHECK_RANGE(fastBytes,          5, 255, "fastBytes must be between 5 and 255");
+    CHECK_RANGE(literalContextBits, 0,   8, "literalContextBits must be between 0 and 8");
+    CHECK_RANGE(literalPosBits,     0,   4, "literalPosBits must be between 0 and 4");
+    CHECK_RANGE(posBits,            0,   4, "posBits must be between 0 and 4");
+    
+    encoder = new NCompress::NLZMA::CPYLZMAEncoder();
+    CHECK_NULL(encoder);
+    
+    if ((res = set_encoder_properties(encoder, dictionary, posBits, literalContextBits, literalPosBits, algorithm, fastBytes, eos) != 0))
+    {
+        delete encoder;
+        PyErr_Format(PyExc_TypeError, "Can't set coder properties: %d", res);
+        goto exit;
+    }
+    
+    result = PyObject_New(CCompressionObject, &CompressionObject_Type);
+    if (result == NULL)
+    {
+        DELETE_AND_NULL(encoder);
+        PyErr_NoMemory();
+        goto exit;
+    }
+    
+    result->encoder = encoder;
+    result->inStream = new CInStream();
+    if (result->inStream == NULL)
+    {
+        DELETE_AND_NULL(encoder);
+        DEC_AND_NULL(result);
+        PyErr_NoMemory();
+    }
+    result->outStream = new COutStream();
+    if (result->outStream == NULL)
+    {
+        DELETE_AND_NULL(encoder);
+        DELETE_AND_NULL(result->inStream);
+        DEC_AND_NULL(result);
+        PyErr_NoMemory();
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    encoder->SetStreams(result->inStream, result->outStream, 0, 0);
+    encoder->WriteCoderProperties(result->outStream);
+    Py_END_ALLOW_THREADS
+    
+exit:
+    
+    return (PyObject *)result;
 }
 
 static char *doc_decompress = \
@@ -572,6 +649,8 @@ PyMethodDef methods[] = {
     // exported functions
     {"compress",      (PyCFunction)pylzma_compress,      METH_VARARGS | METH_KEYWORDS, doc_compress},
     {"decompress",    (PyCFunction)pylzma_decompress,    METH_VARARGS,                 doc_decompress},
+    // XXX: compression through an object doesn't work, yet
+    //{"compressobj",   (PyCFunction)pylzma_compressobj,   METH_VARARGS | METH_KEYWORDS, doc_compressobj},
     {"decompressobj", (PyCFunction)pylzma_decompressobj, METH_VARARGS,                 doc_decompressobj},
     {NULL, NULL},
 };

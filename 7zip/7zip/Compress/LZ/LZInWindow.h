@@ -37,6 +37,15 @@ public:
   HRESULT Init(ISequentialInStream *stream);
   // void ReleaseStream();
 
+  HRESULT ResetStreamEndReached() {
+    if (_streamEndWasReached)
+    {
+      _streamEndWasReached = false;
+      return ReadBlock();
+    }
+    return S_OK;
+  }
+  
   BYTE *GetBuffer() const { return _buffer; }
 
   const BYTE *GetPointerToCurrentPos() const { return _buffer + _pos; }

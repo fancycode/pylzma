@@ -27,32 +27,31 @@ from cStringIO import StringIO
 
 class TestPyLZMA(unittest.TestCase):
     
+    def setUp(self):
+        self.plain = 'hello, this is a test string'
+        self.plain_with_eos = unhexlify('5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c127731a214ff7031c000')
+        self.plain_without_eos = unhexlify('5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c115edbe9')
+        
     def test_compression_eos(self):
         # test compression with end of stream marker
-        original = 'hello, this is a test string'
-        compressed = pylzma.compress(original, eos=1)
-        self.assertEqual(md5.new(compressed).hexdigest(), '790a7c03afa72b2fbc93f46b39c3cd73')
+        compressed = pylzma.compress(self.plain, eos=1)
+        self.assertEqual(compressed, self.plain_with_eos)
     
     def test_compression_no_eos(self):
         # test compression without end of stream marker
-        original = 'hello, this is a test string'
-        compressed = pylzma.compress(original, eos=0)
-        self.assertEqual(md5.new(compressed).hexdigest(), '36ef244e6e7115476f92f47ce9b4d9ed')
+        compressed = pylzma.compress(self.plain, eos=0)
+        self.assertEqual(compressed, self.plain_without_eos)
         
     def test_decompression_eos(self):
         # test decompression with the end of stream marker
-        original = '5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c127731a214ff7031c000'
-        original = unhexlify(original)
-        decompressed = pylzma.decompress(original)
-        self.assertEqual(decompressed, 'hello, this is a test string')
+        decompressed = pylzma.decompress(self.plain_with_eos)
+        self.assertEqual(decompressed, self.plain)
         
     def test_decompression_noeos(self):
         # test decompression without the end of stream marker
-        original = '5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c115edbe9'
-        original = unhexlify(original)
-        decompressed = pylzma.decompress(original)
+        decompressed = pylzma.decompress(self.plain_without_eos)
         decompressed = decompressed[:28]
-        self.assertEqual(decompressed, 'hello, this is a test string')
+        self.assertEqual(decompressed, self.plain)
 
     def test_compression_decompression_eos(self):
         # call compression and decompression on random data of various sizes
@@ -85,36 +84,44 @@ class TestPyLZMA(unittest.TestCase):
 
     def test_decompression_stream(self):
         # test decompression in two steps
-        original = '5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c127731a214ff7031c000'
-        original = unhexlify(original)
         decompress = pylzma.decompressobj()
-        data = decompress.decompress(original[:10])
-        data += decompress.decompress(decompress.unconsumed_tail + original[10:])
-        self.assertEqual(data, 'hello, this is a test string')
+        data = decompress.decompress(self.plain_with_eos[:10])
+        data += decompress.decompress(decompress.unconsumed_tail + self.plain_with_eos[10:])
+        self.assertEqual(data, self.plain)
 
     def test_decompression_stream_reset(self):
         # test reset
-        original = '5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c127731a214ff7031c000'
-        original = unhexlify(original)
         decompress = pylzma.decompressobj()
-        data = decompress.decompress(original[:10])
+        data = decompress.decompress(self.plain_with_eos[:10])
         decompress.reset()
-        data = decompress.decompress(original[:15])
-        data += decompress.decompress(decompress.unconsumed_tail + original[15:])
-        self.assertEqual(data, 'hello, this is a test string')
+        data = decompress.decompress(self.plain_with_eos[:15])
+        data += decompress.decompress(decompress.unconsumed_tail + self.plain_with_eos[15:])
+        self.assertEqual(data, self.plain)
 
     def test_decompression_streaming(self):
         # test decompressing with one byte at a time...
-        original = '5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c127731a214ff7031c000'
-        original = unhexlify(original)
         decompress = pylzma.decompressobj()
-        infile = StringIO(original)
+        infile = StringIO(self.plain_with_eos)
         outfile = StringIO()
         while 1:
             data = decompress.unconsumed_tail + infile.read(1)
             if not data: break
             outfile.write(decompress.decompress(data, 1))
-        self.assertEqual(outfile.getvalue(), 'hello, this is a test string')
+        self.assertEqual(outfile.getvalue(), self.plain)
+
+    def _test_compression_streaming(self):
+        # XXX: this doesn't work, yet
+        # test compressing with one byte at a time...
+        compress = pylzma.compressobj(eos=1)
+        infile = StringIO(self.plain)
+        outfile = StringIO()
+        while 1:
+            data = infile.read(1)
+            if not data: break
+            outfile.write(compress.compress(data, 1))
+        outfile.write(compress.flush())
+        check = pylzma.decompress(outfile.getvalue())
+        self.assertEqual(check, self.plain)
 
 if __name__ == "__main__":
     unittest.main()

@@ -77,5 +77,9 @@ STDMETHODIMP CMatchFinderBinTree::SetCallback(IMatchFinderCallback *callback)
   return S_OK;
 }
 
+STDMETHODIMP_(void) CMatchFinderBinTree::ResetStreamEndReached(void)
+{
+  _matchFinder.ResetStreamEndReached();
+}
 
 }

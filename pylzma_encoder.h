@@ -20,37 +20,29 @@
  * 
  */
 
-#ifndef ___PYLZMA__H___
-#define ___PYLZMA__H___
+#ifndef ___PYLZMA_ENCODER__H___
+#define ___PYLZMA_ENCODER__H___
 
-#include <Python.h>
-#include "Platform.h"  
-#include "pylzma_streams.h"
-#include "pylzma_encoder.h"
-#include <7zip/7zip/IStream.h>
 #include <7zip/7zip/Compress/LZMA/LZMAEncoder.h>
-#include <7zip/LzmaDecode.h>
 
-typedef struct {
-    PyObject_HEAD
-    NCompress::NLZMA::CPYLZMAEncoder *encoder;
-    CInStream *inStream;
-    COutStream *outStream;
-} CCompressionObject;
+namespace NCompress {
+namespace NLZMA {
 
-extern PyTypeObject CCompressionObject_Type;
+class CPYLZMAEncoder : 
+    public CEncoder
+{
+private:
+    UINT64 progressPosValuePrev;
+    UINT32 pos;
+    UINT32 posState;
+    UINT32 len;
+    int state;
 
-#define CompressionObject_Check(v)   ((v)->ob_type == &CCompressionObject_Type)
+public:
+    HRESULT CodeOneBlock(UINT64 *inSize, UINT64 *outSize, INT32 *finished, bool flush);
+    HRESULT FinishStream();
+};
 
-typedef struct {
-    PyObject_HEAD
-    lzma_stream stream;
-    PyObject *unconsumed_tail;
-    PyObject *unused_data;
-} CDecompressionObject;
-
-extern PyTypeObject CDecompressionObject_Type;
-
-#define DecompressionObject_Check(v)   ((v)->ob_type == &CDecompressionObject_Type)
+}}
 
 #endif

@@ -76,6 +76,7 @@ class CEncoder :
   public CBaseCoder,
   public CMyUnknownImp
 {
+  friend class CPYLZMAEncoder;
   COptimal _optimum[kNumOpts];
 public:
   CMyComPtr<IMatchFinder> _matchFinder; // test it

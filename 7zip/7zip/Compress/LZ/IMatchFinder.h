@@ -30,6 +30,7 @@ IMatchFinder: public IInWindowStream
       UINT32 matchMaxLen, UINT32 keepAddBufferAfter) PURE;
   STDMETHOD_(UINT32, GetLongestMatch)(UINT32 *distances) PURE;
   STDMETHOD_(void, DummyLongestMatch)() PURE;
+  STDMETHOD_(void, ResetStreamEndReached)() PURE;
 };
 
 // {23170F69-40C1-278A-0000-000200020100}
