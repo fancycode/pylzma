@@ -75,7 +75,7 @@ public:
 };
 
 //////////////////////////////////////////////////////////
-
+/*
 class CMyComBSTR
 {
 public:
@@ -85,15 +85,15 @@ public:
   // CMyComBSTR(int nSize) { m_str = ::SysAllocStringLen(NULL, nSize); }
   // CMyComBSTR(int nSize, LPCOLESTR sz) { m_str = ::SysAllocStringLen(sz, nSize);  }
   CMyComBSTR(const CMyComBSTR& src) { m_str = src.MyCopy(); }
-  /*
-  CMyComBSTR(REFGUID src)
-  {
-    LPOLESTR szGuid;
-    StringFromCLSID(src, &szGuid);
-    m_str = ::SysAllocString(szGuid);
-    CoTaskMemFree(szGuid);
-  }
-  */
+  
+  //CMyComBSTR(REFGUID src)
+  //{
+  //  LPOLESTR szGuid;
+  //  StringFromCLSID(src, &szGuid);
+  //  m_str = ::SysAllocString(szGuid);
+  //  CoTaskMemFree(szGuid);
+  //}
+  
   ~CMyComBSTR() { ::SysFreeString(m_str); }
   CMyComBSTR& operator=(const CMyComBSTR& src)
   {
@@ -135,7 +135,7 @@ public:
   }
   bool operator!() const {  return (m_str == NULL); }
 };
-
+*/
 
 //////////////////////////////////////////////////////////
 
