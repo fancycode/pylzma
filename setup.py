@@ -54,6 +54,8 @@ modules = ['py7zlib']
 c_files = ['pylzma.c', 'pylzma_decompressobj.c', 'pylzma_compressfile.cpp',
            'pylzma_decompress.c', 'pylzma_compress.cpp']
 macros = [('COMPRESS_MF_BT', 1), ('EXCLUDE_COM', 1), ('COMPRESS_LZMA', 1), ('_NO_CRYPTO', 1)]
+if 'win' in sys.platform:
+    macros.append(('WIN32', 1))
 lzma_files = ('7zip/LzmaDecode.c', '7zip/7zip/Compress/LZMA/LZMAEncoder.cpp',
     '7zip/7zip/Compress/RangeCoder/RangeCoderBit.cpp', '7zip/Common/CRC.cpp',
     '7zip/7zip/Compress/LZ/LZInWindow.cpp', '7zip/7zGuids.cpp',
