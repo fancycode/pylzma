@@ -1,8 +1,6 @@
 Python bindings for LZMA
 ------------------------
 
-Version 0.0.1
-
 Copyright (c) 2004 by Joachim Bauch
 LZMA SDK Copyright (C) 1999-2004 Igor Pavlov
 
