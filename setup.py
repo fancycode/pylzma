@@ -35,7 +35,7 @@ if os.name == 'posix':
 else:
     PYTHON_INCLUDE_DIR="%s\\include" % (PYTHON_PREFIX)
     PYTHON_LIB_DIR="%s\\libs" % (PYTHON_PREFIX)
-    LZMA_ROOT=r"D:\Develop\pylzma\src\Source"
+    LZMA_ROOT=r"D:\Develop\pylzma\trunk\src\Source"
     libs = ['oleaut32']
     compile_args = []
 
