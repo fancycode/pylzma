@@ -49,12 +49,12 @@ public:
         pos = 0;
     }
     
-    virtual LONG Read(void *data, UINT32 size, UINT32 *processedSize)
+    STDMETHOD(Read)(void *data, UINT32 size, UINT32 *processedSize)
     {
         return ReadPart(data, size, processedSize);
     }
     
-    virtual LONG ReadPart(void *data, UINT32 size, UINT32 *processedSize)
+    STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize)
     {
         if (processedSize)
             *processedSize = 0;
@@ -116,12 +116,12 @@ public:
         return count;
     }
 
-    virtual LONG Write(const void *data, UINT32 size, UINT32 *processedSize)
+    STDMETHOD(Write)(const void *data, UINT32 size, UINT32 *processedSize)
     {
         return WritePart(data, size, processedSize);
     }
     
-    virtual LONG WritePart(const void *data, UINT32 size, UINT32 *processedSize)
+    STDMETHOD(WritePart)(const void *data, UINT32 size, UINT32 *processedSize)
     {
         if (processedSize)
             *processedSize = 0;
