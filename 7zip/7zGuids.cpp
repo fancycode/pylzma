@@ -11,6 +11,4 @@
 
 #define INITGUID
 #include "7zip/ICoder.h"
-#include "7zip/IPassword.h"
-#include "7zip/IProgress.h"
 #include "7zip/Compress/LZ/IMatchFinder.h"
