@@ -31,6 +31,10 @@
 #include "Platform.h"  
 #include <7zip/LzmaDecode.h>
 
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
 #define CHECK_NULL(a) if ((a) == NULL) { PyErr_NoMemory(); goto exit; }
 #define DEC_AND_NULL(a) { Py_XDECREF(a); a = NULL; }
 #define DELETE_AND_NULL(a) if (a != NULL) { delete a; a = NULL; }
