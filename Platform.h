@@ -4,6 +4,8 @@
  * Taken from NSIS (http://nsis.sourceforge.net)
  * Copyright (c) 1999-2004 Nullsoft, Inc.
  *
+ * $Id$
+ *
  */
 
 #ifndef ___PLATFORM__H___
