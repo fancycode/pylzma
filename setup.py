@@ -22,10 +22,17 @@
 # $Id$
 #
 import sys, os
+from warnings import warn
 from distutils.core import setup, Extension
 
 PYTHON_VERSION=sys.version[:3]
 PYTHON_PREFIX=sys.prefix
+
+class UnsupportedPlatformWarning(Warning):
+    pass
+
+# set this to any true value to enable multithreaded compression
+ENABLE_MULTITHREADING = 1
 
 if os.name == 'posix':
     # This is the directory, your Python is installed in. It must contain the header and include files.
@@ -47,6 +54,16 @@ PYTHON_LIB_DIR,
 ".",
 ]
 
+mt_platforms = (
+    'win32',
+)
+
+if ENABLE_MULTITHREADING and not sys.platform in mt_platforms:
+    warn("""\
+Multithreading is not supported on the platform "%s",
+please contact mail@joachim-bauch.de for more informations.""" % (sys.platform), UnsupportedPlatformWarning)
+    ENABLE_MULTITHREADING = 0    
+
 descr = "Python bindings for the LZMA library by Igor Pavlov."
 try: version = open('version.txt', 'rb').read().strip()
 except: version = 'unknown'
@@ -56,10 +73,14 @@ c_files = ['pylzma.c', 'pylzma_decompressobj.c', 'pylzma_compressfile.cpp',
 macros = [('COMPRESS_MF_BT', 1), ('EXCLUDE_COM', 1), ('COMPRESS_LZMA', 1), ('_NO_CRYPTO', 1)]
 if 'win' in sys.platform:
     macros.append(('WIN32', 1))
+if ENABLE_MULTITHREADING:
+    macros.append(('COMPRESS_MF_MT', 1))
 lzma_files = ('7zip/LzmaDecode.c', '7zip/7zip/Compress/LZMA/LZMAEncoder.cpp',
     '7zip/7zip/Compress/RangeCoder/RangeCoderBit.cpp', '7zip/Common/CRC.cpp',
     '7zip/7zip/Compress/LZ/LZInWindow.cpp', '7zip/7zGuids.cpp',
     '7zip/7zip/Common/OutBuffer.cpp', '7zip/Common/Alloc.cpp', )
+if ENABLE_MULTITHREADING:
+    lzma_files += ('7zip/7zip/Compress/LZ/MT/MT.cpp', '7zip/OS/Synchronization.cpp', )
 join = os.path.join
 normalize = os.path.normpath
 c_files += map(lambda x: normalize(join('.', x)), lzma_files)

@@ -4,6 +4,7 @@
 #define __MYCOM_H
 
 #include "MyWindows.h"
+#include "../../Platform.h"
 
 #define RINOK(x) { HRESULT __result_ = (x); if(__result_ != S_OK) return __result_; }
 

@@ -31,7 +31,8 @@
 #include "pylzma_streams.h"
 
 int set_encoder_properties(NCompress::NLZMA::CEncoder *encoder, int dictionary, int posBits,
-    int literalContextBits, int literalPosBits, int algorithm, int fastBytes, int eos)
+    int literalContextBits, int literalPosBits, int algorithm, int fastBytes, int eos,
+    int multithreading)
 {
     encoder->SetWriteEndMarkerMode(eos ? true : false);
     
@@ -43,6 +44,9 @@ int set_encoder_properties(NCompress::NLZMA::CEncoder *encoder, int dictionary, 
         NCoderPropID::kLitPosBits,
         NCoderPropID::kAlgorithm,
         NCoderPropID::kNumFastBytes
+#ifdef COMPRESS_MF_MT
+        , NCoderPropID::kMultiThread
+#endif
     };
     const int kNumProps = sizeof(propIDs) / sizeof(propIDs[0]);
     PROPVARIANT props[kNumProps];
@@ -64,6 +68,11 @@ int set_encoder_properties(NCompress::NLZMA::CEncoder *encoder, int dictionary, 
     // NCoderProp::kNumFastBytes;
     props[5].vt = VT_UI4;
     props[5].ulVal = fastBytes;
+#ifdef COMPRESS_MF_MT
+    // NCoderPropID::kMultiThread
+    props[6].vt = VT_BOOL;
+    props[6].boolVal = (multithreading != 0) ? VARIANT_TRUE : VARIANT_FALSE;
+#endif
     
     return encoder->SetCoderProperties(propIDs, props, kNumProps);
 }
@@ -87,19 +96,20 @@ PyObject *pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
     int res;    
     // possible keywords for this function
     static char *kwlist[] = {"data", "dictionary", "fastBytes", "literalContextBits",
-                             "literalPosBits", "posBits", "algorithm", "eos", NULL};
+                             "literalPosBits", "posBits", "algorithm", "eos", "multithreading", NULL};
     int dictionary = 23;         // [0,28], default 23 (8MB)
     int fastBytes = 128;         // [5,255], default 128
     int literalContextBits = 3;  // [0,8], default 3
     int literalPosBits = 0;      // [0,4], default 0
     int posBits = 2;             // [0,4], default 2
     int eos = 1;                 // write "end of stream" marker?
+    int multithreading = 1;      // use multithreading if available?
     int algorithm = 2;
     char *data;
     int length;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iiiiiii", kwlist, &data, &length, &dictionary, &fastBytes,
-                                                                &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iiiiiiii", kwlist, &data, &length, &dictionary, &fastBytes,
+                                                                  &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos, &multithreading))
         return NULL;
     
     CHECK_RANGE(dictionary,         0,  28, "dictionary must be between 0 and 28");
@@ -111,7 +121,7 @@ PyObject *pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
     encoder = new NCompress::NLZMA::CEncoder();
     CHECK_NULL(encoder);
 
-    if ((res = set_encoder_properties(encoder, dictionary, posBits, literalContextBits, literalPosBits, algorithm, fastBytes, eos) != 0))
+    if ((res = set_encoder_properties(encoder, dictionary, posBits, literalContextBits, literalPosBits, algorithm, fastBytes, eos, multithreading) != 0))
     {
         PyErr_Format(PyExc_TypeError, "Can't set coder properties: %d", res);
         goto exit;
