@@ -29,10 +29,10 @@ class TestPyLZMA(unittest.TestCase):
     def testcompression(self):
         original = 'hello, this is a test string'
         compressed = pylzma.compress(original)
-        self.assertEqual(md5.new(compressed).hexdigest(), '7f82418b18b60b4076bb6eb24036d6cf')
+        self.assertEqual(md5.new(compressed).hexdigest(), '790a7c03afa72b2fbc93f46b39c3cd73')
 
     def testdecompression(self):
-        original = '5d000080001c0000000000000000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c115edbe9'
+        original = '5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c127731a214ff7031c000'
         original = unhexlify(original)
         decompressed = pylzma.decompress(original)
         self.assertEqual(decompressed, 'hello, this is a test string')

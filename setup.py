@@ -29,19 +29,12 @@ if os.name == 'posix':
     # This is the directory, your Python is installed in. It must contain the header and include files.
     PYTHON_INCLUDE_DIR="%s/include/python%s" % (PYTHON_PREFIX, PYTHON_VERSION)
     PYTHON_LIB_DIR="%s/lib/python%s" % (PYTHON_PREFIX, PYTHON_VERSION)
-    LZMA_ROOT="/home/jojo/devel/pylzma"
-    libs=[]
-    compile_args = []
 else:
     PYTHON_INCLUDE_DIR="%s\\include" % (PYTHON_PREFIX)
     PYTHON_LIB_DIR="%s\\libs" % (PYTHON_PREFIX)
-    LZMA_ROOT=r"D:\Develop\pylzma\trunk\src\Source"
-    libs = ['oleaut32']
-    compile_args = []
 
 include_dirs = [
 PYTHON_INCLUDE_DIR,
-LZMA_ROOT,
 ".",
 ];
 
@@ -54,20 +47,16 @@ descr = "pylzma package"
 modules = []
 c_files = ['pylzma.cpp']
 macros = [('COMPRESS_MF_BT', 1)]
-win_lzma_files = ('7zip/Compress/LZMA/LZMAEncoder.cpp', '7zip/Compress/LZMA/LZMADecoder.cpp', '7zip/Compress/LZMA/LZMALen.cpp',
-                  '7zip/Compress/LZMA/LZMALiteral.cpp', '7zip/Common/StreamObjects.cpp', '7zip/Common/OutBuffer.cpp',
-                  '7zip/Compress/RangeCoder/RangeCoderBit.cpp', 'Windows/PropVariant.cpp', '7zip/Compress/LZ/LZOutWindow.cpp',
-                  '7zip/Compress/LZ/LZInWindow.cpp', '7zip/Compress/LZ/MT/MT.cpp', '7zip/Common/InBuffer.cpp', 
-                  'Common/CRC.cpp', 'Windows/Synchronization.cpp', )
-linux_lzma_files = ('Source/LzmaDecode.c', )
+lzma_files = ('7zip/LzmaDecode.c', '7zip/7zip/Compress/LZMA/LZMAEncoder.cpp',
+    '7zip/7zip/Compress/LZMA/LZMALen.cpp', '7zip/7zip/Compress/LZMA/LZMALiteral.cpp',
+    '7zip/7zip/Compress/RangeCoder/RangeCoderBit.cpp', '7zip/Common/CRC.cpp',
+    '7zip/7zip/Compress/LZ/LZInWindow.cpp', '7zip/7zGuids.cpp',
+    '7zip/7zip/Common/OutBuffer.cpp', )
 join = os.path.join
 normalize = os.path.normpath
-if os.name == 'posix':
-    c_files += map(lambda x: normalize(join(LZMA_ROOT, x)), linux_lzma_files)
-else:
-    c_files += map(lambda x: normalize(join(LZMA_ROOT, x)), win_lzma_files)
-extens=[Extension('pylzma', c_files, include_dirs=include_dirs, libraries=libs,
-                  library_dirs=library_dirs, define_macros=macros, extra_compile_args=compile_args)] 
+c_files += map(lambda x: normalize(join('.', x)), lzma_files)
+extens=[Extension('pylzma', c_files, include_dirs=include_dirs,
+                  library_dirs=library_dirs, define_macros=macros)] 
 
 setup (name = "pylzma",
        version = "0.0.1",

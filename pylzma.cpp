@@ -20,50 +20,147 @@
  * 
  */
 
-#ifdef __cplusplus
-    extern "C" {
-#endif
-
-#ifdef _WIN32
-#include <Windows.h>
-#endif
-
 #include <Python.h>
+    
+#define BLOCK_SIZE 65536
+  
+#include "Platform.h"  
+#include <7zip/7zip/IStream.h>
+#include <7zip/7zip/Compress/LZMA/LZMAEncoder.h>
+#include <7zip/Common/MyCom.h>
+#include <7zip/LzmaDecode.h>
 
-#ifdef _WIN32
+class CInStream :
+    public ISequentialInStream,
+    public CMyUnknownImp
+{
+private:
+    BYTE *next_in;
+    UINT avail_in;
+    UINT pos;
 
-// We can use the default 7-zip code for de-/compressing on Windows
+public:
+    MY_UNKNOWN_IMP
 
-#ifdef __cplusplus
-}
-#endif
+    CInStream(BYTE *data, int length)
+    {
+        next_in = data;
+        avail_in = length;
+        pos = 0;
+    }
+    
+    virtual LONG Read(void *data, UINT32 size, UINT32 *processedSize)
+    {
+        return ReadPart(data, size, processedSize);
+    }
+    
+    virtual LONG ReadPart(void *data, UINT32 size, UINT32 *processedSize)
+    {
+        if (processedSize)
+            *processedSize = 0;
+        
+        while (size)
+        {
+            if (!avail_in)
+                return S_OK;
+            
+            UINT32 len = size < avail_in ? size : avail_in;
+            memcpy(data, next_in, len);
+            avail_in -= len;
+            size -= len;
+            next_in += len;
+            data = PBYTE(data) + len;
+            if (processedSize)
+                *processedSize += len;
+        }
+        
+        return S_OK;
+    }    
+};
 
-#include <initguid.h>
-#include <7zip/ICoder.h>
-#include <Windows/PropVariant.h>
-#include <7zip/Common/StreamObjects.h>
-#include <7zip/Compress/LZMA/LZMADecoder.h>
-#include <7zip/Compress/LZMA/LZMAEncoder.h>
+class COutStream :
+    public ISequentialOutStream,
+    public CMyUnknownImp
+{
+private:
+    BYTE *buffer;
+    BYTE *next_out;
+    UINT avail_out;
+    UINT count;
 
-using namespace NWindows;
+public:
+    MY_UNKNOWN_IMP
+
+    COutStream()
+    {
+        buffer = (BYTE *)malloc(BLOCK_SIZE);
+        next_out = buffer;
+        avail_out = BLOCK_SIZE;
+        count = 0;
+    }
+    
+    virtual ~COutStream()
+    {
+        if (buffer)
+            free(buffer);
+        buffer = NULL;
+    }
+    
+    char *getData()
+    {
+        return (char *)buffer;
+    }
+    
+    int getLength()
+    {
+        return count;
+    }
+
+    virtual LONG Write(const void *data, UINT32 size, UINT32 *processedSize)
+    {
+        return WritePart(data, size, processedSize);
+    }
+    
+    virtual LONG WritePart(const void *data, UINT32 size, UINT32 *processedSize)
+    {
+        if (processedSize)
+            *processedSize = 0;
+        
+        while (size)
+        {
+            if (!avail_out)
+            {
+                buffer = (BYTE *)realloc(buffer, count + BLOCK_SIZE);
+                avail_out += BLOCK_SIZE;
+                next_out = &buffer[count];
+            }
+            
+            UINT32 len = size < avail_out ? size : avail_out;
+            memcpy(next_out, data, len);
+            avail_out -= len;
+            size -= len;
+            next_out += len;
+            count += len;
+            data = PBYTE(data) + len;
+            if (processedSize)
+                *processedSize += len;
+        }
+        
+        return S_OK;
+    }    
+};
 
 static PyObject *perform_compression(char *data, int length, int dictionary, int fastBytes, int literalContextBits,
 				     int literalPosBits, int posBits, int algorithm, int eos)
 {
-    HRESULT res;
+    PyObject *result = NULL;
+    NCompress::NLZMA::CEncoder *encoder;
+    CInStream *inStream = new CInStream((BYTE *)data, length);
+    COutStream *outStream = new COutStream();
+    int res;
 
-    NCompress::NLZMA::CEncoder *encoderSpec = new NCompress::NLZMA::CEncoder;
-    CMyComPtr<ICompressCoder> encoder = encoderSpec;
-    
-    CSequentialInStreamImp *inStreamSpec = new CSequentialInStreamImp;
-    inStreamSpec->Init((const BYTE *)data, length);
-    CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
-
-    CSequentialOutStreamImp *outStreamSpec = new CSequentialOutStreamImp;
-    CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
-    
-    dictionary = 1 << dictionary;
-    if (eos) encoderSpec->SetWriteEndMarkerMode(true);
+    encoder = new NCompress::NLZMA::CEncoder();
+    encoder->SetWriteEndMarkerMode(true);
 
     PROPID propIDs[] = 
     {
@@ -75,209 +172,101 @@ static PyObject *perform_compression(char *data, int length, int dictionary, int
         NCoderPropID::kNumFastBytes
     };
     const int kNumProps = sizeof(propIDs) / sizeof(propIDs[0]);
-    NWindows::NCOM::CPropVariant properties[kNumProps];
-
-    properties[0] = UINT32(dictionary);
-    properties[1] = UINT32(posBits);
-    properties[2] = UINT32(literalContextBits);
-   
-    properties[3] = UINT32(literalPosBits);
-    properties[4] = UINT32(algorithm);
-    properties[5] = UINT32(fastBytes);
-
-    if ((res = encoderSpec->SetCoderProperties(propIDs, properties, kNumProps)) != S_OK)
+    PROPVARIANT props[kNumProps];
+    // NCoderProp::kDictionarySize;
+    props[0].vt = VT_UI4;
+    props[0].ulVal = 1 << dictionary;
+    // NCoderProp::kPosStateBits;
+    props[1].vt = VT_UI4;
+    props[1].ulVal = posBits;
+    // NCoderProp::kLitContextBits;
+    props[2].vt = VT_UI4;
+    props[2].ulVal = literalContextBits;
+    // NCoderProp::kLitPosBits;
+    props[3].vt = VT_UI4;
+    props[3].ulVal = literalPosBits;
+    // NCoderProp::kAlgorithm;
+    props[4].vt = VT_UI4;
+    props[4].ulVal = algorithm;
+    // NCoderProp::kNumFastBytes;
+    props[5].vt = VT_UI4;
+    props[5].ulVal = fastBytes;
+    if ((res = encoder->SetCoderProperties(propIDs, props, kNumProps)) != 0)
     {
-        PyErr_Format(PyExc_ValueError, "Can't set coder properties: %d", res);
-        return NULL;
-    }
-
-    encoderSpec->WriteCoderProperties(outStream);
-
-    UINT64 fileSize;
-    if (eos)
-        fileSize = (UINT64)(INT64)-1;
-    else
-        fileSize = length;
-    
-    outStream->Write(&fileSize, sizeof(fileSize), 0);
-    UINT64 longLength = length;
-    if ((res = encoder->Code(inStream, outStream, &longLength, 0, 0)) != S_OK)
-    {
-        PyErr_Format(PyExc_ValueError, "Encoder error: %d", res);
-        return NULL;
+        PyErr_Format(PyExc_TypeError, "Can't set coder properties: %d", res);
+        goto exit;
     }
     
-    return PyString_FromStringAndSize((const char *)(const unsigned char *)outStreamSpec->GetBuffer(), outStreamSpec->GetSize());
-}
-
-static PyObject *perform_decompression(char *data, int length)
-{
-    HRESULT res;
+    encoder->SetStreams(inStream, outStream, 0, 0);
+    encoder->WriteCoderProperties(outStream);
+    encoder->CodeReal(inStream, outStream, NULL, 0, 0);
     
-    NCompress::NLZMA::CDecoder *decoderSpec = new NCompress::NLZMA::CDecoder;
-    CMyComPtr<ICompressCoder> decoder = decoderSpec;
+    result = PyString_FromStringAndSize((const char *)outStream->getData(), outStream->getLength());
     
-    CSequentialInStreamImp *inStreamSpec = new CSequentialInStreamImp;
-    inStreamSpec->Init((const BYTE *)data, length);
-    CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
-
-    if ((res = decoderSpec->SetDecoderProperties(inStream)) != S_OK)
-    {
-        PyErr_Format(PyExc_ValueError, "SetDecoderProperties error: %d", res);
-        return NULL;
-    }
-    
-    UINT32 processedSize;
-    UINT64 fileSize;
-    if ((res = inStream->Read(&fileSize, sizeof(fileSize), &processedSize)) != S_OK)
-    {
-        PyErr_Format(PyExc_ValueError, "ReadDecoderFileSize error: %d", res);
-        return NULL;
-    }   
-    
-    CSequentialOutStreamImp *outStreamSpec = new CSequentialOutStreamImp;
-    CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
-    
-    if ((res = decoder->Code(inStream, outStream, 0, &fileSize, 0)) != S_OK)
-    {
-        PyErr_Format(PyExc_ValueError, "Decoder error: %d", res);
-        return NULL;
-    }   
-    
-    return PyString_FromStringAndSize((const char *)(const unsigned char *)outStreamSpec->GetBuffer(), outStreamSpec->GetSize());
-}
-
-#ifdef __cplusplus
-    extern "C" {
-#endif
-
-#else
-
-// Special LZMA handling on Linux
-
-#include <Source/LzmaDecode.h>
-
-static PyObject *perform_compression(char *data, int length, int dictionary, int fastBytes, int literalContextBits,
-				     int literalPosBits, int posBits, int algorithm, int eos)
-{
-    PyErr_SetString(PyExc_NotImplementedError, "not implemented on this platform.");
-    return NULL;
+exit:
+    if (encoder != NULL)
+        delete encoder;
+    if (inStream != NULL)
+        delete inStream;
+    if (outStream != NULL)
+        delete outStream;
+    return result;
 }
 
 static PyObject *perform_decompression(char *data, int length)
 {
     PyObject *result = NULL;
-    unsigned int compressedSize, outSize, outSizeProcessed, lzmaInternalSize;
-    void *inStream, *outStream=NULL, *lzmaInternalData=NULL;
-    unsigned char properties[5];
-    unsigned char prop0;
-    int ii;
-    int lc, lp, pb;
-    int res;
-    int pos=0;
+    lzma_stream stream;
+    int size=BLOCK_SIZE, res;
+    char *output=(char *)malloc(BLOCK_SIZE);
     
-    memcpy(&properties, data, sizeof(properties));
-    pos += sizeof(properties);
-    outSize = 0;
-    for (int ii = 0; ii < 4; ii++)
+    if (!output)
     {
-        unsigned char b;
-        memcpy(&b, &data[pos], sizeof(b));
-        pos += sizeof(b);
-        if (pos > length)
-        {
-            PyErr_SetString(PyExc_ValueError, "end of stream");
-            goto exit;
-        }
-        outSize += (unsigned int)(b) << (ii * 8);
-    }
-
-    if (outSize == 0xFFFFFFFF)
-    {
-        PyErr_SetString(PyExc_ValueError, "stream version is not supported");
+        PyErr_NoMemory();
         goto exit;
     }
-
-    for (ii = 0; ii < 4; ii++)
+    
+    memset(&stream, 0, sizeof(stream));
+    lzmaInit(&stream);
+    stream.next_in = (Byte *)data;
+    stream.avail_in = length;
+    stream.next_out = (Byte *)output;
+    stream.avail_out = BLOCK_SIZE;
+    
+    // decompress data
+    while ((res = lzmaDecode(&stream)) != LZMA_STREAM_END)
     {
-        unsigned char b;
-        memcpy(&b, &data[pos], sizeof(b));
-        pos += sizeof(b);
-        if (pos > length)
+        if (res == LZMA_NOT_ENOUGH_MEM)
         {
-            PyErr_SetString(PyExc_ValueError, "end of stream");
+            // out of memory during decompression
+            PyErr_NoMemory();
+            goto exit;
+        } else if (res == LZMA_DATA_ERROR) {
+            PyErr_SetString(PyExc_ValueError, "data error during decompression");
+            goto exit;
+        } else if (res == LZMA_OK) {
+            output = (char *)realloc(output, size+BLOCK_SIZE);
+            stream.avail_out += BLOCK_SIZE;
+            stream.next_out = (Byte *)&output[stream.totalOut];
+        } else {
+            PyErr_Format(PyExc_ValueError, "unknown return code from lzmaDecode: %d", res);
             goto exit;
         }
         
-        if (b != 0)
-        {
-            PyErr_SetString(PyExc_ValueError, "too long file");
-            goto exit;
-        }
+        // if we exit here, decompression finished without returning LZMA_STREAM_END
+        // XXX: why is this sometimes?
+        if (stream.avail_in == 0)
+            break;
     }
+
+    result = PyString_FromStringAndSize(output, stream.totalOut);
     
-    compressedSize = length - 13;
-    if (compressedSize > (unsigned int)(length-pos))
-    {
-        PyErr_SetString(PyExc_ValueError, "end of stream");
-        goto exit;
-    }
-
-    inStream = &data[pos];
-    pos += compressedSize;
-
-    prop0 = properties[0];
-    if (prop0 >= (9*5*5))
-    {
-        PyErr_SetString(PyExc_ValueError, "properties error");
-        goto exit;
-    }
-    for (pb = 0; prop0 >= (9 * 5); 
-        pb++, prop0 -= (9 * 5));
-    for (lp = 0; prop0 >= 9; 
-        lp++, prop0 -= 9);
-    lc = prop0;
-    
-    lzmaInternalSize = (LZMA_BASE_SIZE + (LZMA_LIT_SIZE << (lc + lp)))* sizeof(CProb);
-
-    outStream = malloc(outSize);
-    if (!outStream)
-    {
-        PyErr_NoMemory();
-        goto exit;
-    }
-    
-    lzmaInternalData = malloc(lzmaInternalSize);
-    if (!lzmaInternalData)
-    {
-        PyErr_NoMemory();
-        goto exit;
-    }
-
-    res = LzmaDecode((unsigned char *)lzmaInternalData, lzmaInternalSize,
-                     lc, lp, pb,
-                     (unsigned char *)inStream, compressedSize,
-                     (unsigned char *)outStream, outSize, &outSizeProcessed);
-    outSize = outSizeProcessed;
-
-    if (res != 0)
-    {
-        PyErr_Format(PyExc_ValueError, "error during decompression (%d)", res);
-        goto exit;
-    }
-    
-    result = PyString_FromStringAndSize((const char *)outStream, outSize);
-
 exit:
-    if (outStream != NULL)
-        free(outStream);
-    if (lzmaInternalData != NULL)
-        free(lzmaInternalData);
+    if (output != NULL)
+        free(output);
     
     return result;
 }
-
-#endif
 
 static PyObject *pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -329,6 +318,10 @@ PyMethodDef methods[] = {
     {"decompress", (PyCFunction)pylzma_decompress, METH_VARARGS},
     {NULL, NULL},
 };
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 DL_EXPORT(void) initpylzma(void)
 {
