@@ -51,6 +51,7 @@ class TestPyLZMA(unittest.TestCase):
         original = '5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c115edbe9'
         original = unhexlify(original)
         decompressed = pylzma.decompress(original)
+        decompressed = decompressed[:28]
         self.assertEqual(decompressed, 'hello, this is a test string')
 
     def test_compression_decompression_eos(self):
@@ -71,6 +72,9 @@ class TestPyLZMA(unittest.TestCase):
             original = map(lambda x: data[random.randrange(0, 255)], xrange(size))
             original = ''.join(original)
             result = pylzma.decompress(pylzma.compress(original, eos=0))
+            # without the eos marker, the result may be padded with 0x00 bytes
+            # when using this compression format, one must store the data length otherwise
+            result = result[:size]
             self.assertEqual(md5.new(original).hexdigest(), md5.new(result).hexdigest())
 
     def test_multi(self):
