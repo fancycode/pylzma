@@ -4,6 +4,7 @@
 #define __COMMON_DEFS_H
 
 #include "../../Platform.h"
+#include "MyWindows.h"
 
 template <class T> inline T MyMin(T a, T b)
   {  return a < b ? a : b; }
