@@ -1,6 +1,6 @@
 // 7z/Handler.h
 
-#pragma once
+// #pragma once
 
 #ifndef __7Z_HANDLER_H
 #define __7Z_HANDLER_H

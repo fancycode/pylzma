@@ -1,16 +1,16 @@
 // StreamObjects.h
 
-#pragma once
+// #pragma once
 
 #ifndef __STREAMOBJECTS_H
 #define __STREAMOBJECTS_H
 
+#include "../IStream.h"
 #include "../../Common/DynamicBuffer.h"
 #include "../../Common/MyCom.h"
-#include "../IStream.h"
 
-class COutStreamImp: 
-  public ISequentialStream,
+class COutStreamImp:
+//  public ISequentialStream,
   public CMyUnknownImp
 {
   CByteDynamicBuffer _buffer;
@@ -28,7 +28,7 @@ public:
 };
 
 class CInStreamImp: 
-  public ISequentialStream,
+//  public ISequentialStream,
   public CMyUnknownImp
 {
   BYTE *_dataPointer;

@@ -1,6 +1,6 @@
 // Windows/FileDir.h
 
-#pragma once
+// #pragma once
 
 #ifndef __WINDOWS_FILEDIR_H
 #define __WINDOWS_FILEDIR_H

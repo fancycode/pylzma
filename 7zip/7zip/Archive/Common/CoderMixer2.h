@@ -1,6 +1,6 @@
 // CoderMixer2.h
 
-#pragma once
+// #pragma once
 
 #ifndef __CODERMIXER2_H
 #define __CODERMIXER2_H

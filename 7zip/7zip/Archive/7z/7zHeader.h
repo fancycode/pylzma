@@ -1,6 +1,6 @@
 // 7z/Header.h
 
-#pragma once
+// #pragma once
 
 #ifndef __7Z_HEADER_H
 #define __7Z_HEADER_H

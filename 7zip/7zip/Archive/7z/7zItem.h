@@ -1,6 +1,6 @@
 // 7zItem.h
 
-#pragma once
+// #pragma once
 
 #ifndef __7Z_ITEM_H
 #define __7Z_ITEM_H

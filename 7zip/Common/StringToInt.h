@@ -1,6 +1,6 @@
 // Common/StringToInt.h
 
-#pragma once
+// #pragma once
 
 #ifndef __COMMON_STRINGTOINT_H
 #define __COMMON_STRINGTOINT_H

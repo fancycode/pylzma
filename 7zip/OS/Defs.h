@@ -1,6 +1,6 @@
 // Windows/Defs.h
 
-#pragma once
+// #pragma once
 
 #ifndef __WINDOWS_DEFS_H
 #define __WINDOWS_DEFS_H

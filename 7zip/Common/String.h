@@ -1,11 +1,12 @@
 // Common/String.h
 
-#pragma once
+// #pragma once
 
 #ifndef __COMMON_STRING_H
 #define __COMMON_STRING_H
 
 #include "Vector.h"
+#include <wctype.h>
 
 extern bool g_IsNT;
 
@@ -116,7 +117,7 @@ int MyStringCollateNoCase(const wchar_t *s1, const wchar_t *s2);
 
 #else // Standard-C
 
-inline NormalizeCompareResult(int res)
+inline int NormalizeCompareResult(int res)
 {
   if (res < 0)
     return -1;

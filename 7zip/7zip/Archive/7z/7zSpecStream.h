@@ -1,6 +1,6 @@
 // 7zSpecStream.h
 
-#pragma once
+// #pragma once
 
 #ifndef __7Z_SPEC_STREAM_H
 #define __7Z_SPEC_STREAM_H

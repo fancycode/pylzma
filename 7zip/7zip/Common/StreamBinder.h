@@ -1,6 +1,6 @@
 // StreamBinder.h
 
-#pragma once
+// #pragma once
 
 #ifndef __STREAMBINDER_H
 #define __STREAMBINDER_H

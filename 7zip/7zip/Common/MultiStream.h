@@ -1,6 +1,6 @@
 // MultiStream.h
 
-#pragma once
+// #pragma once
 
 #ifndef __MULTISTREAM_H
 #define __MULTISTREAM_H

@@ -1,6 +1,6 @@
 // Common/DynamicBuffer.h
 
-#pragma once
+// #pragma once
 
 #ifndef __COMMON_DYNAMICBUFFER_H
 #define __COMMON_DYNAMICBUFFER_H

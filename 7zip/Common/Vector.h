@@ -1,6 +1,6 @@
 // Common/Vector.h
 
-#pragma once
+// #pragma once
 
 #ifndef __COMMON_VECTOR_H
 #define __COMMON_VECTOR_H

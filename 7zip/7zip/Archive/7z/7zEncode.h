@@ -1,6 +1,6 @@
 // 7zEncode.h
 
-#pragma once
+// #pragma once
 
 #ifndef __7Z_ENCODE_H
 #define __7Z_ENCODE_H

@@ -1,6 +1,6 @@
 // Windows/Thread.h
 
-#pragma once
+// #pragma once
 
 #ifndef __WINDOWS_THREAD_H
 #define __WINDOWS_THREAD_H

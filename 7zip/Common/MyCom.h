@@ -5,6 +5,8 @@
 #ifndef __MYCOM_H
 #define __MYCOM_H
 
+#include "../7zip/IMyUnknown.h"
+
 #define RINOK(x) { HRESULT __result_ = (x); if(__result_ != S_OK) return __result_; }
 
 template <class T>

@@ -1,6 +1,6 @@
 // LimitedStreams.h
 
-#pragma once
+// #pragma once
 
 #ifndef __LIMITEDSTREAMS_H
 #define __LIMITEDSTREAMS_H

@@ -1,6 +1,6 @@
 // Windows/FileFind.h
 
-#pragma once
+// #pragma once
 
 #ifndef __WINDOWS_FILEFIND_H
 #define __WINDOWS_FILEFIND_H

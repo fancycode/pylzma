@@ -1,6 +1,6 @@
 // Windows/FileName.h
 
-#pragma once
+// #pragma once
 
 #ifndef __WINDOWS_FILENAME_H
 #define __WINDOWS_FILENAME_H

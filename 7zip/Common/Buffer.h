@@ -1,6 +1,6 @@
 // Common/Buffer.h
 
-#pragma once
+// #pragma once
 
 #ifndef __COMMON_BUFFER_H
 #define __COMMON_BUFFER_H

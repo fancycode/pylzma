@@ -36,20 +36,33 @@
 
 #define VT_UI4 1
 #define VT_BSTR 2
+#define VT_UI1 3
+#define VT_UI8 4
+#define VT_BOOL 5
+#define VT_LPWSTR 6
+#define VT_EMPTY 7
+#define VT_FILETIME 8
 
 typedef struct _PROPVARIANT
 {
   WORD vt;
   ULONG ulVal;
   wchar_t *bstrVal;
+  FILETIME filetime;
+  bool boolVal;
+  UINT64 uhVal;
+  LPWSTR pwszVal;
+  unsigned char bVal;
 } PROPVARIANT;
 
 #define S_OK 0
 #define E_NOINTERFACE 0x80000001
 #define E_ABORT 0x80000002
 #define E_INVALIDARG 0x80070057
+#define E_NOTIMPL                        _HRESULT_TYPEDEF_(0x80004001L)
 #define E_FAIL 0x80004005
 #define E_OUTOFMEMORY 0x8007000E
+
 
 #define PURE = 0;
 
@@ -79,6 +92,11 @@ typedef const GUID & REFGUID;
 #else
 #define REFGUID const GUID * __MIDL_CONST
 #endif
+
+typedef GUID CLSID;
+typedef CLSID *LPCLSID;
+#define CLSID_NULL          GUID_NULL
+#define IsEqualCLSID(rclsid1, rclsid2) IsEqualGUID(rclsid1, rclsid2)
 
 #define MIDL_INTERFACE(x) struct
 

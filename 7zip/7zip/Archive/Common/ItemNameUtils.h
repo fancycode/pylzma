@@ -1,6 +1,6 @@
 // Archive/Common/ItemNameUtils.h
 
-#pragma once
+// #pragma once
 
 #ifndef __ARCHIVE_ITEMNAMEUTILS_H
 #define __ARCHIVE_ITEMNAMEUTILS_H

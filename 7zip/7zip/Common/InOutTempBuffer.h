@@ -1,6 +1,6 @@
 // Util/InOutTempBuffer.h
 
-#pragma once
+// #pragma once
 
 #ifndef __INOUTTEMPBUFFER_H
 #define __INOUTTEMPBUFFER_H

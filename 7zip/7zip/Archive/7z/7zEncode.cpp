@@ -1,6 +1,7 @@
 // Encode.cpp
 
 #include "StdAfx.h"
+#include <vector>
 
 #include "7zEncode.h"
 #include "7zSpecStream.h"

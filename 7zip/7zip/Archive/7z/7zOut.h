@@ -1,6 +1,6 @@
 // 7z/Out.h
 
-#pragma once
+// #pragma once
 
 #ifndef __7Z_OUT_H
 #define __7Z_OUT_H

@@ -1,6 +1,6 @@
 // InBuffer.cpp
 
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #include "InBuffer.h"
 

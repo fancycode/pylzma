@@ -1,6 +1,6 @@
 // 7zMethodID.h
 
-#pragma once
+// #pragma once
 
 #ifndef __7Z_METHOD_ID_H
 #define __7Z_METHOD_ID_H

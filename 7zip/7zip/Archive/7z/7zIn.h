@@ -1,6 +1,6 @@
 // 7zIn.h
 
-#pragma once
+// #pragma once
 
 #ifndef __7Z_IN_H
 #define __7Z_IN_H

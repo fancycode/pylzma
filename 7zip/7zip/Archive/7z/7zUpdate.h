@@ -1,6 +1,6 @@
 // 7zUpdate.h
 
-#pragma once
+// #pragma once
 
 #ifndef __7Z_UPDATE_H
 #define __7Z_UPDATE_H

@@ -1,6 +1,6 @@
 // Common/StringConvert.h
 
-#pragma once
+// #pragma once
 
 #ifndef __COMMON_STRINGCONVERT_H
 #define __COMMON_STRINGCONVERT_H
