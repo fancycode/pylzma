@@ -58,8 +58,6 @@ typedef unsigned char Byte;
 #define LZMA_STREAM_END 1
 #define LZMA_OK 0
 #define LZMA_DATA_ERROR -1
-/* we don't really care what the problem is... */
-/* #define LZMA_RESULT_NOT_ENOUGH_MEM -2 */
 #define LZMA_NOT_ENOUGH_MEM -2
 
 typedef struct
