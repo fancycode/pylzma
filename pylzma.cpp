@@ -306,10 +306,11 @@ static PyObject *pylzma_decompress(PyObject *self, PyObject *args)
             // check if we need to adjust the output buffer
             if (stream.avail_out == 0)
             {
-                output = (char *)realloc(output, stream.totalOut+BLOCK_SIZE);
-                stream.avail_out += BLOCK_SIZE;
-                stream.next_out = (Byte *)&output[stream.totalOut];
-            }
+                output = (char *)realloc(output, blocksize+BLOCK_SIZE);
+                stream.avail_out = BLOCK_SIZE;
+                stream.next_out = (Byte *)&output[blocksize];
+                blocksize += BLOCK_SIZE;
+            };
         } else {
             PyErr_Format(PyExc_ValueError, "unknown return code from lzmaDecode: %d", res);
             goto exit;
