@@ -344,6 +344,12 @@ static PyObject *pylzma_decomp_decompress(CDecompressionObject *self, PyObject *
     
     if (!PyArg_ParseTuple(args, "s#|l", &data, &length, &max_length))
         return NULL;
+
+    if (max_length < 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "bufsize must be greater than zero");
+        return NULL;
+    }
     
     start_total_out = self->stream.totalOut;
     self->stream.next_in = (Byte *)data;
