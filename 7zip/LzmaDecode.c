@@ -443,7 +443,6 @@ int LZMACALL lzmaDecode(lzma_stream *s)
         return LZMA_DATA_ERROR;
       }
       len += kMatchMinLen;
-      totalOut += len;
       do
       {
         UInt32 pos;
@@ -454,7 +453,7 @@ int LZMACALL lzmaDecode(lzma_stream *s)
         previousByte = dictionary[pos];
         dictionary[dictionaryPos] = previousByte;
         dictionaryPos = (dictionaryPos + 1) % dictionarySize;
-        PUT_BYTE_(previousByte);
+        PUT_BYTE(previousByte);
         len--;
       }
       while(len > 0);
