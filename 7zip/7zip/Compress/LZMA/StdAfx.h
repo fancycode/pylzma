@@ -5,8 +5,6 @@
 
 #ifdef WIN32
   #include <windows.h>
-#else
-  #include "../../../../Platform.h"
 #endif
 
 #endif 

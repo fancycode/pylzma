@@ -7,37 +7,13 @@
 
 #include <string.h>
 
+#include "../../Platform.h"
+
 #include "Types.h"
 
-typedef char CHAR;
-typedef unsigned char UCHAR;
-typedef unsigned char BYTE;
-
-typedef short SHORT;
-typedef unsigned short USHORT;
-typedef unsigned short WORD;
 typedef short VARIANT_BOOL;
 
-typedef int INT;
-typedef Int32 INT32;
-typedef unsigned int UINT;
-typedef UInt32 UINT32;
-typedef long LONG;
-typedef unsigned long ULONG;
-typedef unsigned long DWORD;
-
-typedef Int64 LONGLONG;
-typedef UInt64 ULONGLONG;
-
-typedef struct LARGE_INTEGER { LONGLONG QuadPart; }LARGE_INTEGER;
-typedef struct _ULARGE_INTEGER { ULONGLONG QuadPart;} ULARGE_INTEGER;
-
-typedef const CHAR *LPCSTR;
-typedef CHAR TCHAR;
-typedef const TCHAR *LPCTSTR;
-typedef wchar_t WCHAR;
 typedef WCHAR OLECHAR;
-typedef const WCHAR *LPCWSTR;
 typedef OLECHAR *BSTR;
 typedef const OLECHAR *LPCOLESTR;
 typedef OLECHAR *LPOLESTR;

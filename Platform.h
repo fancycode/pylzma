@@ -26,19 +26,22 @@
 typedef unsigned char BYTE, *PBYTE, *LPBYTE;
 typedef unsigned short WORD, *LPWORD;
 typedef unsigned long DWORD, *LPDWORD;
+typedef short SHORT;
+typedef unsigned short USHORT;
 typedef unsigned int UINT;
 typedef unsigned int UINT32;
 typedef int INT;
 typedef int INT32;
 typedef long LONG;
 typedef unsigned long ULONG;
-typedef long long INT64;
-typedef unsigned long long UINT64;
+typedef long long INT64, LARGE_INTEGER;
+typedef unsigned long long UINT64, ULARGE_INTEGER;
 typedef int BOOL;
 typedef void VOID;
 typedef void *LPVOID;
 typedef char CHAR, *PCHAR, *LPCH, *PCH, *NPSTR, *LPSTR, *PSTR;
-typedef wchar_t TCHAR, *BSTR, *LPCOLESTR;
+typedef unsigned char UCHAR;
+typedef wchar_t TCHAR;
 typedef const char *LPCCH, *PCSTR, *LPCSTR, *LPCTSTR;
 typedef wchar_t WCHAR, *PWCHAR, *LPWCH, *PWCH, *NWPSTR, *LPWSTR, *PWSTR;
 typedef const wchar_t *LPCWCH, *PCWCH, *LPCWSTR, *PCWSTR;
@@ -54,23 +57,6 @@ typedef unsigned long HBRUSH;
 #  define TRUE 1
 // more
 typedef WORD LANGID;
-typedef WORD VARTYPE;
-
-typedef short VARIANT_BOOL;
-#define VARIANT_TRUE ((VARIANT_BOOL)-1)
-#define VARIANT_FALSE ((VARIANT_BOOL)0)
-
-#define S_FALSE (-1)
-
-#ifndef FILETIME
-/*
-typedef struct STRUCT tagFILETIME {
-    DWORD dwLowDateTime;
-    DWORD dwHighDateTime;
-} FILETIME;
-*/
-typedef UINT64 FILETIME;
-#endif
 
 #endif
 
