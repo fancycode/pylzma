@@ -35,17 +35,17 @@ class CInStream :
 {
 private:
     BYTE *next_in;
-    UINT avail_in;
+    UINT32 avail_in;
     BYTE *origin;
-    UINT original_size;
-    UINT free_space;
+    UINT32 original_size;
+    UINT32 free_space;
     bool allocated;
     PyObject *sourceFile;
 
 public:
     MY_UNKNOWN_IMP
 
-    CInStream(BYTE *data, int length)
+    CInStream(BYTE *data, UINT32 length)
     {
         SetData(data, length);
         allocated = false;
@@ -68,7 +68,7 @@ public:
             free(origin);
     }
     
-    void SetData(BYTE *data, int length)
+    void SetData(BYTE *data, UINT32 length)
     {
         sourceFile = NULL;
         origin = data;
@@ -80,7 +80,7 @@ public:
 
     int getAvailIn() { return avail_in; }
     
-    bool AppendData(BYTE *data, int length)
+    bool AppendData(BYTE *data, UINT32 length)
     {
         void *insert;
         if (origin == NULL || free_space < (UINT32)length) {
@@ -159,7 +159,6 @@ public:
             if (processedSize)
                 *processedSize += len;
         }
-        
         return S_OK;
     }    
 };
@@ -171,9 +170,9 @@ class COutStream :
 private:
     BYTE *buffer;
     BYTE *next_out;
-    UINT avail_out;
-    UINT count;
-    UINT readpos;
+    UINT32 avail_out;
+    UINT32 count;
+    UINT32 readpos;
 
 public:
     MY_UNKNOWN_IMP
@@ -209,7 +208,7 @@ public:
         return count - readpos;
     }
     
-    void Read(void *dest, int size)
+    void Read(void *dest, UINT32 size)
     {
         memcpy(dest, &buffer[readpos], size);
         increaseReadPos(size);
@@ -220,7 +219,7 @@ public:
         return &buffer[readpos];
     }
     
-    void increaseReadPos(int count)
+    void increaseReadPos(UINT32 count)
     {
         readpos += count;
     }

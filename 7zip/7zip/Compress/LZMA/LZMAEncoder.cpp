@@ -440,7 +440,7 @@ UINT32 CEncoder::GetOptimum(UINT32 &backRes, UINT32 position)
   }
 
 
-  UINT32 reps[kNumRepDistances];
+  INT32 reps[kNumRepDistances];
   UINT32 repLens[kNumRepDistances];
   UINT32 repMaxIndex = 0;
   unsigned int i;
@@ -688,8 +688,8 @@ UINT32 CEncoder::GetOptimum(UINT32 &backRes, UINT32 position)
       numAvailableBytes = _numFastBytes;
     if (numAvailableBytes >= 3 && !nextIsChar)
     {
-      UINT32 backOffset = reps[0] + 1;
-      UINT32 temp;
+      INT32 backOffset = reps[0] + 1;
+      INT32 temp;
       for (temp = 1; temp < numAvailableBytes; temp++)
         if (data[temp] != data[temp - backOffset])
           break;
@@ -723,8 +723,8 @@ UINT32 CEncoder::GetOptimum(UINT32 &backRes, UINT32 position)
     for(UINT32 repIndex = 0; repIndex < kNumRepDistances; repIndex++)
     {
       // UINT32 repLen = _matchFinder->GetMatchLen(0 - 1, reps[repIndex], newLen); // test it;
-      UINT32 backOffset = reps[repIndex] + 1;
-      UINT32 lenTest;
+      INT32 backOffset = reps[repIndex] + 1;
+      INT32 lenTest;
       for (lenTest = 0; lenTest < numAvailableBytes; lenTest++)
         if (data[lenTest] != data[lenTest - backOffset])
           break;
@@ -816,8 +816,8 @@ UINT32 CEncoder::GetOptimum(UINT32 &backRes, UINT32 position)
 
         if (_maxMode)
         {
-          UINT32 backOffset = curBack + 1;
-          UINT32 temp;
+          INT32 backOffset = curBack + 1;
+          INT32 temp;
           for (temp = lenTest + 1; temp < numAvailableBytes; temp++)
             if (data[temp] != data[temp - backOffset])
               break;

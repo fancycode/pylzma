@@ -71,21 +71,21 @@ public:
   // BYTE *GetBufferBeg()const { return _buffer;};
 
   // index + limit have not to exceed _keepSizeAfter;
-  UINT32 GetMatchLen(UINT32 index, UINT32 back, UINT32 limit) const
+  UINT32 GetMatchLen(INT32 index, INT32 back, INT32 limit) const
   {  
     if(_streamEndWasReached)
       if ((_pos + index) + limit > _streamPos)
         limit = _streamPos - (_pos + index);
     back++;
     BYTE *pby = _buffer + _pos + index;
-    UINT32 i;
+    INT32 i;
     for(i = 0; i < limit && pby[i] == pby[i - back]; i++);
     return i;
   }
 
   UINT32 GetNumAvailableBytes() const { return _streamPos - _pos; }
 
-  void ReduceOffsets(UINT32 subValue)
+  void ReduceOffsets(INT32 subValue)
   {
     _buffer += subValue;
     _posLimit -= subValue;

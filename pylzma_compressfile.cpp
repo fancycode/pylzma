@@ -158,7 +158,7 @@ PyObject *pylzma_compressfile(PyObject *self, PyObject *args, PyObject *kwargs)
     int algorithm = 2;
     int res;
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|lllllll", kwlist, &inFile, &dictionary, &fastBytes,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iiiiiii", kwlist, &inFile, &dictionary, &fastBytes,
                                                                &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos))
         return NULL;
     

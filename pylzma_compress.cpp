@@ -98,7 +98,7 @@ PyObject *pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
     char *data;
     int length;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|lllllll", kwlist, &data, &length, &dictionary, &fastBytes,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iiiiiii", kwlist, &data, &length, &dictionary, &fastBytes,
                                                                 &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos))
         return NULL;
     
