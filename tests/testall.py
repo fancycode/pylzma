@@ -52,7 +52,7 @@ class TestPyLZMA(unittest.TestCase):
         decompressed = pylzma.decompress(original)
         self.assertEqual(decompressed, 'hello, this is a test string')
 
-    def test_compression_decompression(self):
+    def test_compression_decompression_eos(self):
         # call compression and decompression on random data of various sizes
         data = map(lambda x: chr(x), xrange(256))
         for i in xrange(18):
@@ -62,10 +62,21 @@ class TestPyLZMA(unittest.TestCase):
             result = pylzma.decompress(pylzma.compress(original, eos=1))
             self.assertEqual(md5.new(original).hexdigest(), md5.new(result).hexdigest())
 
+    def test_compression_decompression_noeos(self):
+        # call compression and decompression on random data of various sizes
+        data = map(lambda x: chr(x), xrange(256))
+        for i in xrange(18):
+            size = 1 << i
+            original = map(lambda x: data[random.randrange(0, 255)], xrange(size))
+            original = ''.join(original)
+            result = pylzma.decompress(pylzma.compress(original, eos=0))
+            self.assertEqual(md5.new(original).hexdigest(), md5.new(result).hexdigest())
+
     def test_multi(self):
         # call compression and decompression multiple times to detect memory leaks...
-        for x in xrange(8):
-            self.test_compression_decompression()
+        for x in xrange(4):
+            self.test_compression_decompression_eos()
+            self.test_compression_decompression_noeos()
 
     def test_decompression_stream(self):
         # test decompression in two steps
