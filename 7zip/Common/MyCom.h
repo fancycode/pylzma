@@ -142,6 +142,7 @@ class CMyUnknownImp
 public:
   ULONG __m_RefCount;
   CMyUnknownImp(): __m_RefCount(0) {}
+  virtual ~CMyUnknownImp() {};
 };
 
 #define MY_QUERYINTERFACE_BEGIN STDMETHOD(QueryInterface) \
