@@ -51,14 +51,13 @@ descr = "Python bindings for the LZMA library by Igor Pavlov."
 try: version = open('version.txt', 'rb').read().strip()
 except: version = 'unknown'
 modules = ['py7zlib']
-c_files = ['pylzma.c', 'pylzma_encoder.cpp', 'pylzma_decompressobj.c', 'pylzma_compressobj.cpp',
-           'pylzma_compressfile.cpp', 'pylzma_decompress.c', 'pylzma_compress.cpp']
+c_files = ['pylzma.c', 'pylzma_decompressobj.c', 'pylzma_compressfile.cpp',
+           'pylzma_decompress.c', 'pylzma_compress.cpp']
 macros = [('COMPRESS_MF_BT', 1), ('EXCLUDE_COM', 1), ('COMPRESS_LZMA', 1), ('_NO_CRYPTO', 1)]
 lzma_files = ('7zip/LzmaDecode.c', '7zip/7zip/Compress/LZMA/LZMAEncoder.cpp',
-    '7zip/7zip/Compress/LZMA/LZMALen.cpp', '7zip/7zip/Compress/LZMA/LZMALiteral.cpp',
     '7zip/7zip/Compress/RangeCoder/RangeCoderBit.cpp', '7zip/Common/CRC.cpp',
     '7zip/7zip/Compress/LZ/LZInWindow.cpp', '7zip/7zGuids.cpp',
-    '7zip/7zip/Common/OutBuffer.cpp', )
+    '7zip/7zip/Common/OutBuffer.cpp', '7zip/Common/Alloc.cpp', )
 join = os.path.join
 normalize = os.path.normpath
 c_files += map(lambda x: normalize(join('.', x)), lzma_files)

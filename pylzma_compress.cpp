@@ -125,7 +125,19 @@ PyObject *pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_BEGIN_ALLOW_THREADS
     encoder->SetStreams(inStream, outStream, 0, 0);
     encoder->WriteCoderProperties(outStream);
-    encoder->CodeReal(inStream, outStream, NULL, 0, 0);
+    while(true)
+    {
+        UInt64 processedInSize;
+        UInt64 processedOutSize;
+        Int32 finished;
+        if ((res = encoder->CodeOneBlock(&processedInSize, &processedOutSize, &finished)) != S_OK)
+        {
+            PyErr_Format(PyExc_TypeError, "Error during compressing: %d", res);
+            goto exit;
+        }
+        if (finished != 0)
+            break;
+    }
     Py_END_ALLOW_THREADS
     
     result = PyString_FromStringAndSize((const char *)outStream->getData(), outStream->getLength());
@@ -133,7 +145,6 @@ PyObject *pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     DELETE_AND_NULL(encoder);
     DELETE_AND_NULL(inStream);
-    DELETE_AND_NULL(outStream);
     
     return result;
 }

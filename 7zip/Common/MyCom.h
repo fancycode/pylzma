@@ -1,11 +1,9 @@
 // MyCom.h
 
-// #pragma once
-
 #ifndef __MYCOM_H
 #define __MYCOM_H
 
-#include "../7zip/IMyUnknown.h"
+#include "MyWindows.h"
 
 #define RINOK(x) { HRESULT __result_ = (x); if(__result_ != S_OK) return __result_; }
 
@@ -52,10 +50,12 @@ public:
     _p = NULL;
     return pt;
   }
-  /*HRESULT CoCreateInstance(REFCLSID rclsid, REFIID iid, LPUNKNOWN pUnkOuter = NULL, DWORD dwClsContext = CLSCTX_ALL)
+  #ifdef WIN32
+  HRESULT CoCreateInstance(REFCLSID rclsid, REFIID iid, LPUNKNOWN pUnkOuter = NULL, DWORD dwClsContext = CLSCTX_ALL)
   {
     return ::CoCreateInstance(rclsid, pUnkOuter, dwClsContext, iid, (void**)&_p);
-  }*/
+  }
+  #endif
   /*
   HRESULT CoCreateInstance(LPCOLESTR szProgID, LPUNKNOWN pUnkOuter = NULL, DWORD dwClsContext = CLSCTX_ALL)
   {
@@ -75,7 +75,7 @@ public:
 };
 
 //////////////////////////////////////////////////////////
-/*
+
 class CMyComBSTR
 {
 public:
@@ -85,15 +85,15 @@ public:
   // CMyComBSTR(int nSize) { m_str = ::SysAllocStringLen(NULL, nSize); }
   // CMyComBSTR(int nSize, LPCOLESTR sz) { m_str = ::SysAllocStringLen(sz, nSize);  }
   CMyComBSTR(const CMyComBSTR& src) { m_str = src.MyCopy(); }
-  
-  //CMyComBSTR(REFGUID src)
-  //{
-  //  LPOLESTR szGuid;
-  //  StringFromCLSID(src, &szGuid);
-  //  m_str = ::SysAllocString(szGuid);
-  //  CoTaskMemFree(szGuid);
-  //}
-  
+  /*
+  CMyComBSTR(REFGUID src)
+  {
+    LPOLESTR szGuid;
+    StringFromCLSID(src, &szGuid);
+    m_str = ::SysAllocString(szGuid);
+    CoTaskMemFree(szGuid);
+  }
+  */
   ~CMyComBSTR() { ::SysFreeString(m_str); }
   CMyComBSTR& operator=(const CMyComBSTR& src)
   {
@@ -135,7 +135,7 @@ public:
   }
   bool operator!() const {  return (m_str == NULL); }
 };
-*/
+
 
 //////////////////////////////////////////////////////////
 
@@ -144,7 +144,6 @@ class CMyUnknownImp
 public:
   ULONG __m_RefCount;
   CMyUnknownImp(): __m_RefCount(0) {}
-  virtual ~CMyUnknownImp() {};
 };
 
 #define MY_QUERYINTERFACE_BEGIN STDMETHOD(QueryInterface) \
@@ -185,6 +184,14 @@ STDMETHOD_(ULONG, Release)() { if (--__m_RefCount != 0)  \
   MY_QUERYINTERFACE_ENTRY(i2) \
   MY_QUERYINTERFACE_ENTRY(i3) \
   MY_QUERYINTERFACE_ENTRY(i4) \
+  )
+
+#define MY_UNKNOWN_IMP5(i1, i2, i3, i4, i5) MY_UNKNOWN_IMP_SPEC( \
+  MY_QUERYINTERFACE_ENTRY(i1) \
+  MY_QUERYINTERFACE_ENTRY(i2) \
+  MY_QUERYINTERFACE_ENTRY(i3) \
+  MY_QUERYINTERFACE_ENTRY(i4) \
+  MY_QUERYINTERFACE_ENTRY(i5) \
   )
 
 #endif

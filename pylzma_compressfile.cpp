@@ -93,7 +93,6 @@ static void pylzma_compfile_dealloc(CCompressionFileObject *self)
     DEC_AND_NULL(self->inFile);
     DELETE_AND_NULL(self->encoder);
     DELETE_AND_NULL(self->inStream);
-    DELETE_AND_NULL(self->outStream);
     PyObject_Del(self);
 }
 

@@ -1,12 +1,12 @@
-// stdafx.h
+// StdAfx.h
 
 #ifndef __STDAFX_H
 #define __STDAFX_H
 
-#ifdef _WIN32
-#  include <windows.h>
+#ifdef WIN32
+  #include <windows.h>
 #else
-#  include "../../../Platform.h"
+  #include "../../../Platform.h"
 #endif
 
 #endif 
