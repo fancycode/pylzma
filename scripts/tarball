@@ -1,0 +1,12 @@
+#!/bin/bash
+VERSION=0.0.3
+TMPDIR=.tmp
+PYLZMA=pylzma-$VERSION
+mkdir $TMPDIR
+svn export https://leviathan.joachim-bauch.de/svn/repos/python/pylzma/tags/v0_0_3 $TMPDIR/$PYLZMA
+cd $TMPDIR
+echo $VERSION > $PYLZMA/version.txt
+tar czf $PYLZMA.tar.gz $PYLZMA
+cd ..
+cp $TMPDIR/$PYLZMA.tar.gz .
+rm -rf $TMPDIR
