@@ -267,7 +267,7 @@ static PyObject *pylzma_decompress(PyObject *self, PyObject *args)
     int length, blocksize=BLOCK_SIZE;
     PyObject *result = NULL;
     lzma_stream stream;
-    int res, prev_avail;
+    int res;
     char *output;
     
     if (!PyArg_ParseTuple(args, "s#|l", &data, &length, &blocksize))
@@ -285,7 +285,6 @@ static PyObject *pylzma_decompress(PyObject *self, PyObject *args)
     stream.avail_in = length;
     stream.next_out = (Byte *)output;
     stream.avail_out = blocksize;
-    prev_avail = blocksize;
     
     // decompress data
     while (true)
@@ -307,7 +306,7 @@ static PyObject *pylzma_decompress(PyObject *self, PyObject *args)
             // check if we need to adjust the output buffer
             if (stream.avail_out == 0)
             {
-                output = (char *)realloc(output, prev_avail+BLOCK_SIZE);
+                output = (char *)realloc(output, stream.totalOut+BLOCK_SIZE);
                 stream.avail_out += BLOCK_SIZE;
                 stream.next_out = (Byte *)&output[stream.totalOut];
             }
@@ -315,7 +314,6 @@ static PyObject *pylzma_decompress(PyObject *self, PyObject *args)
             PyErr_Format(PyExc_ValueError, "unknown return code from lzmaDecode: %d", res);
             goto exit;
         }
-        prev_avail = stream.avail_out;
         
         // if we exit here, decompression finished without returning LZMA_STREAM_END
         // XXX: why is this sometimes?
