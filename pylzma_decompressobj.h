@@ -22,20 +22,24 @@
  *
  */
 
-#ifndef ___PYLZMA__H___
-#define ___PYLZMA__H___
+#ifndef ___PYLZMA_DECOMPRESSOBJ__H___
+#define ___PYLZMA_DECOMPRESSOBJ__H___
 
 #include <Python.h>
+#include <7zip/LzmaDecode.h>
 
-#ifndef min
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
+typedef struct {
+    PyObject_HEAD
+    lzma_stream stream;
+    PyObject *unconsumed_tail;
+    PyObject *unused_data;
+} CDecompressionObject;
 
-#define BLOCK_SIZE 65536
+extern PyTypeObject CDecompressionObject_Type;
 
-#define CHECK_NULL(a) if ((a) == NULL) { PyErr_NoMemory(); goto exit; }
-#define DEC_AND_NULL(a) { Py_XDECREF(a); a = NULL; }
-#define DELETE_AND_NULL(a) if (a != NULL) { delete a; a = NULL; }
-#define CHECK_RANGE(x, a, b, msg) if ((x) < (a) || (x) > (b)) { PyErr_SetString(PyExc_ValueError, msg); return NULL; }
+#define DecompressionObject_Check(v)   ((v)->ob_type == &CDecompressionObject_Type)
+
+extern const char doc_decompressobj[];
+PyObject *pylzma_decompressobj(PyObject *self, PyObject *args);
 
 #endif

@@ -22,20 +22,14 @@
  *
  */
 
-#ifndef ___PYLZMA__H___
-#define ___PYLZMA__H___
+#ifndef ___PYLZMA_COMPRESSOBJ__H___
+#define ___PYLZMA_COMPRESSOBJ__H___
 
-#include <Python.h>
+extern PyTypeObject CCompressionObject_Type;
 
-#ifndef min
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
+#define CompressionObject_Check(v)   ((v)->ob_type == &CCompressionObject_Type)
 
-#define BLOCK_SIZE 65536
-
-#define CHECK_NULL(a) if ((a) == NULL) { PyErr_NoMemory(); goto exit; }
-#define DEC_AND_NULL(a) { Py_XDECREF(a); a = NULL; }
-#define DELETE_AND_NULL(a) if (a != NULL) { delete a; a = NULL; }
-#define CHECK_RANGE(x, a, b, msg) if ((x) < (a) || (x) > (b)) { PyErr_SetString(PyExc_ValueError, msg); return NULL; }
+extern const char doc_compressobj[];
+PyObject *pylzma_compressobj(PyObject *self, PyObject *args);
 
 #endif

@@ -125,5 +125,17 @@ class TestPyLZMA(unittest.TestCase):
         check = pylzma.decompress(outfile.getvalue())
         self.assertEqual(check, self.plain)
 
+    def test_compression_file(self):
+        # test compressing from file-like object
+        infile = StringIO(self.plain)
+        outfile = StringIO()
+        compress = pylzma.compressfile(infile, eos=1)
+        while 1:
+            data = compress.read(1)
+            if not data: break
+            outfile.write(data)
+        check = pylzma.decompress(outfile.getvalue())
+        self.assertEqual(check, self.plain)
+
 if __name__ == "__main__":
     unittest.main()

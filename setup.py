@@ -47,7 +47,8 @@ PYTHON_LIB_DIR,
 
 descr = "pylzma package"
 modules = []
-c_files = ['pylzma.cpp', 'pylzma_encoder.cpp']
+c_files = ['pylzma.c', 'pylzma_encoder.cpp', 'pylzma_decompressobj.c', 'pylzma_compressobj.cpp',
+           'pylzma_compressfile.cpp', 'pylzma_decompress.c', 'pylzma_compress.cpp']
 macros = [('COMPRESS_MF_BT', 1)]
 lzma_files = ('7zip/LzmaDecode.c', '7zip/7zip/Compress/LZMA/LZMAEncoder.cpp',
     '7zip/7zip/Compress/LZMA/LZMALen.cpp', '7zip/7zip/Compress/LZMA/LZMALiteral.cpp',

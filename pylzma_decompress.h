@@ -18,24 +18,18 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
- * $Id$
+ * $Id: pylzma.h 29 2004-05-03 20:26:27Z jojo $
  *
  */
 
-#ifndef ___PYLZMA__H___
-#define ___PYLZMA__H___
+#ifndef ___PYLZMA_DECOMPRESS__H___
+#define ___PYLZMA_DECOMPRESS__H___
 
 #include <Python.h>
+#include <7zip/LzmaDecode.h>
 
-#ifndef min
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
-
-#define BLOCK_SIZE 65536
-
-#define CHECK_NULL(a) if ((a) == NULL) { PyErr_NoMemory(); goto exit; }
-#define DEC_AND_NULL(a) { Py_XDECREF(a); a = NULL; }
-#define DELETE_AND_NULL(a) if (a != NULL) { delete a; a = NULL; }
-#define CHECK_RANGE(x, a, b, msg) if ((x) < (a) || (x) > (b)) { PyErr_SetString(PyExc_ValueError, msg); return NULL; }
+extern const char doc_decompress[];
+void free_lzma_stream(lzma_stream *stream);
+PyObject *pylzma_decompress(PyObject *self, PyObject *args);
 
 #endif

@@ -25,6 +25,7 @@
 #ifndef ___PYLZMA_STREAMS__H___
 #define ___PYLZMA_STREAMS__H___
 
+#include <Python.h>
 #include <7zip/7zip/IStream.h>
 #include <7zip/Common/MyCom.h>
 
@@ -39,6 +40,7 @@ private:
     UINT original_size;
     UINT free_space;
     bool allocated;
+    PyObject *sourceFile;
 
 public:
     MY_UNKNOWN_IMP
@@ -54,6 +56,12 @@ public:
         SetData(NULL, 0);
     }
 
+    CInStream(PyObject *source)
+    {
+        SetData(NULL, 0);
+        sourceFile = source;
+    }
+
     virtual ~CInStream()
     {
         if (allocated)
@@ -62,6 +70,7 @@ public:
     
     void SetData(BYTE *data, int length)
     {
+        sourceFile = NULL;
         origin = data;
         next_in = data;
         avail_in = length;
@@ -101,6 +110,30 @@ public:
     
     STDMETHOD(ReadPart)(void *data, UINT32 size, UINT32 *processedSize)
     {
+        if (sourceFile)
+        {
+            // read from file-like object
+            PyObject *result = PyObject_CallMethod(sourceFile, "read", "l", size);
+            if (result == NULL)
+                return E_FAIL;
+            
+            if (!PyString_Check(result))
+            {
+                PyObject *str = PyObject_Str(result);
+                Py_XDECREF(result);
+                if (str == NULL)
+                    return E_FAIL;
+                result = str;
+            }
+            
+            memcpy(data, PyString_AS_STRING(result), PyString_Size(result));
+            if (processedSize)
+                *processedSize = PyString_Size(result);
+            
+            Py_XDECREF(result);
+            return S_OK;
+        }
+        
         if (processedSize)
             *processedSize = 0;
         
