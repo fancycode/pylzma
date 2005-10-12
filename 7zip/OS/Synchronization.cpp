@@ -1,9 +1,10 @@
-// OS/Synchronization.cpp
+// Windows/Synchronization.cpp
 
 #include "StdAfx.h"
 
 #include "Synchronization.h"
 
+namespace NWindows {
 namespace NSynchronization {
 
 CEvent::CEvent(bool manualReset, bool initiallyOwn, LPCTSTR name,
@@ -13,4 +14,4 @@ CEvent::CEvent(bool manualReset, bool initiallyOwn, LPCTSTR name,
     throw "CreateEvent error";
 }
 
-}
+}}

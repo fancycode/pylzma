@@ -1,11 +1,12 @@
-// OS/Synchronization.h
+// Windows/Synchronization.h
 
-#ifndef __OS_SYNCHRONIZATION_H
-#define __OS_SYNCHRONIZATION_H
+#ifndef __WINDOWS_SYNCHRONIZATION_H
+#define __WINDOWS_SYNCHRONIZATION_H
 
-#include "../Common/Defs.h"
+#include "Defs.h"
 #include "Handle.h"
 
+namespace NWindows {
 namespace NSynchronization {
 
 class CObject: public CHandle
@@ -108,6 +109,6 @@ public:
   ~CCriticalSectionLock() { Unlock(); }
 };
 
-}
+}}
 
 #endif

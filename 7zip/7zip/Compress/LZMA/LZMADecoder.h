@@ -49,7 +49,7 @@ public:
       // UInt32 bit = _decoders[1 + matchBit][symbol].Decode(rangeDecoder);
       // symbol = (symbol << 1) | bit;
       UInt32 bit;
-      RC_GETBIT2(kNumMoveBits, _decoders[((1 + matchBit) << 8) + symbol].Prob, symbol, 
+      RC_GETBIT2(kNumMoveBits, _decoders[0x100 + (matchBit << 8) + symbol].Prob, symbol, 
           bit = 0, bit = 1)
       if (matchBit != bit)
       {
@@ -114,20 +114,20 @@ namespace NLength {
 class CDecoder
 {
   CMyBitDecoder _choice;
-  NRangeCoder::CBitTreeDecoder<kNumMoveBits, kNumLowBits>  _lowCoder[kNumPosStatesMax];
   CMyBitDecoder _choice2;
+  NRangeCoder::CBitTreeDecoder<kNumMoveBits, kNumLowBits>  _lowCoder[kNumPosStatesMax];
   NRangeCoder::CBitTreeDecoder<kNumMoveBits, kNumMidBits>  _midCoder[kNumPosStatesMax];
   NRangeCoder::CBitTreeDecoder<kNumMoveBits, kNumHighBits> _highCoder; 
 public:
   void Init(UInt32 numPosStates)
   {
     _choice.Init();
+    _choice2.Init();
     for (UInt32 posState = 0; posState < numPosStates; posState++)
     {
       _lowCoder[posState].Init();
       _midCoder[posState].Init();
     }
-    _choice2.Init();
     _highCoder.Init();
   }
   UInt32 Decode(NRangeCoder::CDecoder *rangeDecoder, UInt32 posState)
@@ -144,7 +144,7 @@ public:
 
 class CDecoder: 
   public ICompressCoder,
-  public ICompressSetDecoderProperties,
+  public ICompressSetDecoderProperties2,
   public ICompressSetInStream,
   public ICompressSetOutStreamSize,
   public ISequentialInStream,
@@ -180,23 +180,21 @@ class CDecoder:
   UInt64 _nowPos64;
   UInt32 _reps[4];
   CState _state;
-  bool _previousIsMatch;
-  Int32 _remainLen; // -1 means end of stream.
+  Int32 _remainLen; // -1 means end of stream. // -2 means need Init
 
-
+  void Init();
   HRESULT CodeSpec(Byte *buffer, UInt32 size);
 public:
   MY_UNKNOWN_IMP4(
-      ICompressSetDecoderProperties, 
+      ICompressSetDecoderProperties2, 
       ICompressSetInStream, 
       ICompressSetOutStreamSize, 
       ISequentialInStream)
 
-  void Init();
   void ReleaseStreams()
   {
     _outWindowStream.ReleaseStream();
-    _rangeDecoder.ReleaseStream();
+    ReleaseInStream();
   }
 
   class CDecoderFlusher
@@ -204,8 +202,7 @@ public:
     CDecoder *_decoder;
   public:
     bool NeedFlush;
-    CDecoderFlusher(CDecoder *decoder): 
-          _decoder(decoder), NeedFlush(true) {}
+    CDecoderFlusher(CDecoder *decoder): _decoder(decoder), NeedFlush(true) {}
     ~CDecoderFlusher() 
     { 
       if (NeedFlush)
@@ -224,12 +221,12 @@ public:
       ISequentialOutStream *outStream, const UInt64 *inSize, const UInt64 *outSize,
       ICompressProgressInfo *progress);
 
-  // ICompressSetDecoderProperties
-  STDMETHOD(SetDecoderProperties)(ISequentialInStream *inStream);
+  STDMETHOD(SetDecoderProperties2)(const Byte *data, UInt32 size);
 
   STDMETHOD(GetInStreamProcessedSize)(UInt64 *value);
 
   STDMETHOD(SetInStream)(ISequentialInStream *inStream);
+  STDMETHOD(ReleaseInStream)();
   STDMETHOD(SetOutStreamSize)(const UInt64 *outSize);
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
   STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize);

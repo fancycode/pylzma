@@ -2,8 +2,9 @@
 #
 # Python Bindings for LZMA
 #
-# Copyright (c) 2004 by Joachim Bauch, mail@joachim-bauch.de
-# LZMA SDK Copyright (C) 1999-2004 Igor Pavlov
+# Copyright (c) 2004-2005 by Joachim Bauch, mail@joachim-bauch.de
+# 7-Zip Copyright (C) 1999-2005 Igor Pavlov
+# LZMA SDK Copyright (C) 1999-2005 Igor Pavlov
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -70,14 +71,14 @@ except: version = 'unknown'
 modules = ['py7zlib']
 c_files = ['pylzma.c', 'pylzma_decompressobj.c', 'pylzma_compressfile.cpp',
            'pylzma_decompress.c', 'pylzma_compress.cpp']
-macros = [('COMPRESS_MF_BT', 1), ('EXCLUDE_COM', 1), ('COMPRESS_LZMA', 1), ('_NO_CRYPTO', 1)]
+macros = [('COMPRESS_MF_BT', 1), ('EXCLUDE_COM', 1), ('COMPRESS_LZMA', 1), ('_NO_CRYPTO', 1), ('INITGUID', 1)]
 if 'win' in sys.platform:
     macros.append(('WIN32', 1))
 if ENABLE_MULTITHREADING:
     macros.append(('COMPRESS_MF_MT', 1))
 lzma_files = ('7zip/LzmaDecode.c', '7zip/7zip/Compress/LZMA/LZMAEncoder.cpp',
     '7zip/7zip/Compress/RangeCoder/RangeCoderBit.cpp', '7zip/Common/CRC.cpp',
-    '7zip/7zip/Compress/LZ/LZInWindow.cpp', '7zip/7zGuids.cpp',
+    '7zip/7zip/Compress/LZ/LZInWindow.cpp',
     '7zip/7zip/Common/OutBuffer.cpp', '7zip/Common/Alloc.cpp', )
 if ENABLE_MULTITHREADING:
     lzma_files += ('7zip/7zip/Compress/LZ/MT/MT.cpp', '7zip/OS/Synchronization.cpp', )

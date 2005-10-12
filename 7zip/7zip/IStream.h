@@ -16,8 +16,8 @@ public:
   STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize) = 0;
   STDMETHOD(ReadPart)(void *data, UInt32 size, UInt32 *processedSize) = 0;
   
-  // For both function Out: if (*processedSize == 0) then there are 
-  // no more bytes in stream.
+  // For both functions Out: if (*processedSize == 0) then 
+  //   there are no more bytes in stream.
   // Read function always tries to read "size" bytes from stream. It
   // can read less only if it reaches end of stream.
   // ReadPart function can read X bytes: (0<=X<="size") and X can 

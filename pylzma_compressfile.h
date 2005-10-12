@@ -1,8 +1,9 @@
 /*
  * Python Bindings for LZMA
  *
- * Copyright (c) 2004 by Joachim Bauch, mail@joachim-bauch.de
- * LZMA SDK Copyright (C) 1999-2004 Igor Pavlov
+ * Copyright (c) 2004-2005 by Joachim Bauch, mail@joachim-bauch.de
+ * 7-Zip Copyright (C) 1999-2005 Igor Pavlov
+ * LZMA SDK Copyright (C) 1999-2005 Igor Pavlov
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

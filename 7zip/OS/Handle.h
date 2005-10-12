@@ -1,7 +1,9 @@
-// OS/Handle.h
+// Windows/Handle.h
 
-#ifndef __OS_HANDLE_H
-#define __OS_HANDLE_H
+#ifndef __WINDOWS_HANDLE_H
+#define __WINDOWS_HANDLE_H
+
+namespace NWindows {
 
 class CHandle
 {
@@ -29,5 +31,7 @@ public:
     return handle;
   }
 };
+
+}
 
 #endif
