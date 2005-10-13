@@ -1,5 +1,3 @@
-PyLZMA
-------
 $Id$
 
 In this document, some samples of the PyLZMA library will be given.
@@ -26,7 +24,8 @@ For compression, additional parameters can be specified::
 Other available parameters are:
 
 dictionary
-  Number of bits to use for compression (range 0-28, default 23 (8MB)).
+  Number of bits to use for compression dictionary (range 0-28,
+  default 23 (8MB)).
   
 fastBytes
   Range 5-255, default 128
