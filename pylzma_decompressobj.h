@@ -27,11 +27,19 @@
 #define ___PYLZMA_DECOMPRESSOBJ__H___
 
 #include <Python.h>
-#include <7zip/LzmaDecode.h>
+#include <7zip/LzmaStateDecode.h>
+
+#define IN_BUFFER_SIZE (1 << 15)
+#define OUT_BUFFER_SIZE (1 << 15)
 
 typedef struct {
     PyObject_HEAD
-    lzma_stream stream;
+    CLzmaDecoderState state;
+    unsigned char in_buffer[IN_BUFFER_SIZE];
+    unsigned int in_avail;
+    unsigned char out_buffer[OUT_BUFFER_SIZE];
+    unsigned int out_avail;
+    unsigned int total_out;
     char *unconsumed_tail;
     int unconsumed_length;
     PyObject *unused_data;

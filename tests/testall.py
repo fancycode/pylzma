@@ -28,6 +28,19 @@ import unittest
 from binascii import unhexlify
 from cStringIO import StringIO
 
+ALL_CHARS = ''.join([chr(x) for x in xrange(256)])
+
+# cache random strings to speed up tests
+_random_strings = {}
+def generate_random(size, choice=random.choice, ALL_CHARS=ALL_CHARS):
+    global _random_strings
+    if _random_strings.has_key(size):
+        return _random_strings[size]
+        
+    s = ''.join([choice(ALL_CHARS) for x in xrange(size)])
+    _random_strings[size] = s
+    return s
+
 class TestPyLZMA(unittest.TestCase):
     
     def setUp(self):
@@ -52,31 +65,24 @@ class TestPyLZMA(unittest.TestCase):
         
     def test_decompression_noeos(self):
         # test decompression without the end of stream marker
-        decompressed = pylzma.decompress(self.plain_without_eos)
-        decompressed = decompressed[:28]
+        decompressed = pylzma.decompress(self.plain_without_eos, maxlength=28)
         self.assertEqual(decompressed, self.plain)
 
     def test_compression_decompression_eos(self):
         # call compression and decompression on random data of various sizes
-        data = map(lambda x: chr(x), xrange(256))
         for i in xrange(18):
             size = 1 << i
-            original = map(lambda x: data[random.randrange(0, 255)], xrange(size))
-            original = ''.join(original)
+            original = generate_random(size)
             result = pylzma.decompress(pylzma.compress(original, eos=1))
+            self.assertEqual(len(result), size)
             self.assertEqual(md5.new(original).hexdigest(), md5.new(result).hexdigest())
 
     def test_compression_decompression_noeos(self):
         # call compression and decompression on random data of various sizes
-        data = map(lambda x: chr(x), xrange(256))
         for i in xrange(18):
             size = 1 << i
-            original = map(lambda x: data[random.randrange(0, 255)], xrange(size))
-            original = ''.join(original)
-            result = pylzma.decompress(pylzma.compress(original, eos=0))
-            # without the eos marker, the result may be padded with 0x00 bytes
-            # when using this compression format, one must store the data length otherwise
-            result = result[:size]
+            original = generate_random(size)
+            result = pylzma.decompress(pylzma.compress(original, eos=0), maxlength=size)
             self.assertEqual(md5.new(original).hexdigest(), md5.new(result).hexdigest())
 
     def test_multi(self):

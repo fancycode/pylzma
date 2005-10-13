@@ -24,90 +24,122 @@
  */
 
 #include <Python.h>
-#include <7zip/LzmaDecode.h>
+#include <7zip/LzmaStateDecode.h>
 
 #include "pylzma.h"
 
-void free_lzma_stream(lzma_stream *stream)
+void free_lzma_state(CLzmaDecoderState *state)
 {
-    if (stream->dynamicData)
-        lzmafree(stream->dynamicData);
-    stream->dynamicData = NULL;
+    if (state->Probs)
+        free(state->Probs);
+    state->Probs = NULL;
     
-    if (stream->dictionary)
-        lzmafree(stream->dictionary);
-    stream->dictionary = NULL;
+    if (state->Dictionary)
+        free(state->Dictionary);
+    state->Dictionary = NULL;
 }
 
 const char doc_decompress[] = \
-    "decompress(string) -- Decompress the data in string, returning a string containing the decompressed data.\n" \
-    "decompress(string, bufsize) -- Decompress the data in string using an initial output buffer of size bufsize.\n";
+    "decompress(data, [maxlength]) -- Decompress the data in string, returning a string containing the decompressed data. "\
+    "If the string has been compressed without an EOS marker, you must provide the maximum length as keyword parameter.\n" \
+    "decompress(data, bufsize, [maxlength]) -- Decompress the data in string using an initial output buffer of size bufsize. "\
+    "If the string has been compressed without an EOS marker, you must provide the maximum length as keyword parameter.\n";
 
-PyObject *pylzma_decompress(PyObject *self, PyObject *args)
+PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     char *data;
-    int length, blocksize=BLOCK_SIZE;
+    int length, blocksize=BLOCK_SIZE, outsize, outavail, totallength=-1;
     PyObject *result = NULL;
-    lzma_stream stream;
+    CLzmaDecoderState state;
+    unsigned char properties[LZMA_PROPERTIES_SIZE];
     int res;
-    char *output;
+    char *output, *tmp;
+    // possible keywords for this function
+    static char *kwlist[] = {"data", "bufsize", "maxlength", NULL};
     
-    if (!PyArg_ParseTuple(args, "s#|l", &data, &length, &blocksize))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|ll", kwlist, &data, &length, &blocksize, &totallength))
         return NULL;
     
-    memset(&stream, 0, sizeof(stream));
+    memset(&state, 0, sizeof(state));
     if (!(output = (char *)malloc(blocksize)))
     {
         PyErr_NoMemory();
         goto exit;
     }
     
-    lzmaInit(&stream);
-    stream.next_in = (Byte *)data;
-    stream.avail_in = length;
-    stream.next_out = (Byte *)output;
-    stream.avail_out = blocksize;
-    
-    // decompress data
-    while (1)
+    memcpy(&properties, data, sizeof(properties));
+    data += sizeof(properties);
+    length -= sizeof(properties);
+    if (LzmaDecodeProperties(&state.Properties, properties, LZMA_PROPERTIES_SIZE) != LZMA_RESULT_OK)
     {
-        Py_BEGIN_ALLOW_THREADS
-        res = lzmaDecode(&stream);
-        Py_END_ALLOW_THREADS
-        
-        if (res == LZMA_STREAM_END) {
-            break;
-        } else if (res == LZMA_NOT_ENOUGH_MEM) {
-            // out of memory during decompression
+        PyErr_SetString(PyExc_TypeError, "Incorrect stream properties");
+        goto exit;
+    }
+
+    state.Probs = (CProb *)malloc(LzmaGetNumProbs(&state.Properties) * sizeof(CProb));
+    if (state.Probs == 0) {
+        PyErr_NoMemory();
+        goto exit;
+    }
+    
+    if (state.Properties.DictionarySize == 0)
+        state.Dictionary = 0;
+    else {
+        state.Dictionary = (unsigned char *)malloc(state.Properties.DictionarySize);
+        if (state.Dictionary == 0) {
+            free(state.Probs);
+            state.Probs = NULL;
             PyErr_NoMemory();
             goto exit;
-        } else if (res == LZMA_DATA_ERROR) {
-            PyErr_SetString(PyExc_ValueError, "data error during decompression");
-            goto exit;
-        } else if (res == LZMA_OK) {
-            // check if we need to adjust the output buffer
-            if (stream.avail_out == 0)
-            {
-                output = (char *)realloc(output, blocksize+BLOCK_SIZE);
-                stream.avail_out = BLOCK_SIZE;
-                stream.next_out = (Byte *)&output[blocksize];
-                blocksize += BLOCK_SIZE;
-            };
-        } else {
-            PyErr_Format(PyExc_ValueError, "unknown return code from lzmaDecode: %d", res);
+        }
+    }
+
+    LzmaDecoderInit(&state);
+    
+    // decompress data
+    tmp = output;
+    outsize = 0;
+    outavail = blocksize;
+    while (1)
+    {
+        SizeT inProcessed, outProcessed;
+        int finishDecoding = 1;
+        
+        Py_BEGIN_ALLOW_THREADS
+        if (totallength != -1)
+            res = LzmaDecode(&state, data, length, &inProcessed,
+                             tmp, outavail > totallength ? totallength : outavail, &outProcessed, finishDecoding);
+        else
+            res = LzmaDecode(&state, data, length, &inProcessed,
+                             tmp, outavail, &outProcessed, finishDecoding);
+        Py_END_ALLOW_THREADS
+        
+        if (res != 0) {
+            PyErr_Format(PyExc_ValueError, "data error during decompression: %d (%s) %d %d", res, output, length, inProcessed);
             goto exit;
         }
+
+        length -= inProcessed;
+        data += inProcessed;
+        outsize += outProcessed;
+        tmp += outProcessed;
+        outavail -= outProcessed;
+        if (totallength != -1)
+            totallength -= outProcessed;
         
-        // if we exit here, decompression finished without returning LZMA_STREAM_END
-        // XXX: why is this sometimes?
-        if (stream.avail_in == 0)
+        if (length > 0) {
+            output = (char *)realloc(output, outsize+outavail+BLOCK_SIZE);
+            outavail += BLOCK_SIZE;
+            tmp = &output[outsize];
+        } else
+            // Finished decompressing
             break;
     }
 
-    result = PyString_FromStringAndSize(output, stream.totalOut);
+    result = PyString_FromStringAndSize(output, outsize);
     
 exit:
-    free_lzma_stream(&stream);
+    free_lzma_state(&state);
     if (output != NULL)
         free(output);
     

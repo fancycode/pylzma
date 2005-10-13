@@ -45,7 +45,7 @@ static void insint(PyObject *d, char *name, int value)
 PyMethodDef methods[] = {
     // exported functions
     {"compress",      (PyCFunction)pylzma_compress,      METH_VARARGS | METH_KEYWORDS, (char *)&doc_compress},
-    {"decompress",    (PyCFunction)pylzma_decompress,    METH_VARARGS,                 (char *)&doc_decompress},
+    {"decompress",    (PyCFunction)pylzma_decompress,    METH_VARARGS | METH_KEYWORDS, (char *)&doc_decompress},
     // XXX: compression through an object doesn't work, yet
     //{"compressobj",   (PyCFunction)pylzma_compressobj,   METH_VARARGS | METH_KEYWORDS, (char *)&doc_compressobj},
     {"decompressobj", (PyCFunction)pylzma_decompressobj, METH_VARARGS,                 (char *)&doc_decompressobj},

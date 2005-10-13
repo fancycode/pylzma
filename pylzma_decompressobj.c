@@ -24,7 +24,7 @@
  */
 
 #include <Python.h>
-#include <7zip/LzmaDecode.h>
+#include <7zip/LzmaStateDecode.h>
 
 #include "pylzma.h"
 #include "pylzma_decompress.h"
@@ -48,8 +48,10 @@ static PyObject *pylzma_decomp_decompress(CDecompressionObject *self, PyObject *
         PyErr_SetString(PyExc_ValueError, "bufsize must be greater than zero");
         return NULL;
     }
-    
-    start_total_out = self->stream.totalOut;
+    PyErr_SetString(PyExc_NotImplementedError, "not implemented yet");
+
+#if 0
+    start_total_out = self->total_out;
     if (self->unconsumed_length > 0) {
         self->unconsumed_tail = (char *)realloc(self->unconsumed_tail, self->unconsumed_length + length);
         self->stream.next_in = (Byte *)self->unconsumed_tail;
@@ -144,6 +146,7 @@ static PyObject *pylzma_decomp_decompress(CDecompressionObject *self, PyObject *
     }
     
     _PyString_Resize(&result, self->stream.totalOut - start_total_out);
+#endif
     
 exit:
     return result;    
@@ -159,9 +162,14 @@ static PyObject *pylzma_decomp_reset(CDecompressionObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, ""))
         return NULL;
     
-    lzmaInit(&self->stream);
+    free_lzma_state(&self->state);
+    memset(&self->state, 0, sizeof(self->state));
+    LzmaDecoderInit(&self->state);
     FREE_AND_NULL(self->unconsumed_tail);
     self->unconsumed_length = 0;
+    self->in_avail = 0;
+    self->out_avail = OUT_BUFFER_SIZE;
+    self->total_out = 0;
     
     Py_DECREF(self->unused_data);
     self->unused_data = PyString_FromString("");
@@ -182,7 +190,7 @@ PyMethodDef pylzma_decomp_methods[] = {
 
 static void pylzma_decomp_dealloc(CDecompressionObject *self)
 {
-    free_lzma_stream(&self->stream);
+    free_lzma_state(&self->state);
     FREE_AND_NULL(self->unconsumed_tail);
     DEC_AND_NULL(self->unused_data);
     PyObject_Del(self);
@@ -240,6 +248,9 @@ PyObject *pylzma_decompressobj(PyObject *self, PyObject *args)
     
     result->unconsumed_tail = NULL;
     result->unconsumed_length = 0;
+    result->in_avail = 0;
+    result->out_avail = OUT_BUFFER_SIZE;
+    result->total_out = 0;
 
     result->unused_data = PyString_FromString("");
     if (result->unused_data == NULL)
@@ -250,8 +261,8 @@ PyObject *pylzma_decompressobj(PyObject *self, PyObject *args)
         goto exit;
     }    
     
-    memset(&result->stream, 0, sizeof(result->stream));
-    lzmaInit(&result->stream);
+    memset(&result->state, 0, sizeof(result->state));
+    LzmaDecoderInit(&result->state);
     
 exit:
     

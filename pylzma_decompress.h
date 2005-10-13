@@ -27,10 +27,10 @@
 #define ___PYLZMA_DECOMPRESS__H___
 
 #include <Python.h>
-#include <7zip/LzmaDecode.h>
+#include <7zip/LzmaStateDecode.h>
 
 extern const char doc_decompress[];
-void free_lzma_stream(lzma_stream *stream);
+void free_lzma_state(CLzmaDecoderState *stream);
 PyObject *pylzma_decompress(PyObject *self, PyObject *args);
 
 #endif
