@@ -162,5 +162,9 @@ class TestPyLZMA(unittest.TestCase):
         check = pylzma.decompress(outfile.getvalue())
         self.assertEqual(check, self.plain)
 
+def test_main():
+    from test import test_support
+    test_support.run_unittest(TestPyLZMA)
+
 if __name__ == "__main__":
     unittest.main()

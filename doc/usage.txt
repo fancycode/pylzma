@@ -1,0 +1,98 @@
+PyLZMA
+------
+$Id$
+
+In this document, some samples of the PyLZMA library will be given.
+
+First, we need to import the module::
+
+  >>> import pylzma
+
+
+The easiest usage is compression and decompression in one step::
+  
+  >>> compressed = pylzma.compress('Hello world!')
+  >>> pylzma.decompress(compressed)
+  'Hello world!'
+
+
+For compression, additional parameters can be specified::
+
+  >>> compressed = pylzma.compress('Hello world!', dictionary=10)
+  >>> pylzma.decompress(compressed)
+  'Hello world!'
+
+
+Other available parameters are:
+
+dictionary
+  Number of bits to use for compression (range 0-28, default 23 (8MB)).
+  
+fastBytes
+  Range 5-255, default 128
+  
+literalContextBits
+  Range 0-8, default 3
+  
+literalPosBits
+  Range 0-4, default 0
+  
+posBits
+  Range 0-4, default 2
+  
+algorithm
+  Range 0-2, default 2
+
+multithreading
+  Use multithreading if available? (Default yes)
+
+eos
+  Should the `End Of Stream` marker be written? (Default yes)
+  You can save some bytes if the marker is omitted, but the total uncompressed
+  size must be stored by the application and used when decompressing::
+  
+  >>> compressed1 = pylzma.compress('Hello world!', eos=1)
+  >>> compressed2 = pylzma.compress('Hello world!', eos=0)
+  >>> len(compressed1) > len(compressed2)
+  True
+  
+  >>> pylzma.decompress(compressed2)
+  Traceback (most recent call last):
+  ...
+  ValueError: data error during decompression
+
+  >>> pylzma.decompress(compressed2, maxlength=12)
+  'Hello world!'
+  
+
+If you need to compress larger amounts of data, you should use the streaming
+version of the library.  If supports compressing any file-like objects::
+
+  >>> from cStringIO import StringIO
+  >>> fp = StringIO('Hello world!')
+  >>> c_fp = pylzma.compressfile(fp, eos=1)
+  >>> compressed = ''
+  >>> while True:
+  ...   tmp = c_fp.read(1)
+  ...   if not tmp: break
+  ...   compressed += tmp
+  ...
+  >>> pylzma.decompress(compressed)
+  'Hello world!'
+  
+
+Using a similar technique, you can decompress large amounts of data without
+keeping everything in memory::
+  
+  >>> from cStringIO import StringIO
+  >>> fp = StringIO(pylzma.compress('Hello world!'))
+  >>> obj = pylzma.decompressobj()
+  >>> plain = ''
+  >>> while True:
+  ...   tmp = fp.read(1)
+  ...   if not tmp: break
+  ...   plain += obj.decompress(tmp)
+  ...
+  >>> plain += obj.flush()
+  >>> plain
+  'Hello world!'
