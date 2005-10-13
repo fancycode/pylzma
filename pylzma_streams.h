@@ -27,6 +27,7 @@
 #define ___PYLZMA_STREAMS__H___
 
 #include <Python.h>
+#include <7zip/Common/MyWindows.h>
 #include <7zip/7zip/IStream.h>
 #include <7zip/Common/MyCom.h>
 
@@ -156,7 +157,7 @@ public:
                 free_space += len;
             }
 
-            data = PBYTE(data) + len;
+            data = (BYTE *)(data) + len;
             if (processedSize)
                 *processedSize += len;
         }
@@ -250,7 +251,7 @@ public:
             size -= len;
             next_out += len;
             count += len;
-            data = PBYTE(data) + len;
+            data = (BYTE *)(data) + len;
             if (processedSize)
                 *processedSize += len;
         }

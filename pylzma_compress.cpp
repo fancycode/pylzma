@@ -24,7 +24,7 @@
  */
 
 #include <Python.h>
-#include <Platform.h>
+#include <7zip/Common/MyWindows.h>
 #include <7zip/7zip/IStream.h>
 #include <7zip/7zip/Compress/LZMA/LZMAEncoder.h>
 

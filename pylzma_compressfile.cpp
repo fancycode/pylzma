@@ -25,7 +25,7 @@
 
 #include <Python.h>
 #include <cStringIO.h>
-#include <Platform.h>
+#include <7zip/Common/MyWindows.h>
 #include <7zip/7zip/IStream.h>
 #include <7zip/7zip/Compress/LZMA/LZMAEncoder.h>
 
@@ -58,8 +58,8 @@ static PyObject *pylzma_compfile_read(CCompressionFileObject *self, PyObject *ar
     
     while (!bufsize || self->outStream->getMaxRead() < bufsize)
     {
-        UINT64 processedInSize;
-        UINT64 processedOutSize;
+        UInt64 processedInSize;
+        UInt64 processedOutSize;
         INT32 finished;
         
         Py_BEGIN_ALLOW_THREADS
