@@ -40,9 +40,9 @@ void free_lzma_state(CLzmaDecoderState *state)
 }
 
 const char doc_decompress[] = \
-    "decompress(data, [maxlength]) -- Decompress the data in string, returning a string containing the decompressed data. "\
+    "decompress(data[, maxlength]) -- Decompress the data, returning a string containing the decompressed data. "\
     "If the string has been compressed without an EOS marker, you must provide the maximum length as keyword parameter.\n" \
-    "decompress(data, bufsize, [maxlength]) -- Decompress the data in string using an initial output buffer of size bufsize. "\
+    "decompress(data, bufsize[, maxlength]) -- Decompress the data using an initial output buffer of size bufsize. "\
     "If the string has been compressed without an EOS marker, you must provide the maximum length as keyword parameter.\n";
 
 PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
