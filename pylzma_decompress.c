@@ -49,11 +49,11 @@ PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     char *data;
     int length, blocksize=BLOCK_SIZE, outsize, outavail, totallength=-1;
-    PyObject *result = NULL;
+    PyObject *result = NULL, *output=NULL;
     CLzmaDecoderState state;
     unsigned char properties[LZMA_PROPERTIES_SIZE];
     int res;
-    char *output, *tmp;
+    char *tmp;
     // possible keywords for this function
     static char *kwlist[] = {"data", "bufsize", "maxlength", NULL};
     
@@ -61,12 +61,13 @@ PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     
     memset(&state, 0, sizeof(state));
-    if (!(output = (char *)malloc(blocksize)))
+    if (!(output = PyString_FromStringAndSize(NULL, blocksize)))
     {
         PyErr_NoMemory();
         goto exit;
     }
     
+    // Initialize LZMA state decoder
     memcpy(&properties, data, sizeof(properties));
     data += sizeof(properties);
     length -= sizeof(properties);
@@ -97,7 +98,7 @@ PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
     LzmaDecoderInit(&state);
     
     // decompress data
-    tmp = output;
+    tmp = PyString_AS_STRING(output);
     outsize = 0;
     outavail = blocksize;
     while (1)
@@ -107,9 +108,11 @@ PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
         
         Py_BEGIN_ALLOW_THREADS
         if (totallength != -1)
+            // We know the total size of the decompressed string
             res = LzmaDecode(&state, data, length, &inProcessed,
                              tmp, outavail > totallength ? totallength : outavail, &outProcessed, finishDecoding);
         else
+            // Decompress until EOS marker is reached
             res = LzmaDecode(&state, data, length, &inProcessed,
                              tmp, outavail, &outProcessed, finishDecoding);
         Py_END_ALLOW_THREADS
@@ -128,20 +131,27 @@ PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
             totallength -= outProcessed;
         
         if (length > 0) {
-            output = (char *)realloc(output, outsize+outavail+BLOCK_SIZE);
+            // Target block is full, increase size...
+            if (_PyString_Resize(&output, outsize+outavail+BLOCK_SIZE) != 0)
+                goto exit;
+            
             outavail += BLOCK_SIZE;
-            tmp = &output[outsize];
+            tmp = &PyString_AS_STRING(output)[outsize];
         } else
             // Finished decompressing
             break;
     }
 
-    result = PyString_FromStringAndSize(output, outsize);
+    // Decrease length of result to total output size
+    if (_PyString_Resize(&output, outsize) != 0)
+        goto exit;
+    
+    result = output;
+    output = NULL;
     
 exit:
     free_lzma_state(&state);
-    if (output != NULL)
-        free(output);
+    Py_XDECREF(output);
     
     return result;
 }
