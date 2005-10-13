@@ -71,8 +71,7 @@ except: version = 'unknown'
 modules = ['py7zlib']
 c_files = ['pylzma.c', 'pylzma_decompressobj.c', 'pylzma_compressfile.cpp',
            'pylzma_decompress.c', 'pylzma_compress.cpp', 'pylzma_guids.cpp']
-macros = [('COMPRESS_MF_BT', 1), ('COMPRESS_MF_PAT', 1), ('COMPRESS_MF_HC', 1),
-          ('EXCLUDE_COM', 1), ('COMPRESS_LZMA', 1), ('_NO_CRYPTO', 1), ]
+macros = []
 if 'win' in sys.platform:
     macros.append(('WIN32', 1))
 if ENABLE_MULTITHREADING:
