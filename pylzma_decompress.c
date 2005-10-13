@@ -118,7 +118,7 @@ PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
         Py_END_ALLOW_THREADS
         
         if (res != 0) {
-            PyErr_Format(PyExc_ValueError, "data error during decompression: %d (%s) %d %d", res, output, length, inProcessed);
+            PyErr_SetString(PyExc_ValueError, "data error during decompression");
             goto exit;
         }
 
