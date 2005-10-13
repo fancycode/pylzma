@@ -92,12 +92,27 @@ class TestPyLZMA(unittest.TestCase):
             self.test_compression_decompression_noeos()
 
     def test_decompression_stream(self):
+        # test decompression object in one steps
+        decompress = pylzma.decompressobj()
+        data = decompress.decompress(self.plain_with_eos)
+        data += decompress.flush()
+        self.assertEqual(data, self.plain)
+    
+    def test_decompression_stream_two(self):
         # test decompression in two steps
         decompress = pylzma.decompressobj()
         data = decompress.decompress(self.plain_with_eos[:10])
         data += decompress.decompress(self.plain_with_eos[10:])
+        data += decompress.flush()
         self.assertEqual(data, self.plain)
-        self.assertEqual(decompress.unused_data, "")
+
+    def test_decompression_stream_props(self):
+        # test decompression with properties in separate step
+        decompress = pylzma.decompressobj()
+        data = decompress.decompress(self.plain_with_eos[:5])
+        data += decompress.decompress(self.plain_with_eos[5:])
+        data += decompress.flush()
+        self.assertEqual(data, self.plain)
 
     def test_decompression_stream_reset(self):
         # test reset
@@ -106,8 +121,8 @@ class TestPyLZMA(unittest.TestCase):
         decompress.reset()
         data = decompress.decompress(self.plain_with_eos[:15])
         data += decompress.decompress(self.plain_with_eos[15:])
+        data += decompress.flush()
         self.assertEqual(data, self.plain)
-        self.assertEqual(decompress.unused_data, "")
 
     def test_decompression_streaming(self):
         # test decompressing with one byte at a time...
@@ -118,8 +133,8 @@ class TestPyLZMA(unittest.TestCase):
             data = infile.read(1)
             if not data: break
             outfile.write(decompress.decompress(data, 1))
+        outfile.write(decompress.flush())
         self.assertEqual(outfile.getvalue(), self.plain)
-        self.assertEqual(decompress.unused_data, "")
 
     def _test_compression_streaming(self):
         # XXX: this doesn't work, yet

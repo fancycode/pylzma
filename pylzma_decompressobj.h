@@ -29,20 +29,13 @@
 #include <Python.h>
 #include <7zip/LzmaStateDecode.h>
 
-#define IN_BUFFER_SIZE (1 << 15)
-#define OUT_BUFFER_SIZE (1 << 15)
-
 typedef struct {
     PyObject_HEAD
     CLzmaDecoderState state;
-    unsigned char in_buffer[IN_BUFFER_SIZE];
-    unsigned int in_avail;
-    unsigned char out_buffer[OUT_BUFFER_SIZE];
-    unsigned int out_avail;
-    unsigned int total_out;
+    SizeT total_out;
     char *unconsumed_tail;
-    int unconsumed_length;
-    PyObject *unused_data;
+    SizeT unconsumed_length;
+    int need_properties;
 } CDecompressionObject;
 
 extern PyTypeObject CDecompressionObject_Type;
