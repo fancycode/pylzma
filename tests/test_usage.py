@@ -27,10 +27,13 @@ import unittest
 import doctest
 from test import test_support
 
-USAGE_FILE = os.path.join(os.path.split(os.path.abspath(__file__))[0], '..', 'doc', 'usage.txt')
+USAGE_FILE = os.path.join('..', 'doc', 'usage.txt')
 
 if sys.version_info[:2] < (2,4):
     raise ImportError, 'Python 2.4 or above required.'
+
+ROOT = os.path.abspath(os.path.split(__file__)[0])
+sys.path.insert(0, ROOT)
 
 def test_suite():
     return doctest.DocFileSuite(USAGE_FILE)
