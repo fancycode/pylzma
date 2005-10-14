@@ -71,9 +71,13 @@ except: version = 'unknown'
 modules = ['py7zlib']
 c_files = ['pylzma.c', 'pylzma_decompressobj.c', 'pylzma_compressfile.cpp',
            'pylzma_decompress.c', 'pylzma_compress.cpp', 'pylzma_guids.cpp']
+compile_args = []
 macros = []
 if 'win' in sys.platform:
     macros.append(('WIN32', 1))
+if not 'win' in sys.platform:
+    # disable gcc warning about virtual functions with non-virtual destructors
+    compile_args.append(('-Wno-non-virtual-dtor'))
 if ENABLE_MULTITHREADING:
     macros.append(('COMPRESS_MF_MT', 1))
 lzma_files = ('7zip/LzmaStateDecode.c', '7zip/7zip/Compress/LZMA/LZMAEncoder.cpp',
@@ -86,7 +90,7 @@ join = os.path.join
 normalize = os.path.normpath
 c_files += map(lambda x: normalize(join('.', x)), lzma_files)
 extens=[Extension('pylzma', c_files, include_dirs=include_dirs, libraries=libraries,
-                  library_dirs=library_dirs, define_macros=macros)] 
+                  library_dirs=library_dirs, define_macros=macros, extra_compile_args=compile_args)] 
 
 setup (name = "pylzma",
        version = version,
