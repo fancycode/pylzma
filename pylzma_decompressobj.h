@@ -33,7 +33,7 @@ typedef struct {
     PyObject_HEAD
     CLzmaDecoderState state;
     SizeT total_out;
-    char *unconsumed_tail;
+    unsigned char *unconsumed_tail;
     SizeT unconsumed_length;
     int need_properties;
 } CDecompressionObject;

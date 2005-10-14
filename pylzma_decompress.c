@@ -47,13 +47,12 @@ const char doc_decompress[] = \
 
 PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    char *data;
+    unsigned char *data, *tmp;
     int length, blocksize=BLOCK_SIZE, outsize, outavail, totallength=-1;
     PyObject *result = NULL, *output=NULL;
     CLzmaDecoderState state;
     unsigned char properties[LZMA_PROPERTIES_SIZE];
     int res;
-    char *tmp;
     // possible keywords for this function
     static char *kwlist[] = {"data", "bufsize", "maxlength", NULL};
     
@@ -98,7 +97,7 @@ PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
     LzmaDecoderInit(&state);
     
     // decompress data
-    tmp = PyString_AS_STRING(output);
+    tmp = (unsigned char *)PyString_AS_STRING(output);
     outsize = 0;
     outavail = blocksize;
     while (1)
@@ -136,7 +135,7 @@ PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
                 goto exit;
             
             outavail += BLOCK_SIZE;
-            tmp = &PyString_AS_STRING(output)[outsize];
+            tmp = (unsigned char *)&PyString_AS_STRING(output)[outsize];
         } else
             // Finished decompressing
             break;

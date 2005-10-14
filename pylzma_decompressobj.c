@@ -37,7 +37,7 @@ static const char doc_decomp_decompress[] = \
 static PyObject *pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
 {
     PyObject *result=NULL;
-    char *data, *next_in, *next_out;
+    unsigned char *data, *next_in, *next_out;
     int length, old_length, start_total_out, res, max_length=BLOCK_SIZE;
     SizeT avail_in, avail_out;
     unsigned char properties[LZMA_PROPERTIES_SIZE];
@@ -54,18 +54,18 @@ static PyObject *pylzma_decomp_decompress(CDecompressionObject *self, PyObject *
     
     start_total_out = self->total_out;
     if (self->unconsumed_length > 0) {
-        self->unconsumed_tail = (char *)realloc(self->unconsumed_tail, self->unconsumed_length + length);
-        next_in = (char *)self->unconsumed_tail;
+        self->unconsumed_tail = (unsigned char *)realloc(self->unconsumed_tail, self->unconsumed_length + length);
+        next_in = (unsigned char *)self->unconsumed_tail;
         memcpy(next_in + self->unconsumed_length, data, length);
     } else
-        next_in = (char *)data;
+        next_in = data;
     
     avail_in = self->unconsumed_length + length;
     
     if (self->need_properties && avail_in < sizeof(properties)) {
         // we need enough bytes to read the properties
         if (!self->unconsumed_length) {
-            self->unconsumed_tail = (char *)malloc(length);
+            self->unconsumed_tail = (unsigned char *)malloc(length);
             memcpy(self->unconsumed_tail, data, length);
         }
         self->unconsumed_length += length;
@@ -82,7 +82,7 @@ static PyObject *pylzma_decomp_decompress(CDecompressionObject *self, PyObject *
             self->unconsumed_length -= sizeof(properties)-length;
             if (self->unconsumed_length > 0) {
                 memcpy(self->unconsumed_tail, self->unconsumed_tail+sizeof(properties), self->unconsumed_length);
-                self->unconsumed_tail = (char *)realloc(self->unconsumed_tail, self->unconsumed_length);
+                self->unconsumed_tail = (unsigned char *)realloc(self->unconsumed_tail, self->unconsumed_length);
             } else
                 FREE_AND_NULL(self->unconsumed_tail);
         }
@@ -174,10 +174,10 @@ static PyObject *pylzma_decomp_decompress(CDecompressionObject *self, PyObject *
     {
         if (avail_in != self->unconsumed_length) {
             if (avail_in > self->unconsumed_length)
-                self->unconsumed_tail = (char *)realloc(self->unconsumed_tail, avail_in);
+                self->unconsumed_tail = (unsigned char *)realloc(self->unconsumed_tail, avail_in);
             memcpy(self->unconsumed_tail, next_in, avail_in);
             if (avail_in < self->unconsumed_length)
-                self->unconsumed_tail = (char *)realloc(self->unconsumed_tail, avail_in);
+                self->unconsumed_tail = (unsigned char *)realloc(self->unconsumed_tail, avail_in);
         }
         
         if (!self->unconsumed_tail) {
@@ -204,7 +204,7 @@ static PyObject *pylzma_decomp_flush(CDecompressionObject *self, PyObject *args)
     PyObject *result=NULL;
     int res;
     SizeT avail_out, outsize;
-    char *tmp;
+    unsigned char *tmp;
     SizeT inProcessed, outProcessed;
     
     if (!PyArg_ParseTuple(args, ""))
@@ -214,14 +214,14 @@ static PyObject *pylzma_decomp_flush(CDecompressionObject *self, PyObject *args)
     if (result == NULL)
         return NULL;
     
-    tmp = PyString_AS_STRING(result);
+    tmp = (unsigned char *)PyString_AS_STRING(result);
     avail_out = BLOCK_SIZE;
     outsize = 0;
     while (1) {
         Py_BEGIN_ALLOW_THREADS
         if (self->unconsumed_length > 0)
             // No remaining data
-            res = LzmaDecode(&self->state, "", 0, &inProcessed,
+            res = LzmaDecode(&self->state, (unsigned char *)"", 0, &inProcessed,
                              tmp, avail_out, &outProcessed, 1);
         else {
             // Decompress remaining data
@@ -250,7 +250,7 @@ static PyObject *pylzma_decomp_flush(CDecompressionObject *self, PyObject *args)
             goto exit;
         
         avail_out += BLOCK_SIZE;
-        tmp = PyString_AS_STRING(result) + outsize;
+        tmp = (unsigned char *)PyString_AS_STRING(result) + outsize;
     }
     
     _PyString_Resize(&result, outsize);
