@@ -26,7 +26,6 @@ import md5, random
 import pylzma
 import unittest
 from binascii import unhexlify
-from cStringIO import StringIO
 
 if not hasattr(pylzma, 'decompress_compat'):
     raise ImportError, 'no compatibility support available'
