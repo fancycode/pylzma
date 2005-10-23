@@ -13,8 +13,6 @@ Converted to a state machine by Amir Szekely
  *    Configuration    *
  ***********************/
 
-#include "Common/MyWindows.h"
-
 /* #define _LZMA_PROB32 */
 /* It can increase speed on some 32-bit CPUs, 
    but memory usage will be doubled in that case */
@@ -44,6 +42,15 @@ extern "C" {
 #define UInt32 unsigned long
 #else
 #define UInt32 unsigned int
+#endif
+#endif
+
+#ifndef SizeT
+#ifdef _LZMA_SYSTEM_SIZE_T
+#include <stddef.h>
+#define SizeT size_t
+#else
+#define SizeT UInt32
 #endif
 #endif
 

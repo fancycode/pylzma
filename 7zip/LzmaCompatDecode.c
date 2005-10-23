@@ -126,7 +126,7 @@ void LZMACALL lzmaCompatInit(lzma_stream *s)
 {
   /* size of lzma_stream minus the size of the two allocated buffer pointers.
      we don't want to lose to pointer or else we won't be able to free them. */
-  size_t i = sizeof(lzma_stream) - (sizeof(unsigned char *) * 2);
+  SizeT i = sizeof(lzma_stream) - (sizeof(unsigned char *) * 2);
   while (i--)
     ((Byte *)s)[i] = 0;
 
