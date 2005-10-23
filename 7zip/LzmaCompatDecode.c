@@ -225,7 +225,8 @@ int LZMACALL lzmaCompatDecode(lzma_stream *s)
       {
         if (p)
           lzmafree(p);
-        p = lzmaalloc(newDynamicDataSize);
+        //p = lzmaalloc(newDynamicDataSize);
+        _s.dynamicData = lzmaalloc(newDynamicDataSize);
         if (!p)
           return LZMA_NOT_ENOUGH_MEM;
         dynamicDataSize = newDynamicDataSize;
@@ -234,10 +235,13 @@ int LZMACALL lzmaCompatDecode(lzma_stream *s)
       while (numProbs--)
         p[numProbs] = kBitModelTotal >> 1;
 
-      for (i = 0, newDictionarySize = 0; i < 4; i++)
+      
+      //for (i = 0, newDictionarySize = 0; i < 4; i++)
+      for (i = 0, _s.temp3 = 0; i < 4; i++)
       {
         NEED_BYTE(LZMA_C_GETDICT);
-        newDictionarySize |= NEXT_BYTE << (i * 8);
+        //newDictionarySize |= NEXT_BYTE << (i * 8);
+        _s.temp3 |= NEXT_BYTE << (i * 8);
       }
 
       if (newDictionarySize != dictionarySize)
