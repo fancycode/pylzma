@@ -85,8 +85,13 @@ DL_EXPORT(void) initpylzma(void)
     d = PyModule_GetDict(m);
     PycString_IMPORT;
 
-#if defined(WITH_THREAD) && !defined(PYLZMA_USE_GILSTATE)
+#if defined(WITH_THREAD)
+    PyEval_InitThreads();
+
+#if !defined(PYLZMA_USE_GILSTATE)
     /* Save the current interpreter, so compressing file objects works. */
     _pylzma_interpreterState = PyThreadState_Get()->interp;
+#endif
+
 #endif
 }
