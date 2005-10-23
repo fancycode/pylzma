@@ -113,7 +113,9 @@ eos
   'Hello world!'
   
   If you don't know the total uncompressed size, you can use the compatibility
-  decompression function from pylzma version 0.0.3:
+  decompression function from pylzma version 0.0.3.  Be aware that this old
+  method is slower than the new decompression function, so you should use
+  `pylzma.decompress` whenever possible.
   
   >>> pylzma.decompress_compat(compressed2)
   'Hello world!'
