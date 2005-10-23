@@ -32,6 +32,10 @@
 #include "pylzma_decompressobj.h"
 #include "pylzma_compressobj.h"
 #include "pylzma_compressfile.h"
+#ifdef WITH_COMPAT
+#include "pylzma_decompress_compat.h"
+#include "pylzma_decompressobj_compat.h"
+#endif
 
 static void insint(PyObject *d, char *name, int value)
 {
@@ -50,6 +54,11 @@ PyMethodDef methods[] = {
     //{"compressobj",   (PyCFunction)pylzma_compressobj,   METH_VARARGS | METH_KEYWORDS, (char *)&doc_compressobj},
     {"decompressobj", (PyCFunction)pylzma_decompressobj, METH_VARARGS,                 (char *)&doc_decompressobj},
     {"compressfile",  (PyCFunction)pylzma_compressfile,  METH_VARARGS | METH_KEYWORDS, (char *)&doc_compressfile},
+#ifdef WITH_COMPAT
+    // compatibility functions
+    {"decompress_compat",    (PyCFunction)pylzma_decompress_compat,    METH_VARARGS | METH_KEYWORDS, (char *)&doc_decompress_compat},
+    {"decompressobj_compat", (PyCFunction)pylzma_decompressobj_compat, METH_VARARGS,                 (char *)&doc_decompressobj_compat},
+#endif
     {NULL, NULL},
 };
 

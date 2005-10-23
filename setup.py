@@ -33,7 +33,12 @@ class UnsupportedPlatformWarning(Warning):
     pass
 
 # set this to any true value to enable multithreaded compression
-ENABLE_MULTITHREADING = 1
+ENABLE_MULTITHREADING = True
+
+# set this to any true value to add the compatibility decoder
+# from version 0.0.3 to be able to decompress strings without
+# the end of stream mark and you don't know their lengths
+ENABLE_COMPATIBILITY = True
 
 if os.name == 'posix':
     # This is the directory, your Python is installed in. It must contain the header and include files.
@@ -86,6 +91,10 @@ lzma_files = ('7zip/LzmaStateDecode.c', '7zip/7zip/Compress/LZMA/LZMAEncoder.cpp
     '7zip/7zip/Common/OutBuffer.cpp', '7zip/Common/Alloc.cpp', )
 if ENABLE_MULTITHREADING:
     lzma_files += ('7zip/7zip/Compress/LZ/MT/MT.cpp', '7zip/OS/Synchronization.cpp', )
+if ENABLE_COMPATIBILITY:
+    c_files += ('pylzma_decompress_compat.c', 'pylzma_decompressobj_compat.c', )
+    lzma_files += ('7Zip/LzmaCompatDecode.c', )
+    macros.append(('WITH_COMPAT', 1))
 join = os.path.join
 normalize = os.path.normpath
 c_files += map(lambda x: normalize(join('.', x)), lzma_files)

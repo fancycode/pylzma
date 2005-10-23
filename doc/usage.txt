@@ -24,8 +24,12 @@ For compression, additional parameters can be specified::
 Other available parameters are:
 
 dictionary
-  Number of bits to use for compression dictionary (range 0-28,
-  default 23 (8MB)).
+  Dictionary size (Range 0-28, Default: 23 (8MB))
+
+  The maximum value for dictionary size is 256 MB = 2^28 bytes.
+  Dictionary size is calculated as DictionarySize = 2^N bytes. 
+  For decompressing file compressed by LZMA method with dictionary 
+  size D = 2^N you need about D bytes of memory (RAM).
   
 fastBytes
   Range 5-255, default 128
@@ -40,7 +44,7 @@ posBits
   Range 0-4, default 2
   
 algorithm
-  Range 0-2, default 2
+  Compression mode 0 = fast, 1 = normal, 2 = max (Default: 2)
 
 multithreading
   Use multithreading if available? (Default yes)
