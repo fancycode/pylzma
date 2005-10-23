@@ -60,7 +60,7 @@ class TestPyLZMACompability(unittest.TestCase):
         for i in xrange(18):
             size = 1 << i
             original = generate_random(size)
-            result = pylzma.decompress_compat(pylzma.compress(original, eos=0))
+            result = pylzma.decompress_compat(pylzma.compress(original, eos=0))[:size]
             self.assertEqual(md5.new(original).hexdigest(), md5.new(result).hexdigest())
 
     def test_multi(self):
