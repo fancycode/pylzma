@@ -33,8 +33,10 @@
 
 int set_encoder_properties(NCompress::NLZMA::CEncoder *encoder, int dictionary, int posBits,
     int literalContextBits, int literalPosBits, int algorithm, int fastBytes, int eos,
-    int multithreading)
+    int multithreading, const char *matchfinder)
 {
+    wchar_t tmp[10];
+    unsigned int i;
     encoder->SetWriteEndMarkerMode(eos ? true : false);
     
     PROPID propIDs[] = 
@@ -44,7 +46,8 @@ int set_encoder_properties(NCompress::NLZMA::CEncoder *encoder, int dictionary, 
         NCoderPropID::kLitContextBits,
         NCoderPropID::kLitPosBits,
         NCoderPropID::kAlgorithm,
-        NCoderPropID::kNumFastBytes
+        NCoderPropID::kNumFastBytes,
+        NCoderPropID::kMatchFinder
 #ifdef COMPRESS_MF_MT
         , NCoderPropID::kMultiThread
 #endif
@@ -69,10 +72,19 @@ int set_encoder_properties(NCompress::NLZMA::CEncoder *encoder, int dictionary, 
     // NCoderProp::kNumFastBytes;
     props[5].vt = VT_UI4;
     props[5].ulVal = fastBytes;
+    // NCoderProp::kMatchFinder;
+    if (strlen(matchfinder) > (sizeof(tmp)/2)-1)
+        return 1;
+    
+    props[6].vt = VT_BSTR;
+    for (i=0; i<strlen(matchfinder); i++)
+        tmp[i] = matchfinder[i];
+    tmp[i] = 0;
+    props[6].bstrVal = (BSTR)(const wchar_t *)&tmp;
 #ifdef COMPRESS_MF_MT
     // NCoderPropID::kMultiThread
-    props[6].vt = VT_BOOL;
-    props[6].boolVal = (multithreading != 0) ? VARIANT_TRUE : VARIANT_FALSE;
+    props[7].vt = VT_BOOL;
+    props[7].boolVal = (multithreading != 0) ? VARIANT_TRUE : VARIANT_FALSE;
 #endif
     
     return encoder->SetCoderProperties(propIDs, props, kNumProps);
@@ -82,7 +94,7 @@ int set_encoder_properties(NCompress::NLZMA::CEncoder *encoder, int dictionary, 
 extern "C"
 #endif
 const char doc_compress[] = \
-    "compress(string, dictionary=23, fastBytes=128, literalContextBits=3, literalPosBits=0, posBits=2, algorithm=2, eos=1) -- Compress the data in string using the given parameters, returning a string containing the compressed data.";
+    "compress(string, dictionary=23, fastBytes=128, literalContextBits=3, literalPosBits=0, posBits=2, algorithm=2, eos=1, multithreading=1, matchfinder='bt4') -- Compress the data in string using the given parameters, returning a string containing the compressed data.";
 
 #ifdef __cplusplus
 extern "C" {
@@ -97,7 +109,7 @@ PyObject *pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
     int res;    
     // possible keywords for this function
     static char *kwlist[] = {"data", "dictionary", "fastBytes", "literalContextBits",
-                             "literalPosBits", "posBits", "algorithm", "eos", "multithreading", NULL};
+                             "literalPosBits", "posBits", "algorithm", "eos", "multithreading", "matchfinder", NULL};
     int dictionary = 23;         // [0,28], default 23 (8MB)
     int fastBytes = 128;         // [5,255], default 128
     int literalContextBits = 3;  // [0,8], default 3
@@ -105,12 +117,13 @@ PyObject *pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
     int posBits = 2;             // [0,4], default 2
     int eos = 1;                 // write "end of stream" marker?
     int multithreading = 1;      // use multithreading if available?
+    char *matchfinder = "bt4";   // matchfinder algorithm
     int algorithm = 2;
     char *data;
     int length;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iiiiiiii", kwlist, &data, &length, &dictionary, &fastBytes,
-                                                                  &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos, &multithreading))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iiiiiiiis", kwlist, &data, &length, &dictionary, &fastBytes,
+                                                                  &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos, &multithreading, &matchfinder))
         return NULL;
     
     CHECK_RANGE(dictionary,         0,  28, "dictionary must be between 0 and 28");
@@ -122,9 +135,9 @@ PyObject *pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
     encoder = new NCompress::NLZMA::CEncoder();
     CHECK_NULL(encoder);
 
-    if ((res = set_encoder_properties(encoder, dictionary, posBits, literalContextBits, literalPosBits, algorithm, fastBytes, eos, multithreading) != 0))
+    if ((res = set_encoder_properties(encoder, dictionary, posBits, literalContextBits, literalPosBits, algorithm, fastBytes, eos, multithreading, matchfinder) != 0))
     {
-        PyErr_Format(PyExc_TypeError, "Can't set coder properties: %d", res);
+        PyErr_SetString(PyExc_TypeError, "can't set coder properties");
         goto exit;
     }
     

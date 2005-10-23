@@ -34,8 +34,8 @@
 #include "pylzma_compress.h"
 
 int set_encoder_properties(NCompress::NLZMA::CEncoder *encoder, int dictionary, int posBits,
-                           int literalContextBits, int literalPosBits, int algorithm,
-                           int fastBytes, int eos, int multithreading);
+    int literalContextBits, int literalPosBits, int algorithm, int fastBytes, int eos,
+    int multithreading, const char *matchfinder);
 
 typedef struct {
     PyObject_HEAD
@@ -148,7 +148,7 @@ PyObject *pylzma_compressfile(PyObject *self, PyObject *args, PyObject *kwargs)
     
     // possible keywords for this function
     static char *kwlist[] = {"infile", "dictionary", "fastBytes", "literalContextBits",
-                             "literalPosBits", "posBits", "algorithm", "eos", "multithreading", NULL};
+                             "literalPosBits", "posBits", "algorithm", "eos", "multithreading", "matchfinder", NULL};
     int dictionary = 23;         // [0,28], default 23 (8MB)
     int fastBytes = 128;         // [5,255], default 128
     int literalContextBits = 3;  // [0,8], default 3
@@ -156,11 +156,12 @@ PyObject *pylzma_compressfile(PyObject *self, PyObject *args, PyObject *kwargs)
     int posBits = 2;             // [0,4], default 2
     int eos = 1;                 // write "end of stream" marker?
     int multithreading = 1;      // use multithreading if available?
+    char *matchfinder = "bt4";   // matchfinder algorithm
     int algorithm = 2;
     int res;
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iiiiiiii", kwlist, &inFile, &dictionary, &fastBytes,
-                                                                 &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos, &multithreading))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iiiiiiiis", kwlist, &inFile, &dictionary, &fastBytes,
+                                                                 &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos, &multithreading, &matchfinder))
         return NULL;
     
     CHECK_RANGE(dictionary,         0,  28, "dictionary must be between 0 and 28");
@@ -187,11 +188,11 @@ PyObject *pylzma_compressfile(PyObject *self, PyObject *args, PyObject *kwargs)
     encoder = new NCompress::NLZMA::CEncoder();
     CHECK_NULL(encoder);
     
-    if ((res = set_encoder_properties(encoder, dictionary, posBits, literalContextBits, literalPosBits, algorithm, fastBytes, eos, multithreading) != 0))
+    if ((res = set_encoder_properties(encoder, dictionary, posBits, literalContextBits, literalPosBits, algorithm, fastBytes, eos, multithreading, matchfinder) != 0))
     {
         Py_XDECREF(inFile);
         DELETE_AND_NULL(encoder);
-        PyErr_Format(PyExc_TypeError, "Can't set coder properties: %d", res);
+        PyErr_SetString(PyExc_TypeError, "can't set coder properties");
         goto exit;
     }
     

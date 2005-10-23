@@ -49,6 +49,10 @@ algorithm
 multithreading
   Use multithreading if available? (Default yes)
 
+matchfinder
+  Matchfinder algorithm to use.  Possible values are bt2, bt3, bt4, bt4b,
+  pat2r, pat2, pat2h, pat3h, pat4h, hc3, hc4 (Default: bt4).
+
 eos
   Should the `End Of Stream` marker be written? (Default yes)
   You can save some bytes if the marker is omitted, but the total uncompressed
