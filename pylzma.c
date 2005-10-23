@@ -37,6 +37,10 @@
 #include "pylzma_decompressobj_compat.h"
 #endif
 
+#if defined(WITH_THREAD) && !defined(PYLZMA_USE_GILSTATE)
+PyInterpreterState* _pylzma_interpreterState = NULL;
+#endif
+
 static void insint(PyObject *d, char *name, int value)
 {
     PyObject *v = PyInt_FromLong((long) value);
@@ -52,8 +56,6 @@ PyMethodDef methods[] = {
     {"decompress",    (PyCFunction)pylzma_decompress,    METH_VARARGS | METH_KEYWORDS, (char *)&doc_decompress},
     // XXX: compression through an object doesn't work, yet
     //{"compressobj",   (PyCFunction)pylzma_compressobj,   METH_VARARGS | METH_KEYWORDS, (char *)&doc_compressobj},
-    {"decompressobj", (PyCFunction)pylzma_decompressobj, METH_VARARGS,                 (char *)&doc_decompressobj},
-    {"compressfile",  (PyCFunction)pylzma_compressfile,  METH_VARARGS | METH_KEYWORDS, (char *)&doc_compressfile},
 #ifdef WITH_COMPAT
     // compatibility functions
     {"decompress_compat",    (PyCFunction)pylzma_decompress_compat,    METH_VARARGS | METH_KEYWORDS, (char *)&doc_decompress_compat},
@@ -65,8 +67,26 @@ PyMethodDef methods[] = {
 DL_EXPORT(void) initpylzma(void)
 {
     PyObject *m, *d;
+
+    if (PyType_Ready(&CDecompressionObject_Type) < 0)
+        return;
+    
+    if (PyType_Ready(&CCompressionFileObject_Type) < 0)
+        return;
     
     m = Py_InitModule("pylzma", methods);
+    
+    Py_INCREF(&CDecompressionObject_Type);
+    PyModule_AddObject(m, "decompressobj", (PyObject *)&CDecompressionObject_Type);
+    
+    Py_INCREF(&CCompressionFileObject_Type);
+    PyModule_AddObject(m, "compressfile", (PyObject *)&CCompressionFileObject_Type);
+    
     d = PyModule_GetDict(m);
     PycString_IMPORT;
+
+#if defined(WITH_THREAD) && !defined(PYLZMA_USE_GILSTATE)
+    /* Save the current interpreter, so compressing file objects works. */
+    _pylzma_interpreterState = PyThreadState_Get()->interp;
+#endif
 }

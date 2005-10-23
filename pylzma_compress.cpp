@@ -103,7 +103,7 @@ extern "C" {
 PyObject *pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *result = NULL;
-    NCompress::NLZMA::CEncoder *encoder;
+    NCompress::NLZMA::CEncoder *encoder = NULL;
     CInStream *inStream = NULL;
     COutStream *outStream = NULL;
     int res;    
@@ -131,6 +131,7 @@ PyObject *pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
     CHECK_RANGE(literalContextBits, 0,   8, "literalContextBits must be between 0 and 8");
     CHECK_RANGE(literalPosBits,     0,   4, "literalPosBits must be between 0 and 4");
     CHECK_RANGE(posBits,            0,   4, "posBits must be between 0 and 4");
+    CHECK_RANGE(algorithm,          0,   2, "algorithm must be between 0 and 2");
     
     encoder = new NCompress::NLZMA::CEncoder();
     CHECK_NULL(encoder);

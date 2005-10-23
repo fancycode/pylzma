@@ -27,6 +27,7 @@ import pylzma
 import unittest
 from binascii import unhexlify
 from cStringIO import StringIO
+from StringIO import StringIO as PyStringIO
 
 ALL_CHARS = ''.join([chr(x) for x in xrange(256)])
 
@@ -164,9 +165,21 @@ class TestPyLZMA(unittest.TestCase):
         self.assertEqual(check, self.plain)
 
     def test_compression_file(self):
-        # test compressing from file-like object
+        # test compressing from file-like object (C class)
         infile = StringIO(self.plain)
         outfile = StringIO()
+        compress = pylzma.compressfile(infile, eos=1)
+        while 1:
+            data = compress.read(1)
+            if not data: break
+            outfile.write(data)
+        check = pylzma.decompress(outfile.getvalue())
+        self.assertEqual(check, self.plain)
+
+    def test_compression_file_python(self):
+        # test compressing from file-like object (Python class)
+        infile = PyStringIO(self.plain)
+        outfile = PyStringIO()
         compress = pylzma.compressfile(infile, eos=1)
         while 1:
             data = compress.read(1)

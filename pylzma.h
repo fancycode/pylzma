@@ -38,6 +38,40 @@
 #define DEC_AND_NULL(a) { Py_XDECREF(a); a = NULL; }
 #define DELETE_AND_NULL(a) if (a != NULL) { delete a; a = NULL; }
 #define FREE_AND_NULL(a) if (a != NULL) { free(a); a = NULL; }
-#define CHECK_RANGE(x, a, b, msg) if ((x) < (a) || (x) > (b)) { PyErr_SetString(PyExc_ValueError, msg); return NULL; }
+#define CHECK_RANGE(x, a, b, msg) if ((x) < (a) || (x) > (b)) { PyErr_SetString(PyExc_ValueError, msg); goto exit; }
+
+#if defined(WITH_THREAD)
+/* For Python 2.3 and above, use the PyGILState_ calls */
+#if (PY_VERSION_HEX >= 0x02030000)
+#define PYLZMA_USE_GILSTATE
+#endif
+
+#if defined(PYLZMA_USE_GILSTATE)
+// Python 2.3 and above
+#define START_BLOCK_THREADS \
+    PyGILState_STATE __savestate = PyGILState_Ensure();
+#define END_BLOCK_THREADS \
+    PyGILState_Release(__savestate);
+#else
+// Before Python 2.3
+PyInterpreterState* _pylzma_interpreterState;
+#define START_BLOCK_THREADS {                                   \
+        PyThreadState* prevState;                               \
+        PyThreadState* newState;                                \
+        PyEval_AcquireLock();                                   \
+        newState  = PyThreadState_New(_pylzma_interpreterState);\
+        prevState = PyThreadState_Swap(newState);
+
+#define END_BLOCK_THREADS                                       \
+        newState = PyThreadState_Swap(prevState);               \
+        PyThreadState_Clear(newState);                          \
+        PyEval_ReleaseLock();                                   \
+        PyThreadState_Delete(newState);                         \
+        }
+#endif
+#else  // WITH_THREADS
+#define START_BLOCK_THREADS
+#define END_BLOCK_THREADS
+#endif
 
 #endif

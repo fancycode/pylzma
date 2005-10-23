@@ -42,7 +42,4 @@ extern PyTypeObject CDecompressionObject_Type;
 
 #define DecompressionObject_Check(v)   ((v)->ob_type == &CDecompressionObject_Type)
 
-extern const char doc_decompressobj[];
-PyObject *pylzma_decompressobj(PyObject *self, PyObject *args);
-
 #endif

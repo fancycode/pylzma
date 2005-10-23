@@ -30,6 +30,21 @@
 #include "pylzma_decompress.h"
 #include "pylzma_decompressobj.h"
 
+static PyObject* pylzma_decomp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    CDecompressionObject *self;
+    
+    self = (CDecompressionObject*)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->unconsumed_tail = NULL;
+        self->unconsumed_length = 0;
+        self->need_properties = 1;
+        memset(&self->state, 0, sizeof(self->state));
+    }
+    
+    return (PyObject*)self;
+}
+
 static const char doc_decomp_decompress[] = \
     "decompress(data[, bufsize]) -- Returns a string containing the up to bufsize decompressed bytes of the data.\n" \
     "After calling, some of the input data may be available in internal buffers for later processing.";
@@ -280,7 +295,7 @@ static PyObject *pylzma_decomp_reset(CDecompressionObject *self, PyObject *args)
     return result;
 }
 
-PyMethodDef pylzma_decomp_methods[] = {
+static PyMethodDef pylzma_decomp_methods[] = {
     {"decompress", (PyCFunction)pylzma_decomp_decompress, METH_VARARGS, (char *)&doc_decomp_decompress},
     {"flush",      (PyCFunction)pylzma_decomp_flush,      METH_VARARGS, (char *)&doc_decomp_flush},
     {"reset",      (PyCFunction)pylzma_decomp_reset,      METH_VARARGS, (char *)&doc_decomp_reset},
@@ -291,55 +306,48 @@ static void pylzma_decomp_dealloc(CDecompressionObject *self)
 {
     free_lzma_state(&self->state);
     FREE_AND_NULL(self->unconsumed_tail);
-    PyObject_Del(self);
+    self->ob_type->tp_free((PyObject*)self);
 }
 
-static PyObject *pylzma_decomp_getattr(CDecompressionObject *self, char *attrname)
-{
-    return Py_FindMethod(pylzma_decomp_methods, (PyObject *)self, attrname);
-}
-
-PyTypeObject DecompressionObject_Type = {
-  //PyObject_HEAD_INIT(&PyType_Type)
-  PyObject_HEAD_INIT(NULL)
-  0,
-  "LZMADecompress",                    /* char *tp_name; */
-  sizeof(CDecompressionObject),        /* int tp_basicsize; */
-  0,                                   /* int tp_itemsize;       // not used much */
-  (destructor)pylzma_decomp_dealloc,   /* destructor tp_dealloc; */
-  NULL,                                /* printfunc  tp_print;   */
-  (getattrfunc)pylzma_decomp_getattr,  /* getattrfunc  tp_getattr; // __getattr__ */
-  NULL,                                /* setattrfunc  tp_setattr;  // __setattr__ */
-  NULL,                                /* cmpfunc  tp_compare;  // __cmp__ */
-  NULL,                                /* reprfunc  tp_repr;    // __repr__ */
-  NULL,                                /* PyNumberMethods *tp_as_number; */
-  NULL,                                /* PySequenceMethods *tp_as_sequence; */
-  NULL,                                /* PyMappingMethods *tp_as_mapping; */
-  NULL,                                /* hashfunc tp_hash;     // __hash__ */
-  NULL,                                /* ternaryfunc tp_call;  // __call__ */
-  NULL,                                /* reprfunc tp_str;      // __str__ */
+PyTypeObject CDecompressionObject_Type = {
+    //PyObject_HEAD_INIT(&PyType_Type)
+    PyObject_HEAD_INIT(NULL)
+    0,
+    "LZMADecompress",                    /* char *tp_name; */
+    sizeof(CDecompressionObject),        /* int tp_basicsize; */
+    0,                                   /* int tp_itemsize;       // not used much */
+    (destructor)pylzma_decomp_dealloc,   /* destructor tp_dealloc; */
+    NULL,                                /* printfunc  tp_print;   */
+    NULL,                                /* getattrfunc  tp_getattr; // __getattr__ */
+    NULL,                                /* setattrfunc  tp_setattr;  // __setattr__ */
+    NULL,                                /* cmpfunc  tp_compare;  // __cmp__ */
+    NULL,                                /* reprfunc  tp_repr;    // __repr__ */
+    NULL,                                /* PyNumberMethods *tp_as_number; */
+    NULL,                                /* PySequenceMethods *tp_as_sequence; */
+    NULL,                                /* PyMappingMethods *tp_as_mapping; */
+    NULL,                                /* hashfunc tp_hash;     // __hash__ */
+    NULL,                                /* ternaryfunc tp_call;  // __call__ */
+    NULL,                                /* reprfunc tp_str;      // __str__ */
+    0,                                   /* tp_getattro*/
+    0,                                   /* tp_setattro*/
+    0,                                   /* tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,  /*tp_flags*/
+    "Decompression class",              /* tp_doc */
+    0,                                   /* tp_traverse */
+    0,                                   /* tp_clear */
+    0,                                   /* tp_richcompare */
+    0,                                   /* tp_weaklistoffset */
+    0,                                   /* tp_iter */
+    0,                                   /* tp_iternext */
+    pylzma_decomp_methods,               /* tp_methods */
+    0,                                   /* tp_members */
+    0,                                   /* tp_getset */
+    0,                                   /* tp_base */
+    0,                                   /* tp_dict */
+    0,                                   /* tp_descr_get */
+    0,                                   /* tp_descr_set */
+    0,                                   /* tp_dictoffset */
+    0,                                   /* tp_init */
+    0,                                   /* tp_alloc */
+    pylzma_decomp_new,                   /* tp_new */
 };
-
-const char doc_decompressobj[] = \
-    "decompressobj() -- Returns object that can be used for decompression.";
-
-PyObject *pylzma_decompressobj(PyObject *self, PyObject *args)
-{
-    CDecompressionObject *result=NULL;
-    
-    if (!PyArg_ParseTuple(args, ""))
-        goto exit;
-    
-    result = PyObject_New(CDecompressionObject, &DecompressionObject_Type);
-    CHECK_NULL(result);
-    
-    result->unconsumed_tail = NULL;
-    result->unconsumed_length = 0;
-    result->need_properties = 1;
-
-    memset(&result->state, 0, sizeof(result->state));
-    
-exit:
-    
-    return (PyObject *)result;
-}

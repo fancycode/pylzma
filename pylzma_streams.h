@@ -115,16 +115,19 @@ public:
         if (sourceFile)
         {
             // read from file-like object
+            HRESULT res = E_FAIL;
+            // we might be calling into Python code from outside the main thread, so block threads...
+            START_BLOCK_THREADS
             PyObject *result = PyObject_CallMethod(sourceFile, "read", "l", size);
             if (result == NULL)
-                return E_FAIL;
+                goto exit;
             
             if (!PyString_Check(result))
             {
                 PyObject *str = PyObject_Str(result);
                 Py_XDECREF(result);
                 if (str == NULL)
-                    return E_FAIL;
+                    goto exit;
                 result = str;
             }
             
@@ -133,7 +136,11 @@ public:
                 *processedSize = PyString_Size(result);
             
             Py_XDECREF(result);
-            return S_OK;
+            res = S_OK;
+            
+exit:
+            END_BLOCK_THREADS
+            return res;
         }
         
         if (processedSize)

@@ -26,11 +26,17 @@
 #ifndef ___PYLZMA_COMPRESSFILE__H___
 #define ___PYLZMA_COMPRESSFILE__H___
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern PyTypeObject CCompressionFileObject_Type;
 
 #define CompressionFileObject_Check(v)   ((v)->ob_type == &CCompressionFileObject_Type)
 
-extern const char doc_compressfile[];
-PyObject *pylzma_compressfile(PyObject *self, PyObject *args);
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif
