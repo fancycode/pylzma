@@ -37,6 +37,10 @@ extern "C" {
 #  define LZMACALL
 #endif
 
+#ifndef malloc
+#include <malloc.h>
+#endif
+
 #ifndef UInt32
 #ifdef _LZMA_UINT32_IS_ULONG
 #define UInt32 unsigned long
