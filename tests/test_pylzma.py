@@ -188,6 +188,25 @@ class TestPyLZMA(unittest.TestCase):
         check = pylzma.decompress(outfile.getvalue())
         self.assertEqual(check, self.plain)
 
+    def test_compress_large_string(self):
+        # decompress large block of repeating data, string version (bug reported by Christopher Perkins)
+        data = "asdf"*123456
+        compressed = pylzma.compress(data)
+        self.failUnless(data == pylzma.decompress(compressed))
+
+    def test_compress_large_stream(self):
+        # decompress large block of repeating data, stream version (bug reported by Christopher Perkins)
+        data = "asdf"*123456
+        decompress = pylzma.decompressobj()
+        infile = StringIO(pylzma.compress(data))
+        outfile = StringIO()
+        while 1:
+            tmp = infile.read(1)
+            if not tmp: break
+            outfile.write(decompress.decompress(tmp))
+        outfile.write(decompress.flush())
+        self.failUnless(data == outfile.getvalue())
+
 def test_main():
     from test import test_support
     test_support.run_unittest(TestPyLZMA)

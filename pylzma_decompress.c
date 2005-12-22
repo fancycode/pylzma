@@ -48,7 +48,7 @@ const char doc_decompress[] = \
 PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     unsigned char *data, *tmp;
-    int length, blocksize=BLOCK_SIZE, outsize, outavail, totallength=-1;
+    int length, blocksize=BLOCK_SIZE, outsize, outavail, totallength=-1, bufsize;
     PyObject *result = NULL, *output=NULL;
     CLzmaDecoderState state;
     unsigned char properties[LZMA_PROPERTIES_SIZE];
@@ -104,6 +104,7 @@ PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
     {
         SizeT inProcessed, outProcessed;
         int finishDecoding = 1;
+        bufsize = outavail;
         
         Py_BEGIN_ALLOW_THREADS
         if (totallength != -1)
@@ -129,7 +130,7 @@ PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
         if (totallength != -1)
             totallength -= outProcessed;
         
-        if (length > 0) {
+        if (length > 0 || outProcessed == bufsize) {
             // Target block is full, increase size...
             if (_PyString_Resize(&output, outsize+outavail+BLOCK_SIZE) != 0)
                 goto exit;
