@@ -53,7 +53,7 @@ static PyObject *pylzma_decomp_decompress(CDecompressionObject *self, PyObject *
 {
     PyObject *result=NULL;
     unsigned char *data, *next_in, *next_out;
-    int length, old_length, start_total_out, res, max_length=BLOCK_SIZE;
+    int length, start_total_out, res, max_length=BLOCK_SIZE;
     SizeT avail_in, avail_out;
     unsigned char properties[LZMA_PROPERTIES_SIZE];
     SizeT inProcessed, outProcessed;
@@ -148,34 +148,7 @@ static PyObject *pylzma_decomp_decompress(CDecompressionObject *self, PyObject *
     next_in += inProcessed;
     avail_in -= inProcessed;
     next_out += outProcessed;
-    avail_out += outProcessed;
-    
-    while (res == LZMA_RESULT_OK && outProcessed > 0 && avail_in > 0)
-    {
-        if (max_length && length >= max_length)
-            break;
-        
-        old_length = length;
-        length <<= 1;
-        if (max_length && length > max_length)
-            length = max_length;
-        
-        if (_PyString_Resize(&result, length) < 0)
-            goto exit;
-        
-        next_out = (unsigned char *)PyString_AS_STRING(result) + (self->total_out - start_total_out);
-        
-        Py_BEGIN_ALLOW_THREADS
-        // Decompress until EOS marker is reached
-        res = LzmaDecode(&self->state, next_in, avail_in, &inProcessed,
-                         next_out, avail_out, &outProcessed, 0);
-        Py_END_ALLOW_THREADS
-        self->total_out += outProcessed;
-        next_in += inProcessed;
-        avail_in -= inProcessed;
-        next_out += outProcessed;
-        avail_out += outProcessed;
-    }
+    avail_out -= outProcessed;
     
     if (res != LZMA_RESULT_OK) {
         PyErr_SetString(PyExc_ValueError, "data error during decompression");
@@ -188,11 +161,14 @@ static PyObject *pylzma_decomp_decompress(CDecompressionObject *self, PyObject *
     if (avail_in > 0)
     {
         if (avail_in != self->unconsumed_length) {
-            if (avail_in > self->unconsumed_length)
+            if (avail_in > self->unconsumed_length) {
                 self->unconsumed_tail = (unsigned char *)realloc(self->unconsumed_tail, avail_in);
-            memcpy(self->unconsumed_tail, next_in, avail_in);
-            if (avail_in < self->unconsumed_length)
+                memmove(self->unconsumed_tail, next_in, avail_in);
+            }
+            if (avail_in < self->unconsumed_length) {
+                memcpy(self->unconsumed_tail, next_in, avail_in);
                 self->unconsumed_tail = (unsigned char *)realloc(self->unconsumed_tail, avail_in);
+            }
         }
         
         if (!self->unconsumed_tail) {
@@ -234,7 +210,7 @@ static PyObject *pylzma_decomp_flush(CDecompressionObject *self, PyObject *args)
     outsize = 0;
     while (1) {
         Py_BEGIN_ALLOW_THREADS
-        if (self->unconsumed_length > 0)
+        if (self->unconsumed_length == 0)
             // No remaining data
             res = LzmaDecode(&self->state, (unsigned char *)"", 0, &inProcessed,
                              tmp, avail_out, &outProcessed, 1);
@@ -259,6 +235,8 @@ static PyObject *pylzma_decomp_flush(CDecompressionObject *self, PyObject *args)
         outsize += outProcessed;
         if (outProcessed < avail_out)
             break;
+        
+        avail_out -= outProcessed;
         
         // Output buffer is full, might be more data for decompression
         if (_PyString_Resize(&result, outsize+BLOCK_SIZE) != 0)

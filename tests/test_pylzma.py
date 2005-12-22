@@ -207,6 +207,19 @@ class TestPyLZMA(unittest.TestCase):
         outfile.write(decompress.flush())
         self.failUnless(data == outfile.getvalue())
 
+    def test_compress_large_stream_bigchunks(self):
+        # decompress large block of repeating data, stream version with big chunks
+        data = "asdf"*123456
+        decompress = pylzma.decompressobj()
+        infile = StringIO(pylzma.compress(data))
+        outfile = StringIO()
+        while 1:
+            tmp = infile.read(1024)
+            if not tmp: break
+            outfile.write(decompress.decompress(tmp))
+        outfile.write(decompress.flush())
+        self.failUnless(data == outfile.getvalue())
+
 def test_main():
     from test import test_support
     test_support.run_unittest(TestPyLZMA)
