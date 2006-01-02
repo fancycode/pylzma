@@ -22,9 +22,12 @@ bool CLZInWindow::Create(UInt32 keepSizeBefore, UInt32 keepSizeAfter, UInt32 kee
   {
     Free();
     _blockSize = blockSize;
-    _bufferBase = (Byte *)::BigAlloc(_blockSize);
+    if (_blockSize != 0)
+      _bufferBase = (Byte *)::BigAlloc(_blockSize);
   }
   _pointerToLastSafePosition = _bufferBase + _blockSize - keepSizeAfter;
+  if (_blockSize == 0)
+    return true;
   return (_bufferBase != 0);
 }
 
@@ -69,7 +72,7 @@ HRESULT CLZInWindow::ReadBlock()
     if(size == 0)
       return S_OK;
     UInt32 numReadBytes;
-    RINOK(_stream->ReadPart(_buffer + _streamPos, size, &numReadBytes));
+    RINOK(_stream->Read(_buffer + _streamPos, size, &numReadBytes));
     if(numReadBytes == 0)
     {
       _posLimit = _streamPos;
