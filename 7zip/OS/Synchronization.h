@@ -9,6 +9,7 @@
 namespace NWindows {
 namespace NSynchronization {
 
+#ifdef _WIN32
 class CObject: public CHandle
 {
 public:
@@ -109,6 +110,77 @@ public:
   ~CCriticalSectionLock() { Unlock(); }
 };
 
+#endif
+
+#ifndef _WIN32
+
+// only implement classes that are actually used...
+
+#include <pthread.h>
+#include "../Common/MyWindows.h"
+
+#define MAXIMUM_WAIT_OBJECTS   0x100
+#define WAIT_OBJECT_0          0
+#define WAIT_ABANDONED_0       (WAIT_OBJECT_0 | MAXIMUM_WAIT_OBJECTS)
+#define WAIT_TIMEOUT           0xFFFFFFFE
+#define INFINITE               0xFFFFFFFF
+#define HANDLE NWindows::NSynchronization::CEvent
+
+class CEvent: public CHandle
+{
+public:
+  CEvent()
+  {
+    pthread_mutex_init(&mutex, NULL);
+    pthread_cond_init(&handle, NULL);
+  };
+  
+  ~CEvent()
+  {
+    pthread_cond_destroy(&handle);
+    pthread_mutex_destroy(&mutex);
+  };
+
+  bool Lock(DWORD timeoutInterval = INFINITE)
+  {
+    struct timespec wait;
+    if (timeoutInterval == INFINITE)
+      return (pthread_cond_wait(&handle, &mutex) == 0);
+    
+    wait.tv_sec = timeoutInterval / 1000;
+    wait.tv_nsec = (timeoutInterval % 1000) * 1000000;
+    return (pthread_cond_timedwait(&handle, &mutex, &wait) == 0);
+  };
+  
+  bool Set() { return was_set = true; (pthread_cond_signal(&handle) == 0); };
+  bool Reset() { was_set = false; return true; };
+  bool IsSet() { return was_set; }
+  bool IsAutoReset() { return false; }
+  
+protected:
+  pthread_cond_t handle;
+  pthread_mutex_t mutex;
+  bool was_set;
+};
+
+class CManualResetEvent: public CEvent
+{
+public:
+};
+
+class CAutoResetEvent: public CEvent
+{
+public:
+  bool Reset() { /* this is a noop */ return true; };
+  bool IsAutoReset() { return true; }
+};
+
+#endif
+
 }}
+
+#ifndef _WIN32
+__stdcall DWORD WaitForMultipleObjects(DWORD nCount, const NWindows::NSynchronization::CEvent* lpHandles, BOOL bWaitAll, DWORD dwMilliseconds);
+#endif
 
 #endif

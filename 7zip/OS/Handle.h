@@ -5,6 +5,10 @@
 
 namespace NWindows {
 
+#ifdef _WIN32
+
+// Windows handle base-class
+
 class CHandle
 {
 protected:
@@ -31,6 +35,16 @@ public:
     return handle;
   }
 };
+
+#else
+
+// Non-Windows dummy handle class
+
+class CHandle
+{
+};
+
+#endif
 
 }
 

@@ -6,9 +6,16 @@
 #include "Handle.h"
 #include "Defs.h"
 
+#ifdef _WIN32
+#define CThread CWindowsThread
+#else
+#define CThread CPosixThread
+#endif
+
 namespace NWindows {
 
-class CThread: public CHandle
+#ifdef _WIN32
+class CWindowsThread: public CHandle
 {
   bool IsOpen() const { return _handle != 0; }
 public:
@@ -46,6 +53,73 @@ public:
   }
 
 };
+#endif
+
+#ifndef _WIN32
+
+#include <pthread.h>
+
+class CPosixThread: public CHandle
+{
+  bool IsOpen() const { return thread != NULL; }
+public:
+  ~CPosixThread()
+  {
+    if (IsOpen())
+      Terminate(0);
+  };
+  
+  bool Create(LPTHREAD_START_ROUTINE startAddress, LPVOID parameter)
+  {
+    thread = NULL;
+    threadProc = startAddress;
+    threadParameter = parameter;
+    return (pthread_create(&thread, NULL, MyThreadProc, this) == 0);
+  }
+  
+  DWORD Resume()
+    { return 0; }
+  DWORD Suspend()
+    { return 0; }
+  bool Terminate(DWORD exitCode)
+  {
+    if (!IsOpen())
+      return true;
+    
+    // make sure the thread is running
+    Resume();
+    if (pthread_cancel(thread) != 0)
+      return false;
+    
+    thread = NULL;
+    return true;
+  }
+  
+  int GetPriority()
+    { return 0; }
+  bool SetPriority(int priority)
+    { return false; }
+
+  bool Wait() 
+  { 
+    if (!IsOpen())
+      return true;
+    
+    return (pthread_join(thread, NULL) == 0); 
+  }
+private:
+  pthread_t thread;
+  LPTHREAD_START_ROUTINE threadProc;
+  LPVOID threadParameter;
+
+  static void *MyThreadProc(void *klass)
+  {
+    CPosixThread *thread = (CPosixThread *)(klass);
+    thread->threadProc(thread->threadParameter);
+    return NULL;
+  }
+};
+#endif
 
 }
 

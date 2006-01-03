@@ -3,6 +3,8 @@
 #ifndef __WINDOWS_DEFS_H
 #define __WINDOWS_DEFS_H
 
+#include "../Common/MyWindows.h"
+
 inline bool BOOLToBool(BOOL value)
   { return (value != FALSE); }
 

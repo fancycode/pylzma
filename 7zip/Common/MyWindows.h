@@ -12,7 +12,6 @@
 #include <stddef.h> // for wchar_t
 #include <string.h>
 
-#include "Types.h"
 #include "MyGuidDef.h"
 
 typedef char CHAR;
@@ -23,6 +22,15 @@ typedef short SHORT;
 typedef unsigned short USHORT;
 typedef unsigned short WORD;
 typedef short VARIANT_BOOL;
+typedef int BOOL;
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE  1
+#endif
 
 typedef int INT;
 typedef Int32 INT32;
@@ -34,6 +42,8 @@ typedef UINT32 DWORD;
 
 typedef Int64 LONGLONG;
 typedef UInt64 ULONGLONG;
+
+typedef void *LPVOID;
 
 typedef struct LARGE_INTEGER { LONGLONG QuadPart; }LARGE_INTEGER;
 typedef struct _ULARGE_INTEGER { ULONGLONG QuadPart;} ULARGE_INTEGER;
@@ -179,6 +189,13 @@ typedef enum tagSTREAM_SEEK
   STREAM_SEEK_CUR	= 1,
   STREAM_SEEK_END	= 2
 } STREAM_SEEK;
+
+#define WINAPI  __stdcall
+
+typedef DWORD (WINAPI *PTHREAD_START_ROUTINE)(
+    LPVOID lpThreadParameter
+    );
+typedef PTHREAD_START_ROUTINE LPTHREAD_START_ROUTINE;
 
 #endif
 #endif
