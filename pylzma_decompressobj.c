@@ -293,12 +293,15 @@ exit:
 static const char doc_decomp_reset[] = \
     "reset([maxlength]) -- Resets the decompression object.";
 
-static PyObject *pylzma_decomp_reset(CDecompressionObject *self, PyObject *args)
+static PyObject *pylzma_decomp_reset(CDecompressionObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *result=NULL;
     int max_length = -1;
     
-    if (!PyArg_ParseTuple(args, "|i", &max_length))
+    // possible keywords for this function
+    static char *kwlist[] = {"maxlength", NULL};
+    
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i", kwlist, &max_length))
         return NULL;
     
     free_lzma_state(&self->state);
@@ -317,7 +320,7 @@ static PyObject *pylzma_decomp_reset(CDecompressionObject *self, PyObject *args)
 static PyMethodDef pylzma_decomp_methods[] = {
     {"decompress", (PyCFunction)pylzma_decomp_decompress, METH_VARARGS, (char *)&doc_decomp_decompress},
     {"flush",      (PyCFunction)pylzma_decomp_flush,      METH_VARARGS, (char *)&doc_decomp_flush},
-    {"reset",      (PyCFunction)pylzma_decomp_reset,      METH_VARARGS, (char *)&doc_decomp_reset},
+    {"reset",      (PyCFunction)pylzma_decomp_reset,      METH_VARARGS | METH_KEYWORDS, (char *)&doc_decomp_reset},
     {NULL, NULL},
 };
 
