@@ -30,23 +30,6 @@
 #include "pylzma_decompress.h"
 #include "pylzma_decompressobj.h"
 
-static PyObject* pylzma_decomp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    CDecompressionObject *self;
-    
-    self = (CDecompressionObject*)type->tp_alloc(type, 0);
-    if (self != NULL) {
-        self->unconsumed_tail = NULL;
-        self->unconsumed_length = 0;
-        self->need_properties = 1;
-        self->max_length = -1;
-        self->total_out = 0;
-        memset(&self->state, 0, sizeof(self->state));
-    }
-    
-    return (PyObject*)self;
-}
-
 int pylzma_decomp_init(CDecompressionObject *self, PyObject *args, PyObject *kwargs)
 {
     int max_length = -1;
@@ -62,7 +45,12 @@ int pylzma_decomp_init(CDecompressionObject *self, PyObject *args, PyObject *kwa
         return -1;
     }
     
+    self->unconsumed_tail = NULL;
+    self->unconsumed_length = 0;
+    self->need_properties = 1;
     self->max_length = max_length;
+    self->total_out = 0;
+    memset(&self->state, 0, sizeof(self->state));
     return 0;
 }
 
@@ -184,7 +172,7 @@ static PyObject *pylzma_decomp_decompress(CDecompressionObject *self, PyObject *
         if (avail_in != self->unconsumed_length) {
             if (avail_in > self->unconsumed_length) {
                 self->unconsumed_tail = (unsigned char *)realloc(self->unconsumed_tail, avail_in);
-                memmove(self->unconsumed_tail, next_in, avail_in);
+                memcpy(self->unconsumed_tail, next_in, avail_in);
             }
             if (avail_in < self->unconsumed_length) {
                 memcpy(self->unconsumed_tail, next_in, avail_in);
@@ -261,11 +249,9 @@ static PyObject *pylzma_decomp_flush(CDecompressionObject *self, PyObject *args)
             goto exit;
         }
         
+        self->total_out += outProcessed;
         outsize += outProcessed;
-        if (outProcessed < avail_out)
-            break;
-
-        if (outProcessed == avail_out && self->max_length != -1)
+        if (outProcessed < avail_out || (outProcessed == avail_out && self->max_length != -1))
             break;
         
         if (self->max_length != -1) {
@@ -284,7 +270,8 @@ static PyObject *pylzma_decomp_flush(CDecompressionObject *self, PyObject *args)
         tmp = (unsigned char *)PyString_AS_STRING(result) + outsize;
     }
     
-    _PyString_Resize(&result, outsize);
+    if (outsize != PyString_GET_SIZE(result))
+        _PyString_Resize(&result, outsize);
     
 exit:
     return result;
@@ -371,5 +358,5 @@ PyTypeObject CDecompressionObject_Type = {
     0,                                   /* tp_dictoffset */
     (initproc)pylzma_decomp_init,        /* tp_init */
     0,                                   /* tp_alloc */
-    pylzma_decomp_new,                   /* tp_new */
+    PyType_GenericNew,                   /* tp_new */
 };
