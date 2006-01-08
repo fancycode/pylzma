@@ -40,6 +40,9 @@ ENABLE_MULTITHREADING = True
 # the end of stream mark and you don't know their lengths
 ENABLE_COMPATIBILITY = True
 
+# compile including debug symbols on Windows?
+COMPILE_DEBUG = False
+
 if os.name == 'posix':
     # This is the directory, your Python is installed in. It must contain the header and include files.
     PYTHON_INCLUDE_DIR="%s/include/python%s" % (PYTHON_PREFIX, PYTHON_VERSION)
@@ -77,9 +80,13 @@ modules = ['py7zlib']
 c_files = ['pylzma.c', 'pylzma_decompressobj.c', 'pylzma_compressfile.cpp',
            'pylzma_decompress.c', 'pylzma_compress.cpp', 'pylzma_guids.cpp']
 compile_args = []
+link_args = []
 macros = []
 if 'win' in sys.platform:
     macros.append(('WIN32', 1))
+    if COMPILE_DEBUG:
+        compile_args.append('/Zi')
+        link_args.append('/DEBUG')
 if not 'win' in sys.platform:
     # disable gcc warning about virtual functions with non-virtual destructors
     compile_args.append(('-Wno-non-virtual-dtor'))
@@ -99,7 +106,8 @@ join = os.path.join
 normalize = os.path.normpath
 c_files += map(lambda x: normalize(join('.', x)), lzma_files)
 extens=[Extension('pylzma', c_files, include_dirs=include_dirs, libraries=libraries,
-                  library_dirs=library_dirs, define_macros=macros, extra_compile_args=compile_args)] 
+                  library_dirs=library_dirs, define_macros=macros, extra_compile_args=compile_args,
+                  extra_link_args=link_args)] 
 
 setup (name = "pylzma",
        version = version,
