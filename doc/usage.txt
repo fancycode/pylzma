@@ -2,6 +2,7 @@ $Id$
 
 In this document, some samples of the PyLZMA library will be given.
 
+
 First, we need to import the module::
 
   >>> import pylzma
@@ -120,6 +121,7 @@ eos
   >>> pylzma.decompress_compat(compressed2)
   'Hello world!'
 
+
 If you need to compress larger amounts of data, you should use the streaming
 version of the library.  If supports compressing any file-like objects::
 
@@ -151,3 +153,52 @@ keeping everything in memory::
   >>> plain += obj.flush()
   >>> plain
   'Hello world!'
+
+
+However this only works for streams that contain the `End Of Stream` marker.
+You must provide the size of the decompressed data if you don't include the
+EOS marker::
+
+  >>> from cStringIO import StringIO
+  >>> fp = StringIO(pylzma.compress('Hello world!', eos=0))
+  >>> obj = pylzma.decompressobj(maxlength=13)
+  >>> plain = ''
+  >>> while True:
+  ...   tmp = fp.read(1)
+  ...   if not tmp: break
+  ...   plain += obj.decompress(tmp)
+  ...
+  >>> plain += obj.flush()
+  Traceback (most recent call last):
+  ...
+  ValueError: data error during decompression
+
+  >>> obj.reset(maxlength=12)
+  >>> fp.seek(0)
+  >>> plain = ''
+  >>> while True:
+  ...   tmp = fp.read(1)
+  ...   if not tmp: break
+  ...   plain += obj.decompress(tmp)
+  ...
+  >>> plain += obj.flush()
+  >>> plain
+  'Hello world!'
+
+
+Please note that the compressed data is not compatible to the lzma.exe command
+line utility!  To get compatible data, you can use the following utility
+function::
+
+  >>> import struct
+  >>> from cStringIO import StringIO
+  
+  >>> def compress_compatible(data):
+  ...     c = pylzma.compressfile(StringIO(data))
+  ...     # LZMA header
+  ...     result = c.read(5)
+  ...     # size of uncompressed data
+  ...     result += struct.pack('<Q', len(data))
+  ...     # compressed data
+  ...     return result + c.read()
+
