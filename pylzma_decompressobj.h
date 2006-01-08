@@ -32,6 +32,7 @@
 typedef struct {
     PyObject_HEAD
     CLzmaDecoderState state;
+    SizeT max_length;
     SizeT total_out;
     unsigned char *unconsumed_tail;
     SizeT unconsumed_length;

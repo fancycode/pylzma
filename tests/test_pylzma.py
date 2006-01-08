@@ -150,6 +150,18 @@ class TestPyLZMA(unittest.TestCase):
         outfile.write(decompress.flush())
         self.assertEqual(outfile.getvalue(), self.plain)
 
+    def test_decompression_streaming_noeos(self):
+        # test decompressing with one byte at a time...
+        decompress = pylzma.decompressobj(maxlength=len(self.plain))
+        infile = StringIO(self.plain_without_eos)
+        outfile = StringIO()
+        while 1:
+            data = infile.read(1)
+            if not data: break
+            outfile.write(decompress.decompress(data, 1))
+        outfile.write(decompress.flush())
+        self.assertEqual(outfile.getvalue(), self.plain)
+
     def _test_compression_streaming(self):
         # XXX: this doesn't work, yet
         # test compressing with one byte at a time...
