@@ -43,14 +43,14 @@ class Test7ZipFiles(unittest.TestCase):
     def _test_archive(self, filename):
         fp = file(os.path.join(ROOT, 'data', filename), 'rb')
         archive = Archive7z(fp)
-        self.failUnlessEqual(sorted(archive.getnames()), ['test/test2.txt', 'test1.txt'])
-        self.failUnlessEqual(archive.getmember('test2.txt'), None)
-        cf = archive.getmember('test1.txt')
+        self.failUnlessEqual(sorted(archive.getnames()), [u'test/test2.txt', u'test1.txt'])
+        self.failUnlessEqual(archive.getmember(u'test2.txt'), None)
+        cf = archive.getmember(u'test1.txt')
         self.failUnlessEqual(cf.read(), 'This file is located in the root.')
         cf.reset()
         self.failUnlessEqual(cf.read(), 'This file is located in the root.')
 
-        cf = archive.getmember('test/test2.txt')
+        cf = archive.getmember(u'test/test2.txt')
         self.failUnlessEqual(cf.read(), 'This file is located in a folder.')
         cf.reset()
         self.failUnlessEqual(cf.read(), 'This file is located in a folder.')

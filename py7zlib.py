@@ -365,10 +365,8 @@ class FilesInfo(Base):
                     name = ''
                     while True:
                         ch = buffer.read(2)
-                        # XXX: make this work with widestrings <-> unicode objects
-                        ch = ch[0]
-                        if ch == '\x00':
-                            f['filename'] = name
+                        if ch == '\0\0':
+                            f['filename'] = unicode(name, 'utf-16')
                             break
                         name += ch
             elif typ == PROPERTY_CREATION_TIME:
