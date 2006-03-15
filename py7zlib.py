@@ -64,10 +64,8 @@ class Base:
     """ base class with support for various basic read/write functions """
     
     def _readReal64Bit(self, file):
-        res = file.read(4)
-        a = unpack('<L', res)[0]
-        res += file.read(4)
-        b = unpack('<L', res[4:])[0]
+        res = file.read(8)
+        a, b = unpack('<LL', res)
         return b << 32 | a, res
     
     def _read64Bit(self, file):
@@ -87,7 +85,7 @@ class Base:
         if checkall:
             alldefined = file.read(1)
             if alldefined != '\x00':
-                return map(lambda x: True, xrange(count))
+                return [True] * count
             
         result = []
         b = 0
@@ -110,11 +108,11 @@ class PackInfo(Base):
         self.numstreams = self._read64Bit(file)
         id = file.read(1)
         if id == PROPERTY_SIZE:
-            self.packsizes = map(lambda x: self._read64Bit(file), xrange(self.numstreams))
+            self.packsizes = [self._read64Bit(file) for x in xrange(self.numstreams)]
             id = file.read(1)
             
             if id == PROPERTY_CRC:
-                self.crcs = map(lambda x: self._read64Bit(file), xrange(self.numstreams))
+                self.crcs = [self._read64Bit(file) for x in xrange(self.numstreams)]
                 id = file.read(1)
             
         if id != PROPERTY_END:
@@ -198,7 +196,7 @@ class Digests(Base):
     
     def __init__(self, file, count):
         self.defined = self._readBoolean(file, count, checkall=1)
-        self.crcs = map(lambda x: unpack('<l', file.read(4))[0], xrange(count))
+        self.crcs = [unpack('<l', file.read(4))[0] for x in xrange(count)]
     
 UnpackDigests = Digests
 
@@ -213,7 +211,7 @@ class UnpackInfo(Base):
         self.folders = []
         external = file.read(1)
         if external == '\x00':
-            self.folders = map(lambda x: Folder(file), xrange(self.numfolders))
+            self.folders = [Folder(file) for x in xrange(self.numfolders)]
         elif external == '\x01':
             self.datastreamidx = self._read64Bit(file)
         else:
@@ -224,7 +222,7 @@ class UnpackInfo(Base):
             raise FormatError, 'coders unpack size id expected but %s found' % repr(id)
         
         for folder in self.folders:
-            folder.unpacksizes = map(lambda x: self._read64Bit(file), xrange(folder.totalout))
+            folder.unpacksizes = [self._read64Bit(file) for x in xrange(folder.totalout)]
             
         id = file.read(1)
         if id == PROPERTY_CRC:
@@ -247,7 +245,7 @@ class SubstreamsInfo(Base):
         self.digestsdefined = []
         id = file.read(1)
         if id == PROPERTY_NUM_UNPACK_STREAM:
-            self.numunpackstreams = map(lambda x: self._read64Bit(file), xrange(numfolders))
+            self.numunpackstreams = [self._read64Bit(file) for x in xrange(numfolders)]
             id = file.read(1)
         else:        
             self.numunpackstreams = []
@@ -295,8 +293,8 @@ class SubstreamsInfo(Base):
             raise FormatError, 'end id expected but %s found' % repr(id)
 
         if not self.digestsdefined:
-            self.digestsdefined = map(lambda x: False, numdigeststotal)
-            self.digests = map(lambda x: 0, numdigeststotal)
+            self.digestsdefined = [False] * numdigeststotal
+            self.digests = [0] * numdigeststotal
 
 class StreamsInfo(Base):
     """ informations about compressed streams """
@@ -332,7 +330,7 @@ class FilesInfo(Base):
 
     def __init__(self, file):
         self.numfiles = self._read64Bit(file)
-        self.files = map(lambda x: {'emptystream': False}, xrange(self.numfiles))
+        self.files = [{'emptystream': False} for x in xrange(self.numfiles)]
         numemptystreams = 0
         while True:
             typ = self._read64Bit(file)
@@ -350,8 +348,8 @@ class FilesInfo(Base):
                 map(lambda x, y: x.update({'emptystream': y}), self.files, isempty)
                 for x in isempty:
                     if x: numemptystreams += 1
-                emptyfiles = map(lambda x: False, xrange(numemptystreams))
-                antifiles = map(lambda x: False, xrange(numemptystreams))
+                emptyfiles = [False] * numemptystreams
+                antifiles = [False] * numemptystreams
             elif typ == PROPERTY_EMPTY_FILE:
                 emptyfiles = self._readBoolean(buffer, numemptystreams)
             elif typ == PROPERTY_ANTI:
@@ -527,7 +525,7 @@ class Archive7z(Base):
             unpacksizes = subinfo.unpacksizes
         else:
             # every file has it's own folder with compressed data
-            unpacksizes = map(lambda x: x.unpacksizes[0], folders)
+            unpacksizes = [x.unpacksizes[0] for x in folders]
         
         fidx = 0
         obidx = 0
