@@ -520,7 +520,10 @@ class Archive7z(Base):
         self.solid = packinfo.numstreams == 1
         if self.solid:
             # the files are stored in substreams
-            unpacksizes = subinfo.unpacksizes
+            if hasattr(subinfo, 'unpacksizes'):
+                unpacksizes = subinfo.unpacksizes
+            else:
+                unpacksizes = [x.unpacksizes[0] for x in folders]
         else:
             # every file has it's own folder with compressed data
             unpacksizes = [x.unpacksizes[0] for x in folders]

@@ -63,6 +63,25 @@ class Test7ZipFiles(unittest.TestCase):
         # test loading of a solid archive
         self._test_archive('solid.7z')
 
+    def _test_umlaut_archive(self, filename):
+        fp = file(os.path.join(ROOT, 'data', filename), 'rb')
+        archive = Archive7z(fp)
+        self.failUnlessEqual(sorted(archive.getnames()), [u't\xe4st.txt'])
+        self.failUnlessEqual(archive.getmember(u'test.txt'), None)
+        cf = archive.getmember(u't\xe4st.txt')
+        self.failUnlessEqual(cf.read(), 'This file contains a german umlaut in the filename.')
+        cf.reset()
+        self.failUnlessEqual(cf.read(), 'This file contains a german umlaut in the filename.')
+        
+    def test_non_solid_umlaut(self):
+        # test loading of a non-solid archive containing files with umlauts
+        self._test_umlaut_archive('umlaut-non_solid.7z')
+
+    def test_solid_umlaut(self):
+        # test loading of a solid archive containing files with umlauts
+        self._test_umlaut_archive('umlaut-solid.7z')
+
+
 def test_main():
     from test import test_support
     test_support.run_unittest(Test7ZipFiles)
