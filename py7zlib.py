@@ -198,7 +198,7 @@ class Digests(Base):
     
     def __init__(self, file, count):
         self.defined = self._readBoolean(file, count, checkall=1)
-        self.crcs = map(lambda x: unpack('<L', file.read(4))[0], xrange(count))
+        self.crcs = map(lambda x: unpack('<l', file.read(4))[0], xrange(count))
     
 UnpackDigests = Digests
 
@@ -438,15 +438,15 @@ class ArchiveFile:
         data = ''
         idx = 0
         cnt = 0
-        dec = pylzma.decompressobj()
+        dec = pylzma.decompressobj(maxlength=self._start+self.size)
         self._file.seek(self._src_start)
         dec.decompress(self._folder.coders[0]['properties'])
         total = self.compressed
         if total is None:
             # XXX: only read and decompress necessary parts of the solid archive...
-            data = pylzma.decompress(self._folder.coders[0]['properties'] + self._file.read(self._maxsize))
+            data = pylzma.decompress(self._folder.coders[0]['properties'] + self._file.read(self._maxsize), maxlength=self._start+self.size)
         else:
-            data = dec.decompress(dec.unconsumed_tail + self._file.read(total))
+            data = dec.decompress(dec.unconsumed_tail + self._file.read(total), maxlength=self._start+self.size)
         return data[self._start:self._start+self.size]
         
     def checkcrc(self):
@@ -458,7 +458,7 @@ class ArchiveFile:
         crc = crc32(data)
         # make crc unsigned
         # XXX: better way to do this?
-        crc = unpack('<L', pack('<L', crc))[0]
+        crc = unpack('<l', pack('<L', crc))[0]
         return crc == self.digest
 
 class Archive7z(Base):
@@ -471,13 +471,13 @@ class Archive7z(Base):
             raise FormatError, 'not a 7z file'
         self.version = unpack('BB', file.read(2))
 
-        self.startheadercrc = unpack('<L', file.read(4))[0]
+        self.startheadercrc = unpack('<l', file.read(4))[0]
         self.nextheaderofs, data = self._readReal64Bit(file)
         crc = crc32(data)
         self.nextheadersize, data = self._readReal64Bit(file)
         crc = crc32(data, crc)
         data = file.read(4)
-        self.nextheadercrc = unpack('<L', data)[0]
+        self.nextheadercrc = unpack('<l', data)[0]
         crc = crc32(data, crc)
         if crc != self.startheadercrc:
             raise FormatError, 'invalid header data'
@@ -505,7 +505,7 @@ class Archive7z(Base):
                 props = folder.coders[0]['properties']
                 for idx in xrange(len(streams.packinfo.packsizes)):
                     tmp = file.read(streams.packinfo.packsizes[idx])
-                    data += pylzma.decompress(props+tmp)[:folder.unpacksizes[idx]]
+                    data += pylzma.decompress(props+tmp, maxlength=folder.unpacksizes[idx])
                 
                 if folder.digestdefined:
                     if folder.crc != crc32(data):
@@ -550,8 +550,8 @@ class Archive7z(Base):
                     src_pos += packsizes[obidx]
                 obidx += 1
 
-            if not self.solid:
-                fidx += 1
+                if not self.solid:
+                    fidx += 1
             
         self.numfiles = len(self.files)
         self.filenames = map(lambda x: x.filename, self.files)
