@@ -439,10 +439,17 @@ class ArchiveFile:
         dec.decompress(self._folder.coders[0]['properties'])
         total = self.compressed
         if total is None:
-            # XXX: only read and decompress necessary parts of the solid archive...
-            data = pylzma.decompress(self._folder.coders[0]['properties'] + self._file.read(self._maxsize), maxlength=self._start+self.size)
+            remaining = self._start+self.size
+            out = StringIO()
+            while remaining > 0:
+                data = self._file.read(1024)
+                tmp = dec.decompress(data, remaining)
+                out.write(tmp)
+                remaining -= len(tmp)
+            
+            data = out.getvalue()
         else:
-            data = dec.decompress(dec.unconsumed_tail + self._file.read(total), maxlength=self._start+self.size)
+            data = dec.decompress(self._file.read(total), self._start+self.size)
         return data[self._start:self._start+self.size]
         
     def checkcrc(self):

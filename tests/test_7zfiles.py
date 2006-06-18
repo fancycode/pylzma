@@ -81,6 +81,15 @@ class Test7ZipFiles(unittest.TestCase):
         # test loading of a solid archive containing files with umlauts
         self._test_umlaut_archive('umlaut-solid.7z')
 
+    def test_bugzilla_4(self):
+        # sample file for bugzilla #4
+        fp = file(os.path.join(ROOT, 'data', 'bugzilla_4.7z'), 'rb')
+        archive = Archive7z(fp)
+        filenames = archive.getnames()
+        for filename in filenames:
+            cf = archive.getmember(filename)
+            self.failUnlessEqual(len(cf.read()), cf.uncompressed)
+
 
 def test_main():
     from test import test_support
