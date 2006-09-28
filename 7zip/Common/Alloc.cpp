@@ -84,6 +84,7 @@ bool SetLargePageSize()
   return true;
 }
 
+#ifdef MEM_LARGE_PAGES
 
 void *BigAlloc(size_t size) throw()
 {
@@ -114,5 +115,7 @@ void BigFree(void *address) throw()
     return;
   ::VirtualFree(address, 0, MEM_RELEASE);
 }
+
+#endif
 
 #endif

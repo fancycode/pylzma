@@ -358,5 +358,5 @@ PyTypeObject CDecompressionObject_Type = {
     0,                                   /* tp_dictoffset */
     (initproc)pylzma_decomp_init,        /* tp_init */
     0,                                   /* tp_alloc */
-    PyType_GenericNew,                   /* tp_new */
+    0,                                   /* tp_new */
 };

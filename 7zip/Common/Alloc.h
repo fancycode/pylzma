@@ -14,8 +14,13 @@ bool SetLargePageSize();
 
 void *MidAlloc(size_t size) throw();
 void MidFree(void *address) throw();
+#ifdef MEM_LARGE_PAGES
 void *BigAlloc(size_t size) throw();
 void BigFree(void *address) throw();
+#else
+#define BigAlloc(size) MidAlloc(size)
+#define BigFree(address) MidFree(address)
+#endif
 
 #else
 

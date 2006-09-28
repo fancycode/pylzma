@@ -68,6 +68,8 @@ DL_EXPORT(void) initpylzma(void)
 {
     PyObject *m, *d;
 
+    CDecompressionObject_Type.tp_new = PyType_GenericNew;
+    
     if (PyType_Ready(&CDecompressionObject_Type) < 0)
         return;
     

@@ -94,10 +94,7 @@ class TestPyLZMA(unittest.TestCase):
 
     def test_matchfinders(self):
         # use different matchfinder algorithms for compression
-        matchfinders = ['bt2', 'bt3', 'bt4', 'bt4b', 'pat2r', 'pat2', 'pat2h', 'pat3h', 'pat4h', 'hc3', 'hc4']
-        if sys.platform == 'cygwin':
-            # XXX: the matchfinder "pat4h" results in a core dump when running on cygwin
-            matchfinders.remove('pat4h')
+        matchfinders = ['bt2', 'bt3', 'hc4']
         original = 'hello world'
         for mf in matchfinders:
             result = pylzma.decompress(pylzma.compress(original, matchfinder=mf))

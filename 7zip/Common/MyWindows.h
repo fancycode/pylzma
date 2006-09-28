@@ -7,7 +7,17 @@
 
 #include <windows.h>
 
+#define CHAR_PATH_SEPARATOR '\\'
+#define WCHAR_PATH_SEPARATOR L'\\'
+#define STRING_PATH_SEPARATOR "\\"
+#define WSTRING_PATH_SEPARATOR L"\\"
+
 #else
+
+#define CHAR_PATH_SEPARATOR '/'
+#define WCHAR_PATH_SEPARATOR L'/'
+#define STRING_PATH_SEPARATOR "/"
+#define WSTRING_PATH_SEPARATOR L"/"
 
 #include <stddef.h> // for wchar_t
 #include <string.h>
@@ -16,10 +26,14 @@
 
 typedef char CHAR;
 typedef unsigned char UCHAR;
+
+#undef BYTE
 typedef unsigned char BYTE;
 
 typedef short SHORT;
 typedef unsigned short USHORT;
+
+#undef WORD
 typedef unsigned short WORD;
 typedef short VARIANT_BOOL;
 
@@ -29,6 +43,8 @@ typedef unsigned int UINT;
 typedef UInt32 UINT32;
 typedef INT32 LONG;   // LONG, ULONG and DWORD must be 32-bit
 typedef UINT32 ULONG;
+
+#undef DWORD
 typedef UINT32 DWORD;
 
 typedef Int64 LONGLONG;
@@ -60,6 +76,7 @@ typedef LONG SCODE;
 
 #define S_OK    ((HRESULT)0x00000000L)
 #define S_FALSE ((HRESULT)0x00000001L)
+#define E_NOTIMPL ((HRESULT)0x80004001L)
 #define E_NOINTERFACE ((HRESULT)0x80004002L)
 #define E_ABORT ((HRESULT)0x80004004L)
 #define E_FAIL ((HRESULT)0x80004005L)

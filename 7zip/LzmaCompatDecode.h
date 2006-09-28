@@ -9,6 +9,8 @@ Converted to a state machine by Amir Szekely
 #ifndef __LZMADECODE_H
 #define __LZMADECODE_H
 
+#include "LzmaTypes.h"
+
 /***********************
  *    Configuration    *
  ***********************/
@@ -58,13 +60,13 @@ extern "C" {
 #endif
 #endif
 
+#ifndef CProb
 #ifdef _LZMA_PROB32
 #define CProb UInt32
 #else
 #define CProb unsigned short
 #endif
-
-typedef unsigned char Byte;
+#endif
 
 #define LZMA_STREAM_END 1
 #define LZMA_OK 0
