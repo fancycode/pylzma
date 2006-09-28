@@ -24,7 +24,14 @@
 #
 import sys, os
 from warnings import warn
-from distutils.core import setup, Extension
+
+# set this to True to create an egg package
+BUILD_EGG = False
+
+if BUILD_EGG:
+    from setuptools import setup, Extension
+else:
+    from distutils.core import setup, Extension
 
 PYTHON_VERSION=sys.version[:3]
 PYTHON_PREFIX=sys.prefix
@@ -115,6 +122,7 @@ setup (name = "pylzma",
        author = "Joachim Bauch",
        author_email = "mail@joachim-bauch.de",
        url = "http://www.joachim-bauch.de",
+       license = 'LGPL',
        py_modules=modules,
        ext_modules=extens,
        )
