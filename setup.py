@@ -93,7 +93,10 @@ if 'win' in sys.platform:
     macros.append(('WIN32', 1))
     if COMPILE_DEBUG:
         compile_args.append('/Zi')
+        compile_args.append('/MTd')
         link_args.append('/DEBUG')
+    else:
+        compile_args.append('/MT')
 if not 'win' in sys.platform:
     # disable gcc warning about virtual functions with non-virtual destructors
     compile_args.append(('-Wno-non-virtual-dtor'))
