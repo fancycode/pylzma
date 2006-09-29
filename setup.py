@@ -25,11 +25,14 @@
 import sys, os
 from warnings import warn
 
-# set this to True to create an egg package
-BUILD_EGG = False
+# are we building an egg package?
+BUILD_EGG = 'bdist_egg' in sys.argv
 
+kw = {}
 if BUILD_EGG:
     from setuptools import setup, Extension
+    kw['test_suite'] = 'tests'
+    kw['zip_safe'] = False
 else:
     from distutils.core import setup, Extension
 
@@ -81,6 +84,8 @@ please contact mail@joachim-bauch.de for more informations.""" % (sys.platform),
     ENABLE_MULTITHREADING = 0    
 
 descr = "Python bindings for the LZMA library by Igor Pavlov."
+long_descr = """PyLZMA provides a platform independent way to read and write data
+that has been compressed or can be decompressed by the LZMA library by Igor Pavlov."""
 try: version = open('version.txt', 'rb').read().strip()
 except: version = 'unknown'
 modules = ['py7zlib']
@@ -119,15 +124,33 @@ extens=[Extension('pylzma', c_files, include_dirs=include_dirs, libraries=librar
                   library_dirs=library_dirs, define_macros=macros, extra_compile_args=compile_args,
                   extra_link_args=link_args)] 
 
-setup (name = "pylzma",
-       version = version,
-       description = descr,
-       author = "Joachim Bauch",
-       author_email = "mail@joachim-bauch.de",
-       url = "http://www.joachim-bauch.de",
-       license = 'LGPL',
-       py_modules=modules,
-       ext_modules=extens,
-       )
+if sys.platform == 'win32':
+    operating_system = 'Microsoft :: Windows'
+else:
+    operating_system = 'POSIX :: Linux'
+
+setup(
+    name = "pylzma",
+    version = version,
+    description = descr,
+    author = "Joachim Bauch",
+    author_email = "mail@joachim-bauch.de",
+    url = "http://www.joachim-bauch.de",
+    license = 'LGPL',
+    keywords = "lzma compression",
+    long_description = long_descr,
+    platforms = sys.platform,
+    classifiers = [
+        'Development Status :: 5 - Production/Stable',
+        'Programming Language :: Python',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)',
+        'Operating System :: %s' % operating_system,
+    ],
+    py_modules = modules,
+    ext_modules = extens,
+    **kw
+)
 
 sys.exit(0)
