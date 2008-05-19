@@ -25,16 +25,10 @@
 import sys, os
 from warnings import warn
 
-# are we building an egg package?
-BUILD_EGG = 'bdist_egg' in sys.argv or 'upload' in sys.argv
+from ez_setup import use_setuptools
+use_setuptools()
 
-kw = {}
-if BUILD_EGG:
-    from setuptools import setup, Extension
-    kw['test_suite'] = 'tests'
-    kw['zip_safe'] = False
-else:
-    from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 PYTHON_VERSION=sys.version[:3]
 PYTHON_PREFIX=sys.prefix
@@ -117,12 +111,13 @@ if ENABLE_COMPATIBILITY:
     c_files += ('pylzma_decompress_compat.c', 'pylzma_decompressobj_compat.c', )
     lzma_files += ('7zip/LzmaCompatDecode.c', )
     macros.append(('WITH_COMPAT', 1))
-join = os.path.join
-normalize = os.path.normpath
-c_files += map(lambda x: normalize(join('.', x)), lzma_files)
-extens=[Extension('pylzma', c_files, include_dirs=include_dirs, libraries=libraries,
-                  library_dirs=library_dirs, define_macros=macros, extra_compile_args=compile_args,
-                  extra_link_args=link_args)] 
+
+c_files += [os.path.normpath(os.path.join('.', x)) for x in lzma_files]
+extens = [
+    Extension('pylzma', c_files, include_dirs=include_dirs, libraries=libraries,
+              library_dirs=library_dirs, define_macros=macros, extra_compile_args=compile_args,
+              extra_link_args=link_args),
+]
 
 if sys.platform == 'win32':
     operating_system = 'Microsoft :: Windows'
@@ -135,7 +130,7 @@ setup(
     description = descr,
     author = "Joachim Bauch",
     author_email = "mail@joachim-bauch.de",
-    url = "http://www.joachim-bauch.de",
+    url = "http://www.joachim-bauch.de/projects/python/pylzma/",
     license = 'LGPL',
     keywords = "lzma compression",
     long_description = long_descr,
@@ -150,7 +145,6 @@ setup(
     ],
     py_modules = modules,
     ext_modules = extens,
-    **kw
+    test_suite = 'tests',
+    zip_safe = False,
 )
-
-sys.exit(0)
