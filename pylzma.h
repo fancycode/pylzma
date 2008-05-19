@@ -32,7 +32,7 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-#define BLOCK_SIZE 65536
+#define BLOCK_SIZE (128*1024)
 
 #define CHECK_NULL(a) if ((a) == NULL) { PyErr_NoMemory(); goto exit; }
 #define DEC_AND_NULL(a) { Py_XDECREF(a); a = NULL; }

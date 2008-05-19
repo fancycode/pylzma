@@ -214,7 +214,7 @@ PyTypeObject CCompressionFileObject_Type = {
     //PyObject_HEAD_INIT(&PyType_Type)
     PyObject_HEAD_INIT(NULL)
     0,
-    "LZMACompressFile",                  /* char *tp_name; */
+    "pylzma.compressfile",                  /* char *tp_name; */
     sizeof(CCompressionFileObject),      /* int tp_basicsize; */
     0,                                   /* int tp_itemsize;       // not used much */
     (destructor)pylzma_compfile_dealloc, /* destructor tp_dealloc; */
@@ -232,7 +232,7 @@ PyTypeObject CCompressionFileObject_Type = {
     0,                                   /* tp_getattro*/
     0,                                   /* tp_setattro*/
     0,                                   /* tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,  /*tp_flags*/
+    Py_TPFLAGS_DEFAULT,  /*tp_flags*/
     "File compression class",           /* tp_doc */
     0,                                   /* tp_traverse */
     0,                                   /* tp_clear */

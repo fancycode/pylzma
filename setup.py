@@ -26,7 +26,7 @@ import sys, os
 from warnings import warn
 
 # are we building an egg package?
-BUILD_EGG = 'bdist_egg' in sys.argv
+BUILD_EGG = 'bdist_egg' in sys.argv or 'upload' in sys.argv
 
 kw = {}
 if BUILD_EGG:
