@@ -24,9 +24,9 @@
  */
 
 #include <Python.h>
-#include <7zip/Common/MyWindows.h>
-#include <7zip/7zip/IStream.h>
-#include <7zip/7zip/Compress/LZMA/LZMAEncoder.h>
+#include <src/CPP/Common/MyWindows.h>
+#include <src/CPP/7zip/IStream.h>
+#include <src/CPP/7zip/Compress/LZMA/LZMAEncoder.h>
 
 #include "pylzma.h"
 #include "pylzma_streams.h"

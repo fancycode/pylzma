@@ -27,7 +27,7 @@
 #define ___PYLZMA_DECOMPRESSOBJ__H___
 
 #include <Python.h>
-#include <7zip/LzmaStateDecode.h>
+#include <src/LzmaStateDecode.h>
 
 typedef struct {
     PyObject_HEAD

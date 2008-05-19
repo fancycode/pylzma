@@ -25,6 +25,6 @@
 
 // Initialize LZMA GUIDs
 #define INITGUID
-#include <7zip/Common/MyWindows.h>
-#include "7zip/7zip/ICoder.h"
-#include "7zip/7zip/Compress/LZ/IMatchFinder.h"
+#include <src/CPP/Common/MyWindows.h>
+#include "src/CPP/7zip/ICoder.h"
+#include "src/CPP/7zip/Compress/LZ/IMatchFinder.h"

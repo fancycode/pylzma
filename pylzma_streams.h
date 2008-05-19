@@ -27,9 +27,9 @@
 #define ___PYLZMA_STREAMS__H___
 
 #include <Python.h>
-#include <7zip/Common/MyWindows.h>
-#include <7zip/7zip/IStream.h>
-#include <7zip/Common/MyCom.h>
+#include <src/CPP/Common/MyWindows.h>
+#include <src/CPP/7zip/IStream.h>
+#include <src/CPP/Common/MyCom.h>
 
 class CInStream :
     public ISequentialInStream,

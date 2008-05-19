@@ -26,7 +26,7 @@
 #ifndef ___PYLZMA_ENCODER__H___
 #define ___PYLZMA_ENCODER__H___
 
-#include <7zip/7zip/Compress/LZMA/LZMAEncoder.h>
+#include <src/CPP/7zip/Compress/LZMA/LZMAEncoder.h>
 
 namespace NCompress {
 namespace NLZMA {

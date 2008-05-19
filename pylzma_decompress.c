@@ -24,7 +24,7 @@
  */
 
 #include <Python.h>
-#include <7zip/LzmaStateDecode.h>
+#include <src/LzmaStateDecode.h>
 
 #include "pylzma.h"
 

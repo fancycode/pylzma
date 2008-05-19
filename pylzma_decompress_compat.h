@@ -27,7 +27,7 @@
 #define ___PYLZMA_DECOMPRESS_COMPAT__H___
 
 #include <Python.h>
-#include <7zip/LzmaCompatDecode.h>
+#include <src/LzmaCompatDecode.h>
 
 extern const char doc_decompress_compat[];
 void free_lzma_stream(lzma_stream *stream);

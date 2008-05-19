@@ -27,7 +27,7 @@
 #define ___PYLZMA_DECOMPRESS__H___
 
 #include <Python.h>
-#include <7zip/LzmaStateDecode.h>
+#include <src/LzmaStateDecode.h>
 
 extern const char doc_decompress[];
 void free_lzma_state(CLzmaDecoderState *stream);

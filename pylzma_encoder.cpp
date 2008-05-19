@@ -26,8 +26,8 @@
 #include <stdio.h>
 #include "Platform.h"
 #include "pylzma_encoder.h"
-#include <7zip/7zip/Compress/LZMA/LZMAEncoder.h>
-#include <7zip/7zip/Compress/LZ/LZInWindow.h>
+#include <src/CPP/7zip/Compress/LZMA/LZMAEncoder.h>
+#include <src/CPP/7zip/Compress/LZ/LZInWindow.h>
 
 namespace NCompress {
 namespace NLZMA {

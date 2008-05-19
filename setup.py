@@ -101,15 +101,15 @@ if not 'win' in sys.platform:
     compile_args.append(('-Wno-non-virtual-dtor'))
 if ENABLE_MULTITHREADING:
     macros.append(('COMPRESS_MF_MT', 1))
-lzma_files = ('7zip/LzmaStateDecode.c', '7zip/7zip/Compress/LZMA/LZMAEncoder.cpp',
-    '7zip/7zip/Compress/RangeCoder/RangeCoderBit.cpp', '7zip/Common/CRC.cpp',
-    '7zip/7zip/Compress/LZ/LZInWindow.cpp', '7zip/7zip/Common/StreamUtils.cpp',
-    '7zip/7zip/Common/OutBuffer.cpp', '7zip/Common/Alloc.cpp', '7zip/Common/NewHandler.cpp', )
+lzma_files = ('src/LzmaStateDecode.c', 'src/CPP/7zip/Compress/LZMA/LZMAEncoder.cpp',
+    'src/CPP/7zip/Compress/RangeCoder/RangeCoderBit.cpp', 'src/CPP/Common/CRC.cpp',
+    'src/CPP/7zip/Compress/LZ/LZInWindow.cpp', 'src/CPP/7zip/Common/StreamUtils.cpp',
+    'src/CPP/7zip/Common/OutBuffer.cpp', 'src/CPP/Common/Alloc.cpp', 'src/CPP/Common/NewHandler.cpp', )
 if ENABLE_MULTITHREADING:
-    lzma_files += ('7zip/7zip/Compress/LZ/MT/MT.cpp', '7zip/OS/Synchronization.cpp', )
+    lzma_files += ('src/CPP/7zip/Compress/LZ/MT/MT.cpp', 'src/CPP/OS/Synchronization.cpp', )
 if ENABLE_COMPATIBILITY:
     c_files += ('pylzma_decompress_compat.c', 'pylzma_decompressobj_compat.c', )
-    lzma_files += ('7zip/LzmaCompatDecode.c', )
+    lzma_files += ('src/LzmaCompatDecode.c', )
     macros.append(('WITH_COMPAT', 1))
 
 c_files += [os.path.normpath(os.path.join('.', x)) for x in lzma_files]
