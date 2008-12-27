@@ -55,7 +55,7 @@ PyMethodDef methods[] = {
     {NULL, NULL},
 };
 
-DL_EXPORT(void) initpylzma(void)
+PyMODINIT_FUNC initpylzma(void)
 {
     PyObject *m;
 
