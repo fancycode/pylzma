@@ -40,7 +40,11 @@ extern "C" {
 #endif
 
 #ifndef malloc
+# ifdef __APPLE__
+#include <malloc/malloc.h>
+# else
 #include <malloc.h>
+# endif
 #endif
 
 #ifndef UInt32

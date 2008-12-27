@@ -30,9 +30,6 @@ use_setuptools()
 
 from setuptools import setup, Extension
 
-PYTHON_VERSION=sys.version[:3]
-PYTHON_PREFIX=sys.prefix
-
 class UnsupportedPlatformWarning(Warning):
     pass
 
@@ -47,23 +44,18 @@ ENABLE_COMPATIBILITY = True
 # compile including debug symbols on Windows?
 COMPILE_DEBUG = False
 
-if os.name == 'posix':
-    # This is the directory, your Python is installed in. It must contain the header and include files.
-    PYTHON_INCLUDE_DIR="%s/include/python%s" % (PYTHON_PREFIX, PYTHON_VERSION)
-    PYTHON_LIB_DIR="%s/lib/python%s" % (PYTHON_PREFIX, PYTHON_VERSION)
-    libraries=[]
-else:
-    PYTHON_INCLUDE_DIR="%s\\include" % (PYTHON_PREFIX)
-    PYTHON_LIB_DIR="%s\\libs" % (PYTHON_PREFIX)
-    libraries=['user32', 'oleaut32']
+# are we running on Windows?
+IS_WINDOWS = sys.platform in ('win32', )
+
+libraries = []
+if IS_WINDOWS:
+    libraries += ['user32', 'oleaut32']
 
 include_dirs = [
-PYTHON_INCLUDE_DIR,
 ".",
 ]
 
 library_dirs = [
-PYTHON_LIB_DIR,
 ".",
 ]
 
@@ -88,7 +80,7 @@ c_files = ['pylzma.c', 'pylzma_decompressobj.c', 'pylzma_compressfile.cpp',
 compile_args = []
 link_args = []
 macros = []
-if 'win' in sys.platform:
+if IS_WINDOWS:
     macros.append(('WIN32', 1))
     if COMPILE_DEBUG:
         compile_args.append('/Zi')
@@ -96,7 +88,7 @@ if 'win' in sys.platform:
         link_args.append('/DEBUG')
     else:
         compile_args.append('/MT')
-if not 'win' in sys.platform:
+if not IS_WINDOWS:
     # disable gcc warning about virtual functions with non-virtual destructors
     compile_args.append(('-Wno-non-virtual-dtor'))
 if ENABLE_MULTITHREADING:
@@ -119,7 +111,7 @@ extens = [
               extra_link_args=link_args),
 ]
 
-if sys.platform == 'win32':
+if IS_WINDOWS:
     operating_system = 'Microsoft :: Windows'
 else:
     operating_system = 'POSIX :: Linux'
