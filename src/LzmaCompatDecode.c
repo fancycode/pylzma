@@ -61,7 +61,7 @@ enum {
 #define RC_NORMALIZE(c) if (range < kTopValue) { NEED_BYTE(c); range <<= 8; code = (code << 8) | NEXT_BYTE; }
 
 #define RC_GET_BIT2(c, prob, mi, A0, A1) { \
-  UInt32 bound = (range >> kNumBitModelTotalBits) * *prob; \
+  bound = (range >> kNumBitModelTotalBits) * *prob; \
   if (code < bound) \
     { A0; range = bound; *prob += (kBitModelTotal - *prob) >> kNumMoveBits; mi <<= 1; } \
   else \
@@ -136,6 +136,9 @@ void LZMACALL lzmaCompatInit(lzma_stream *s)
 
 int LZMACALL lzmaCompatDecode(lzma_stream *s)
 {
+  UInt32 bound;
+  UInt32 pos;
+  
   /* restore decoder state */
   lzma_stream _s = *s;
 
@@ -226,7 +229,7 @@ int LZMACALL lzmaCompatDecode(lzma_stream *s)
         if (p)
           lzmafree(p);
         //p = lzmaalloc(newDynamicDataSize);
-        _s.dynamicData = lzmaalloc(newDynamicDataSize);
+        _s.dynamicData = (Byte *) lzmaalloc(newDynamicDataSize);
         if (!p)
           return LZMA_NOT_ENOUGH_MEM;
         dynamicDataSize = newDynamicDataSize;
@@ -249,7 +252,7 @@ int LZMACALL lzmaCompatDecode(lzma_stream *s)
         dictionarySize = newDictionarySize;
         if (dictionary)
           lzmafree(dictionary);
-        dictionary = lzmaalloc(dictionarySize);
+        dictionary = (Byte *) lzmaalloc(dictionarySize);
         if (!dictionary)
           return LZMA_NOT_ENOUGH_MEM;
       }
@@ -276,7 +279,7 @@ int LZMACALL lzmaCompatDecode(lzma_stream *s)
       else state -= 6;
       if (isPreviousMatch)
       {
-        UInt32 pos = dictionaryPos - rep0;
+        pos = dictionaryPos - rep0;
         if (pos >= dictionarySize)
           pos += dictionarySize;
         matchByte = dictionary[pos];
@@ -334,7 +337,6 @@ int LZMACALL lzmaCompatDecode(lzma_stream *s)
           DECODE_BIT(LZMA_C_ISREP0LONG, p + IsRep0Long + (state << kNumPosBitsMax) + posState);
           if (bit == 0)
           {
-            UInt32 pos;
             if (totalOut == 0)
               return LZMA_DATA_ERROR;
             state = state < 7 ? 9 : 11;
@@ -449,7 +451,6 @@ int LZMACALL lzmaCompatDecode(lzma_stream *s)
       len += kMatchMinLen;
       do
       {
-        UInt32 pos;
         NEED_OUT(LZMA_C_OUTPUT_3);
         pos = dictionaryPos - rep0;
         if (pos >= dictionarySize)
