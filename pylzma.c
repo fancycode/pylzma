@@ -75,7 +75,6 @@ DL_EXPORT(void) initpylzma(void)
     Py_INCREF(&CCompressionFileObject_Type);
     PyModule_AddObject(m, "compressfile", (PyObject *)&CCompressionFileObject_Type);
     
-    PyModule_GetDict(m);
     PycString_IMPORT;
 
 #if defined(WITH_THREAD)
