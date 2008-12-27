@@ -41,15 +41,6 @@
 PyInterpreterState* _pylzma_interpreterState = NULL;
 #endif
 
-static void insint(PyObject *d, char *name, int value)
-{
-    PyObject *v = PyInt_FromLong((long) value);
-    if (!v || PyDict_SetItemString(d, name, v))
-        PyErr_Clear();
-
-    Py_XDECREF(v);
-}
-
 PyMethodDef methods[] = {
     // exported functions
     {"compress",      (PyCFunction)pylzma_compress,      METH_VARARGS | METH_KEYWORDS, (char *)&doc_compress},
@@ -66,7 +57,7 @@ PyMethodDef methods[] = {
 
 DL_EXPORT(void) initpylzma(void)
 {
-    PyObject *m, *d;
+    PyObject *m;
 
     CDecompressionObject_Type.tp_new = PyType_GenericNew;
     
@@ -84,7 +75,7 @@ DL_EXPORT(void) initpylzma(void)
     Py_INCREF(&CCompressionFileObject_Type);
     PyModule_AddObject(m, "compressfile", (PyObject *)&CCompressionFileObject_Type);
     
-    d = PyModule_GetDict(m);
+    PyModule_GetDict(m);
     PycString_IMPORT;
 
 #if defined(WITH_THREAD)
