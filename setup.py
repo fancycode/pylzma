@@ -55,6 +55,12 @@ include_dirs = [
 ".",
 ]
 
+if sys.platform == 'darwin':
+    # additional include directories are required when compiling on Darwin platforms
+    include_dirs += [
+        "/var/include",
+    ]
+
 library_dirs = [
 ".",
 ]
