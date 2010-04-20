@@ -62,20 +62,21 @@ static PyObject *pylzma_decomp_decompress(CDecompressionObject *self, PyObject *
 {
     PyObject *result=NULL;
     unsigned char *data, *next_in, *next_out;
-    int length, res;
-    SizeT avail_in, avail_out=BLOCK_SIZE;
+    int length, res, avail_out_param=BLOCK_SIZE;
+    SizeT avail_in, avail_out;
     unsigned char properties[LZMA_PROPERTIES_SIZE];
     SizeT inProcessed, outProcessed;
     
-    if (!PyArg_ParseTuple(args, "s#|l", &data, &length, &avail_out)){
+    if (!PyArg_ParseTuple(args, "s#|i", &data, &length, &avail_out_param)){
         return NULL;
     }
 
-    if (avail_out <= 0) {
+    if (avail_out_param <= 0) {
         PyErr_SetString(PyExc_ValueError, "bufsize must be greater than zero");
         return NULL;
     }
     
+    avail_out = avail_out_param;
     if (self->unconsumed_length > 0) {
         self->unconsumed_tail = (unsigned char *) realloc(self->unconsumed_tail, self->unconsumed_length + length);
         next_in = (unsigned char *) self->unconsumed_tail;

@@ -56,7 +56,7 @@ PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
     // possible keywords for this function
     static char *kwlist[] = {"data", "bufsize", "maxlength", NULL};
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|ll", kwlist, &data, &length, &blocksize, &totallength))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|ii", kwlist, &data, &length, &blocksize, &totallength))
         return NULL;
     
     memset(&state, 0, sizeof(state));

@@ -52,7 +52,7 @@ PyObject *pylzma_decompress_compat(PyObject *self, PyObject *args)
     int res;
     char *output;
     
-    if (!PyArg_ParseTuple(args, "s#|l", &data, &length, &blocksize))
+    if (!PyArg_ParseTuple(args, "s#|i", &data, &length, &blocksize))
         return NULL;
     
     memset(&stream, 0, sizeof(stream));

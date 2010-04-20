@@ -54,7 +54,7 @@ static PyObject *pylzma_comp_compress(CCompressionObject *self, PyObject *args)
     int length, bufsize=BLOCK_SIZE, finished;
     UINT64 inSize, outSize;
     
-    if (!PyArg_ParseTuple(args, "s#|l", &data, &length, &bufsize))
+    if (!PyArg_ParseTuple(args, "s#|i", &data, &length, &bufsize))
         return NULL;
     
     if (!self->inStream->AppendData((BYTE *)data, length))

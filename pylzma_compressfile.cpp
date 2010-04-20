@@ -54,7 +54,7 @@ static PyObject *pylzma_compfile_read(CCompressionFileObject *self, PyObject *ar
     PyObject *result = NULL;
     int length, bufsize=0;
     
-    if (!PyArg_ParseTuple(args, "|l", &bufsize))
+    if (!PyArg_ParseTuple(args, "|i", &bufsize))
         return NULL;
     
     while (!bufsize || self->outStream->getMaxRead() < bufsize)
