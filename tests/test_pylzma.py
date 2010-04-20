@@ -26,7 +26,7 @@ import sys, random
 try:
     from hashlib import md5
 except ImportError:
-    import md5
+    from md5 import new as md5
 import pylzma
 import unittest
 from binascii import unhexlify
@@ -80,7 +80,7 @@ class TestPyLZMA(unittest.TestCase):
             original = generate_random(size)
             result = pylzma.decompress(pylzma.compress(original, eos=1))
             self.assertEqual(len(result), size)
-            self.assertEqual(md5.new(original).hexdigest(), md5.new(result).hexdigest())
+            self.assertEqual(md5(original).hexdigest(), md5(result).hexdigest())
 
     def test_compression_decompression_noeos(self):
         # call compression and decompression on random data of various sizes
@@ -88,7 +88,7 @@ class TestPyLZMA(unittest.TestCase):
             size = 1 << i
             original = generate_random(size)
             result = pylzma.decompress(pylzma.compress(original, eos=0), maxlength=size)
-            self.assertEqual(md5.new(original).hexdigest(), md5.new(result).hexdigest())
+            self.assertEqual(md5(original).hexdigest(), md5(result).hexdigest())
 
     def test_multi(self):
         # call compression and decompression multiple times to detect memory leaks...

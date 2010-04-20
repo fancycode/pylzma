@@ -25,7 +25,7 @@
 try:
     from hashlib import md5
 except ImportError:
-    import md5
+    from md5 import new as md5
 import random
 import pylzma
 import unittest
@@ -65,7 +65,7 @@ class TestPyLZMACompability(unittest.TestCase):
             size = 1 << i
             original = generate_random(size)
             result = pylzma.decompress_compat(pylzma.compress(original, eos=0))[:size]
-            self.assertEqual(md5.new(original).hexdigest(), md5.new(result).hexdigest())
+            self.assertEqual(md5(original).hexdigest(), md5(result).hexdigest())
 
     def test_multi(self):
         # call compression and decompression multiple times to detect memory leaks...
