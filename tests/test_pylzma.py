@@ -22,7 +22,11 @@
 #
 # $Id$
 #
-import sys, md5, random
+import sys, random
+try:
+    from hashlib import md5
+except ImportError:
+    import md5
 import pylzma
 import unittest
 from binascii import unhexlify
@@ -229,9 +233,18 @@ class TestPyLZMA(unittest.TestCase):
         outfile.write(decompress.flush())
         self.failUnless(data == outfile.getvalue())
 
-def test_main():
-    from test import test_support
-    test_support.run_unittest(TestPyLZMA)
 
-if __name__ == "__main__":
-    unittest.main()
+def suite():
+    suite = unittest.TestSuite()
+
+    test_cases = [
+        TestPyLZMA,
+    ]
+
+    for tc in test_cases:
+        suite.addTest(unittest.makeSuite(tc))
+
+    return suite
+
+if __name__ == '__main__':
+    unittest.main(defaultTest='suite')

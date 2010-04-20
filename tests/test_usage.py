@@ -35,7 +35,7 @@ if sys.version_info[:2] < (2,4):
 ROOT = os.path.abspath(os.path.split(__file__)[0])
 sys.path.insert(0, ROOT)
 
-def test_suite():
+def suite():
     return doctest.DocFileSuite(USAGE_FILE)
 
 def test_main():
@@ -43,4 +43,4 @@ def test_main():
 
 if __name__ == "__main__":
     runner = unittest.TextTestRunner()
-    runner.run(test_suite())
+    runner.run(suite())

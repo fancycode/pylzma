@@ -143,6 +143,6 @@ setup(
     ],
     py_modules = modules,
     ext_modules = extens,
-    test_suite = 'tests',
+    test_suite = 'tests.suite',
     zip_safe = False,
 )

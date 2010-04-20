@@ -22,7 +22,11 @@
 #
 # $Id$
 #
-import md5, random
+try:
+    from hashlib import md5
+except ImportError:
+    import md5
+import random
 import pylzma
 import unittest
 from binascii import unhexlify
@@ -68,9 +72,17 @@ class TestPyLZMACompability(unittest.TestCase):
         for x in xrange(4):
             self.test_compression_decompression_noeos()
 
-def test_main():
-    from test import test_support
-    test_support.run_unittest(TestPyLZMACompability)
+def suite():
+    suite = unittest.TestSuite()
 
-if __name__ == "__main__":
-    unittest.main()
+    test_cases = [
+        TestPyLZMACompability,
+    ]
+
+    for tc in test_cases:
+        suite.addTest(unittest.makeSuite(tc))
+
+    return suite
+
+if __name__ == '__main__':
+    unittest.main(defaultTest='suite')

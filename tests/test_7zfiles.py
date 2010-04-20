@@ -91,9 +91,17 @@ class Test7ZipFiles(unittest.TestCase):
             self.failUnlessEqual(len(cf.read()), cf.uncompressed)
 
 
-def test_main():
-    from test import test_support
-    test_support.run_unittest(Test7ZipFiles)
+def suite():
+    suite = unittest.TestSuite()
 
-if __name__ == "__main__":
-    unittest.main()
+    test_cases = [
+        Test7ZipFiles,
+    ]
+
+    for tc in test_cases:
+        suite.addTest(unittest.makeSuite(tc))
+
+    return suite
+
+if __name__ == '__main__':
+    unittest.main(defaultTest='suite')
