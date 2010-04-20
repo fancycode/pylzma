@@ -56,11 +56,13 @@ public:
     CInStream()
     {
         SetData(NULL, 0);
+        allocated  = false;
     }
 
     CInStream(PyObject *source)
     {
         SetData(NULL, 0);
+        allocated  = false;
         sourceFile = source;
     }
 
