@@ -24,9 +24,9 @@
  */
 
 #include <Python.h>
-#include <src/LzmaCompatDecode.h>
 
 #include "pylzma.h"
+#include "pylzma_decompress_compat.h"
 
 void free_lzma_stream(lzma_stream *stream)
 {

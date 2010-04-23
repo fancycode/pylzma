@@ -107,7 +107,7 @@ if ENABLE_MULTITHREADING:
     lzma_files += ('src/CPP/7zip/Compress/LZ/MT/MT.cpp', 'src/CPP/OS/Synchronization.cpp', )
 if ENABLE_COMPATIBILITY:
     c_files += ('pylzma_decompress_compat.c', 'pylzma_decompressobj_compat.c', )
-    lzma_files += ('src/LzmaCompatDecode.c', )
+    lzma_files += ('src/compat/LzmaCompatDecode.c', )
     macros.append(('WITH_COMPAT', 1))
 
 c_files += [os.path.normpath(os.path.join('.', x)) for x in lzma_files]
