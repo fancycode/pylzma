@@ -1,10 +1,9 @@
 Python bindings for LZMA
 ------------------------
 
-PyLZMA Copyright (C) 2004-2008 Joachim Bauch
-Initial Linux port of LZMA encoder Copyright (C) 1999-2004 Nullsoft, Inc.
-7-Zip Copyright (C) 1999-2005 Igor Pavlov
-LZMA SDK Copyright (C) 1999-2005 Igor Pavlov
+PyLZMA Copyright (C) 2004-2010 Joachim Bauch
+7-Zip Copyright (C) 1999-2010 Igor Pavlov
+LZMA SDK Copyright (C) 1999-2010 Igor Pavlov
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
