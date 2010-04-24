@@ -67,34 +67,6 @@ multithreading
 
   Currently, multithreading is only available on Windows platforms.
 
-matchfinder
-  Matchfinder algorithm to use.  Possible values are bt2, bt3, bt4, bt4b,
-  pat2r, pat2, pat2h, pat3h, pat4h, hc3, hc4 (Default: bt4).
-
-  Compression ratio for all bt* and pat* almost the same.  Algorithms from hc*
-  group don't provide good compression ratio, but they often work pretty fast
-  in combination with fast mode (algorithm=0).  Methods from bt* group require
-  less memory than methods from pat* group.  Usually bt4 works faster than
-  any pat*, but for some types of files pat* can work faster.
-
-  Memory requirements depend from dictionary size (parameter "d" in table below). 
-
-  =====  ============  =======================================================
-  MF_ID  Memory        Description
-  =====  ============  =======================================================
-  bt2    d*9.5 +  1MB  Binary Tree with 2 bytes hashing.
-  bt3    d*9.5 + 65MB  Binary Tree with 2-3(full) bytes hashing.
-  bt4    d*9.5 +  6MB  Binary Tree with 2-3-4 bytes hashing.
-  bt4b   d*9.5 + 34MB  Binary Tree with 2-3-4(big) bytes hashing.
-  pat2r  d*26  +  1MB  Patricia Tree with 2-bits nodes, removing.
-  pat2   d*38  +  1MB  Patricia Tree with 2-bits nodes.
-  pat2h  d*38  + 77MB  Patricia Tree with 2-bits nodes, 2-3 bytes hashing.
-  pat3h  d*62  + 85MB  Patricia Tree with 3-bits nodes, 2-3 bytes hashing.
-  pat4h  d*110 +101MB  Patricia Tree with 4-bits nodes, 2-3 bytes hashing.
-  hc3    d*5.5 +  1MB  Hash Chain with 2-3 bytes hashing.
-  hc4    d*5.5 +  6MB  Hash Chain with 2-3-4 bytes hashing.
-  =====  ============  =======================================================
-
 eos
   Should the `End Of Stream` marker be written? (Default yes)
   You can save some bytes if the marker is omitted, but the total uncompressed

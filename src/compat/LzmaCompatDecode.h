@@ -9,7 +9,7 @@ Converted to a state machine by Amir Szekely
 #ifndef __LZMADECODE_H
 #define __LZMADECODE_H
 
-#include "../LzmaTypes.h"
+#include "../sdk/Types.h"
 
 /***********************
  *    Configuration    *

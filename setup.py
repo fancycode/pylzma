@@ -51,9 +51,7 @@ libraries = []
 if IS_WINDOWS:
     libraries += ['user32', 'oleaut32']
 
-include_dirs = [
-".",
-]
+include_dirs = []
 
 if sys.platform == 'darwin':
     # additional include directories are required when compiling on Darwin platforms
@@ -61,9 +59,7 @@ if sys.platform == 'darwin':
         "/var/include",
     ]
 
-library_dirs = [
-".",
-]
+library_dirs = []
 
 mt_platforms = (
     'win32',
@@ -73,7 +69,7 @@ if ENABLE_MULTITHREADING and not sys.platform in mt_platforms:
     warn("""\
 Multithreading is not supported on the platform "%s",
 please contact mail@joachim-bauch.de for more informations.""" % (sys.platform), UnsupportedPlatformWarning)
-    ENABLE_MULTITHREADING = 0    
+    ENABLE_MULTITHREADING = False
 
 descr = "Python bindings for the LZMA library by Igor Pavlov."
 long_descr = """PyLZMA provides a platform independent way to read and write data
@@ -81,8 +77,8 @@ that has been compressed or can be decompressed by the LZMA library by Igor Pavl
 try: version = open('version.txt', 'rb').read().strip()
 except: version = 'unknown'
 modules = ['py7zlib']
-c_files = ['pylzma.c', 'pylzma_decompressobj.c', 'pylzma_compressfile.cpp',
-           'pylzma_decompress.c', 'pylzma_compress.cpp', 'pylzma_guids.cpp']
+c_files = ['src/pylzma/pylzma.c', 'src/pylzma/pylzma_decompressobj.c', 'src/pylzma/pylzma_compressfile.c',
+           'src/pylzma/pylzma_decompress.c', 'src/pylzma/pylzma_compress.c', 'src/pylzma/pylzma_streams.c']
 compile_args = []
 link_args = []
 macros = []
@@ -94,19 +90,13 @@ if IS_WINDOWS:
         link_args.append('/DEBUG')
     else:
         compile_args.append('/MT')
-if not IS_WINDOWS:
-    # disable gcc warning about virtual functions with non-virtual destructors
-    compile_args.append(('-Wno-non-virtual-dtor'))
 if ENABLE_MULTITHREADING:
     macros.append(('COMPRESS_MF_MT', 1))
-lzma_files = ('src/LzmaStateDecode.c', 'src/CPP/7zip/Compress/LZMA/LZMAEncoder.cpp',
-    'src/CPP/7zip/Compress/RangeCoder/RangeCoderBit.cpp', 'src/CPP/Common/CRC.cpp',
-    'src/CPP/7zip/Compress/LZ/LZInWindow.cpp', 'src/CPP/7zip/Common/StreamUtils.cpp',
-    'src/CPP/7zip/Common/OutBuffer.cpp', 'src/CPP/Common/Alloc.cpp', 'src/CPP/Common/NewHandler.cpp', )
+lzma_files = ('src/sdk/LzFind.c', 'src/sdk/LzmaDec.c', 'src/sdk/LzmaEnc.c', )
 if ENABLE_MULTITHREADING:
-    lzma_files += ('src/CPP/7zip/Compress/LZ/MT/MT.cpp', 'src/CPP/OS/Synchronization.cpp', )
+    lzma_files += ('src/sdk/LzFindMt.c', 'src/sdk/Threads.c', )
 if ENABLE_COMPATIBILITY:
-    c_files += ('pylzma_decompress_compat.c', 'pylzma_decompressobj_compat.c', )
+    c_files += ('src/pylzma/pylzma_decompress_compat.c', 'src/pylzma/pylzma_decompressobj_compat.c', )
     lzma_files += ('src/compat/LzmaCompatDecode.c', )
     macros.append(('WITH_COMPAT', 1))
 

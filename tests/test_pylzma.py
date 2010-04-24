@@ -96,16 +96,6 @@ class TestPyLZMA(unittest.TestCase):
             self.test_compression_decompression_eos()
             self.test_compression_decompression_noeos()
 
-    def test_matchfinders(self):
-        # use different matchfinder algorithms for compression
-        matchfinders = ['bt2', 'bt3', 'hc4']
-        original = 'hello world'
-        for mf in matchfinders:
-            result = pylzma.decompress(pylzma.compress(original, matchfinder=mf))
-            self.assertEqual(original, result)
-            
-        self.failUnlessRaises(TypeError, pylzma.compress, original, matchfinder='1234')
-
     def test_decompression_stream(self):
         # test decompression object in one steps
         decompress = pylzma.decompressobj()
