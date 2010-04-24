@@ -24,97 +24,123 @@
  */
 
 #include <Python.h>
-#include <cStringIO.h>
 
 #include "../sdk/LzmaEnc.h"
-#include "../sdk/Types.h"
 
 #include "pylzma.h"
 #include "pylzma_streams.h"
-#include "pylzma_compress.h"
-#include "pylzma_compressfile.h"
 
 typedef struct {
     PyObject_HEAD
     CLzmaEncHandle encoder;
-    CPythonInStream inStream;
+    CMemoryInOutStream inStream;
     CMemoryOutStream outStream;
-    PyObject *inFile;
-} CCompressionFileObject;
+} CCompressionObject;
 
-static const char
-doc_compfile_read[] = \
+static char
+doc_comp_compress[] = \
     "docstring is todo\n";
 
 static PyObject *
-pylzma_compfile_read(CCompressionFileObject *self, PyObject *args)
+pylzma_comp_compress(CCompressionObject *self, PyObject *args)
 {
     PyObject *result = NULL;
-    int length, bufsize=0, res=SZ_OK;
+    char *data;
+    int length, bufsize=BLOCK_SIZE, res;
+    size_t before;
     
-    if (!PyArg_ParseTuple(args, "|i", &bufsize))
+    if (!PyArg_ParseTuple(args, "s#|i", &data, &length, &bufsize))
         return NULL;
-
-    while (!bufsize || self->outStream.size < bufsize)
-    {
-        Py_BEGIN_ALLOW_THREADS
+    
+    if (!MemoryInOutStreamAppend(&self->inStream, (Byte *) data, length)) {
+        return PyErr_NoMemory();
+    }
+    
+    Py_BEGIN_ALLOW_THREADS
+    while (1) {
+        before = self->inStream.avail;
         res = LzmaEnc_CodeOneBlock(self->encoder, False, 0, 0);
-        Py_END_ALLOW_THREADS
+        if (res != SZ_OK || self->outStream.size >= bufsize || self->inStream.avail == before) {
+            break;
+        }
+    }
+    Py_END_ALLOW_THREADS
+    if (res != SZ_OK) {
+        PyErr_Format(PyExc_TypeError, "Error during compressing: %d", res);
+        return NULL;
+    }
+    
+    length = min(self->outStream.size, bufsize);
+    result = PyString_FromStringAndSize((const char *)self->outStream.data, length);
+    if (result != NULL) {
+        MemoryOutStreamDiscard(&self->outStream, length);
+    }
+    
+    return result;
+}
+
+static char 
+doc_comp_flush[] = \
+    "flush() -- Finishes the compression and returns any remaining compressed data.";
+
+static PyObject *
+pylzma_comp_flush(CCompressionObject *self, PyObject *args)
+{
+    PyObject *result;
+    int res;
+    
+    Py_BEGIN_ALLOW_THREADS
+    while (1) {
+        res = LzmaEnc_CodeOneBlock(self->encoder, False, 0, 0);
         if (res != SZ_OK || LzmaEnc_IsFinished(self->encoder)) {
             break;
         }
     }
-    
-    if (LzmaEnc_IsFinished(self->encoder)) {
-        LzmaEnc_Finish(self->encoder);
+    Py_END_ALLOW_THREADS
+    if (res != SZ_OK) {
+        PyErr_Format(PyExc_TypeError, "Error during compressing: %d", res);
+        return NULL;
     }
     
-    if (bufsize)
-        length = min(bufsize, self->outStream.size);
-    else
-        length = self->outStream.size;
-    
-    result = PyString_FromStringAndSize((const char *)self->outStream.data, length);
-    if (result == NULL) {
-        PyErr_NoMemory();
-        goto exit;
+    LzmaEnc_Finish(self->encoder);
+    result = PyString_FromStringAndSize((const char *) self->outStream.data, self->outStream.size);
+    if (result != NULL) {
+        MemoryOutStreamDiscard(&self->outStream, self->outStream.size);
     }
     
-    MemoryOutStreamDiscard(&self->outStream, length);
-
-exit:
-
     return result;
 }
 
-static PyMethodDef
-pylzma_compfile_methods[] = {
-    {"read",   (PyCFunction)pylzma_compfile_read, METH_VARARGS, doc_compfile_read},
+PyMethodDef
+pylzma_comp_methods[] = {
+    {"compress",   (PyCFunction)pylzma_comp_compress, METH_VARARGS, doc_comp_compress},
+    {"flush",      (PyCFunction)pylzma_comp_flush,    METH_NOARGS,  doc_comp_flush},
     {NULL, NULL},
 };
 
 static void
-pylzma_compfile_dealloc(CCompressionFileObject *self)
+pylzma_comp_dealloc(CCompressionObject *self)
 {
-    DEC_AND_NULL(self->inFile);
     LzmaEnc_Destroy(self->encoder, &allocator, &allocator);
     if (self->outStream.data != NULL) {
         free(self->outStream.data);
     }
+    if (self->inStream.data != NULL) {
+        free(self->inStream.data);
+    }
     self->ob_type->tp_free((PyObject*)self);
 }
 
-static int
-pylzma_compfile_init(CCompressionFileObject *self, PyObject *args, PyObject *kwargs)
+int
+pylzma_comp_init(CCompressionObject *self, PyObject *args, PyObject *kwargs)
 {
-    PyObject *inFile;
     CLzmaEncProps props;
     Byte header[LZMA_PROPS_SIZE];
     size_t headerSize = LZMA_PROPS_SIZE;
-    int result = -1;
+    int result=-1;
     
     // possible keywords for this function
-    static char *kwlist[] = {"infile", "dictionary", "fastBytes", "literalContextBits",
+    static char *kwlist[] = {"dictionary", "fastBytes", "literalContextBits",
                              "literalPosBits", "posBits", "algorithm", "eos", "multithreading", "matchfinder", NULL};
     int dictionary = 23;         // [0,28], default 23 (8MB)
     int fastBytes = 128;         // [5,255], default 128
@@ -127,7 +153,7 @@ pylzma_compfile_init(CCompressionFileObject *self, PyObject *args, PyObject *kwa
     int algorithm = 2;
     int res;
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|iiiiiiiis", kwlist, &inFile, &dictionary, &fastBytes,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iiiiiiiis", kwlist, &dictionary, &fastBytes,
                                                                  &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos, &multithreading, &matchfinder))
         return -1;
     
@@ -136,31 +162,13 @@ pylzma_compfile_init(CCompressionFileObject *self, PyObject *args, PyObject *kwa
     CHECK_RANGE(literalContextBits, 0,   8, "literalContextBits must be between 0 and 8");
     CHECK_RANGE(literalPosBits,     0,   4, "literalPosBits must be between 0 and 4");
     CHECK_RANGE(posBits,            0,   4, "posBits must be between 0 and 4");
-    CHECK_RANGE(algorithm,          0,   2, "algorithm must be between 0 and 2");
-    
+
     if (matchfinder != NULL) {
         PyErr_WarnEx(PyExc_DeprecationWarning, "matchfinder selection is deprecated and will be ignored", 1);
     }
     
-    if (PyString_Check(inFile)) {
-        // create new cStringIO object from string
-        inFile = PycStringIO->NewInput(inFile);
-        if (inFile == NULL)
-        {
-            PyErr_NoMemory();
-            return -1;
-        }
-    } else if (!PyObject_HasAttrString(inFile, "read")) {
-        PyErr_SetString(PyExc_ValueError, "first parameter must be a file-like object");
-        return -1;
-    } else {
-        // protect object from being refcounted out...
-        Py_INCREF(inFile);
-    }
-    
     self->encoder = LzmaEnc_Create(&allocator);
     if (self->encoder == NULL) {
-        Py_DECREF(inFile);
         PyErr_NoMemory();
         return -1;
     }
@@ -181,13 +189,11 @@ pylzma_compfile_init(CCompressionFileObject *self, PyObject *args, PyObject *kwa
     LzmaEncProps_Normalize(&props);
     res = LzmaEnc_SetProps(self->encoder, &props);
     if (res != SZ_OK) {
-        Py_DECREF(inFile);
         PyErr_Format(PyExc_TypeError, "could not set encoder properties: %d", res);
         return -1;
     }
 
-    self->inFile = inFile;
-    CreatePythonInStream(&self->inStream, inFile);
+    CreateMemoryInOutStream(&self->inStream);
     CreateMemoryOutStream(&self->outStream);
 
     LzmaEnc_WriteProperties(self->encoder, header, &headerSize);
@@ -204,14 +210,14 @@ exit:
 }
 
 PyTypeObject
-CCompressionFileObject_Type = {
+CCompressionObject_Type = {
     //PyObject_HEAD_INIT(&PyType_Type)
     PyObject_HEAD_INIT(NULL)
     0,
-    "pylzma.compressfile",                  /* char *tp_name; */
-    sizeof(CCompressionFileObject),      /* int tp_basicsize; */
+    "pylzma.compressobj",                /* char *tp_name; */
+    sizeof(CCompressionObject),          /* int tp_basicsize; */
     0,                                   /* int tp_itemsize;       // not used much */
-    (destructor)pylzma_compfile_dealloc, /* destructor tp_dealloc; */
+    (destructor)pylzma_comp_dealloc,     /* destructor tp_dealloc; */
     NULL,                                /* printfunc  tp_print;   */
     NULL,                                /* getattrfunc  tp_getattr; // __getattr__ */
     NULL,                                /* setattrfunc  tp_setattr;  // __setattr__ */
@@ -227,14 +233,14 @@ CCompressionFileObject_Type = {
     0,                                   /* tp_setattro*/
     0,                                   /* tp_as_buffer*/
     Py_TPFLAGS_DEFAULT,  /*tp_flags*/
-    "File compression class",           /* tp_doc */
+    "Compression class",                 /* tp_doc */
     0,                                   /* tp_traverse */
     0,                                   /* tp_clear */
     0,                                   /* tp_richcompare */
     0,                                   /* tp_weaklistoffset */
     0,                                   /* tp_iter */
     0,                                   /* tp_iternext */
-    pylzma_compfile_methods,             /* tp_methods */
+    pylzma_comp_methods,                 /* tp_methods */
     0,                                   /* tp_members */
     0,                                   /* tp_getset */
     0,                                   /* tp_base */
@@ -242,7 +248,7 @@ CCompressionFileObject_Type = {
     0,                                   /* tp_descr_get */
     0,                                   /* tp_descr_set */
     0,                                   /* tp_dictoffset */
-    (initproc)pylzma_compfile_init,      /* tp_init */
+    (initproc)pylzma_comp_init,          /* tp_init */
     0,                                   /* tp_alloc */
     0,                                   /* tp_new */
 };

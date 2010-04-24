@@ -30,7 +30,9 @@
 #include "pylzma_compress.h"
 #include "pylzma_decompress.h"
 #include "pylzma_decompressobj.h"
+#if 0
 #include "pylzma_compressobj.h"
+#endif
 #include "pylzma_compressfile.h"
 #ifdef WITH_COMPAT
 #include "pylzma_decompress_compat.h"
@@ -46,8 +48,6 @@ methods[] = {
     // exported functions
     {"compress",      (PyCFunction)pylzma_compress,      METH_VARARGS | METH_KEYWORDS, (char *)&doc_compress},
     {"decompress",    (PyCFunction)pylzma_decompress,    METH_VARARGS | METH_KEYWORDS, (char *)&doc_decompress},
-    // XXX: compression through an object doesn't work, yet
-    //{"compressobj",   (PyCFunction)pylzma_compressobj,   METH_VARARGS | METH_KEYWORDS, (char *)&doc_compressobj},
 #ifdef WITH_COMPAT
     // compatibility functions
     {"decompress_compat",    (PyCFunction)pylzma_decompress_compat,    METH_VARARGS | METH_KEYWORDS, (char *)&doc_decompress_compat},
@@ -68,7 +68,11 @@ initpylzma(void)
     CDecompressionObject_Type.tp_new = PyType_GenericNew;
     if (PyType_Ready(&CDecompressionObject_Type) < 0)
         return;
-    
+#if 0
+    CCompressionObject_Type.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&CCompressionObject_Type) < 0)
+        return;
+#endif
     CCompressionFileObject_Type.tp_new = PyType_GenericNew;
     if (PyType_Ready(&CCompressionFileObject_Type) < 0)
         return;
@@ -77,7 +81,10 @@ initpylzma(void)
 
     Py_INCREF(&CDecompressionObject_Type);
     PyModule_AddObject(m, "decompressobj", (PyObject *)&CDecompressionObject_Type);
-    
+#if 0
+    Py_INCREF(&CCompressionObject_Type);
+    PyModule_AddObject(m, "compressobj", (PyObject *)&CCompressionObject_Type);
+#endif   
     Py_INCREF(&CCompressionFileObject_Type);
     PyModule_AddObject(m, "compressfile", (PyObject *)&CCompressionFileObject_Type);
 

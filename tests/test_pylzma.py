@@ -154,8 +154,8 @@ class TestPyLZMA(unittest.TestCase):
         self.assertEqual(outfile.getvalue(), self.plain)
 
     def _test_compression_streaming(self):
-        # XXX: this doesn't work, yet
         # test compressing with one byte at a time...
+        # XXX: disabled as LZMA doesn't support streaming compression yet
         compress = pylzma.compressobj(eos=1)
         infile = StringIO(self.plain)
         outfile = StringIO()
@@ -222,7 +222,6 @@ class TestPyLZMA(unittest.TestCase):
             outfile.write(decompress.decompress(tmp))
         outfile.write(decompress.flush())
         self.failUnless(data == outfile.getvalue())
-
 
 def suite():
     suite = unittest.TestSuite()

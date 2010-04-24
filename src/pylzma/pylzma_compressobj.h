@@ -30,7 +30,6 @@ extern PyTypeObject CCompressionObject_Type;
 
 #define CompressionObject_Check(v)   ((v)->ob_type == &CCompressionObject_Type)
 
-extern const char doc_compressobj[];
 PyObject *pylzma_compressobj(PyObject *self, PyObject *args);
 
 #endif

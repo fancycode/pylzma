@@ -39,6 +39,11 @@ typedef struct
 
 void CreateMemoryInStream(CMemoryInStream *stream, Byte *data, size_t size);
 
+typedef CMemoryInStream CMemoryInOutStream;
+
+void CreateMemoryInOutStream(CMemoryInOutStream *stream);
+Bool MemoryInOutStreamAppend(CMemoryInOutStream *stream, Byte *data, size_t size);
+
 typedef struct
 {
     ISeqInStream s;
@@ -55,5 +60,6 @@ typedef struct
 } CMemoryOutStream;
 
 void CreateMemoryOutStream(CMemoryOutStream *stream);
+void MemoryOutStreamDiscard(CMemoryOutStream *stream, size_t size);
 
 #endif
