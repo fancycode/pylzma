@@ -26,6 +26,8 @@
 #include <Python.h>
 #include <cStringIO.h>
 
+#include "../sdk/7zVersion.h"
+
 #include "pylzma.h"
 #include "pylzma_compress.h"
 #include "pylzma_decompress.h"
@@ -87,6 +89,14 @@ initpylzma(void)
 #endif   
     Py_INCREF(&CCompressionFileObject_Type);
     PyModule_AddObject(m, "compressfile", (PyObject *)&CCompressionFileObject_Type);
+
+    PyModule_AddIntConstant(m, "SDK_VER_MAJOR", MY_VER_MAJOR);
+    PyModule_AddIntConstant(m, "SDK_VER_MINOR", MY_VER_MINOR);
+    PyModule_AddIntConstant(m, "SDK_VER_BUILD ", MY_VER_BUILD);
+    PyModule_AddStringConstant(m, "SDK_VERSION", MY_VERSION);
+    PyModule_AddStringConstant(m, "SDK_DATE", MY_DATE);
+    PyModule_AddStringConstant(m, "SDK_COPYRIGHT", MY_COPYRIGHT);
+    PyModule_AddStringConstant(m, "SDK_VERSION_COPYRIGHT_DATE", MY_VERSION_COPYRIGHT_DATE);
 
     PycString_IMPORT;
 
