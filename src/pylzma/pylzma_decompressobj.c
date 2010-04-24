@@ -161,7 +161,7 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
     avail_in -= inProcessed;
     
     if (res != SZ_OK) {
-        Py_DECREF(result);
+        DEC_AND_NULL(result);
         PyErr_SetString(PyExc_ValueError, "data error during decompression");
         goto exit;
     }
