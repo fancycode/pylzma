@@ -455,30 +455,37 @@ class ArchiveFile:
         self.pos = 0
     
     def read(self):
-        if self._folder.coders[0]['method'][0] == COMPRESSION_METHOD_CRYPTO:
-            raise EncryptedArchiveError("encrypted archives are not supported yet")
+        if not self._folder.coders:
+            raise TypeError("file has no coder informations")
         
-        method = self._folder.coders[0]['method']
-        decoder = None
-        while method and decoder is None:
-            decoder = self._decoders.get(method, None)
-            method = method[:-1]
+        data = None
+        for coder in self._folder.coders:
+            method = coder['method']
+            if method[0] == COMPRESSION_METHOD_CRYPTO:
+                raise EncryptedArchiveError("encrypted archives are not supported yet")
+            
+            decoder = None
+            while method and decoder is None:
+                decoder = self._decoders.get(method, None)
+                method = method[:-1]
+            
+            if decoder is None:
+                raise UnsupportedCompressionMethodError(coder['method'])
+            
+            data = getattr(self, decoder)(coder, data)
         
-        if decoder is None:
-            raise UnsupportedCompressionMethodError(self._folder.coders[0]['method'])
-        
-        return getattr(self, decoder)()
+        return data
     
-    def _read_copy(self):
+    def _read_copy(self, coder, input):
         self._file.seek(self._src_start)
         return self._file.read(self.uncompressed)
     
-    def _read_from_decompressor(self, decompressor, checkremaining=False):
+    def _read_from_decompressor(self, coder, decompressor, checkremaining=False):
         data = ''
         idx = 0
         cnt = 0
         self._file.seek(self._src_start)
-        properties = self._folder.coders[0].get('properties', None)
+        properties = coder.get('properties', None)
         if properties:
             decompressor.decompress(properties)
         total = self.compressed
@@ -502,17 +509,17 @@ class ArchiveFile:
                 data = decompressor.decompress(self._file.read(total))
         return data[self._start:self._start+self.size]
     
-    def _read_lzma(self):
+    def _read_lzma(self, coder, input):
         dec = pylzma.decompressobj(maxlength=self._start+self.size)
-        return self._read_from_decompressor(dec, checkremaining=True)
+        return self._read_from_decompressor(coder, dec, checkremaining=True)
         
-    def _read_zip(self):
+    def _read_zip(self, coder, input):
         dec = zlib.decompressobj(-15)
-        return self._read_from_decompressor(dec, checkremaining=True)
+        return self._read_from_decompressor(coder, dec, checkremaining=True)
         
-    def _read_bzip(self):
+    def _read_bzip(self, coder, input):
         dec = bz2.BZ2Decompressor()
-        return self._read_from_decompressor(dec)
+        return self._read_from_decompressor(coder, dec)
         
     def checkcrc(self):
         if self.digest is None:
