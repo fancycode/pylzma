@@ -28,6 +28,8 @@
 import pylzma
 from struct import pack, unpack
 from zlib import crc32
+import zlib
+import bz2
 from cStringIO import StringIO
 
 MAGIC_7Z                         = '7z\xbc\xaf\x27\x1c'
@@ -57,7 +59,23 @@ PROPERTY_ATTRIBUTES              = '\x15'
 PROPERTY_COMMENT                 = '\x16'
 PROPERTY_ENCODED_HEADER          = '\x17'
 
-class FormatError(Exception):
+COMPRESSION_METHOD_COPY          = '\x00'
+COMPRESSION_METHOD_LZMA          = '\x03'
+COMPRESSION_METHOD_CRYPTO        = '\x06'
+COMPRESSION_METHOD_MISC          = '\x04'
+COMPRESSION_METHOD_MISC_ZIP      = '\x04\x01'
+COMPRESSION_METHOD_MISC_BZIP     = '\x04\x02'
+
+class ArchiveError(Exception):
+    pass
+
+class FormatError(ArchiveError):
+    pass
+
+class EncryptedArchiveError(ArchiveError):
+    pass
+
+class UnsupportedCompressionMethodError(ArchiveError):
     pass
 
 class Base:
@@ -144,7 +162,7 @@ class Folder(Base):
                     c['numoutstreams'] = 1
                 totalin += c['numinstreams']
                 self.totalout += c['numoutstreams']
-                if c['method'][0] != '\x00':
+                if not noattributes:
                     c['properties'] = file.read(self._read64Bit(file))
                 self.coders.append(c)
                 if last_alternative:
@@ -426,31 +444,75 @@ class ArchiveFile:
         for k, v in info.items():
             setattr(self, k, v)
         self.reset()
+        self._decoders = {
+            COMPRESSION_METHOD_COPY: '_read_copy',
+            COMPRESSION_METHOD_LZMA: '_read_lzma',
+            COMPRESSION_METHOD_MISC_ZIP: '_read_zip',
+            COMPRESSION_METHOD_MISC_BZIP: '_read_bzip',
+        }
 
     def reset(self):
         self.pos = 0
     
     def read(self):
+        if self._folder.coders[0]['method'][0] == COMPRESSION_METHOD_CRYPTO:
+            raise EncryptedArchiveError("encrypted archives are not supported yet")
+        
+        method = self._folder.coders[0]['method']
+        decoder = None
+        while method and decoder is None:
+            decoder = self._decoders.get(method, None)
+            method = method[:-1]
+        
+        if decoder is None:
+            raise UnsupportedCompressionMethodError(self._folder.coders[0]['method'])
+        
+        return getattr(self, decoder)()
+    
+    def _read_copy(self):
+        self._file.seek(self._src_start)
+        return self._file.read(self.uncompressed)
+    
+    def _read_from_decompressor(self, decompressor, checkremaining=False):
         data = ''
         idx = 0
         cnt = 0
-        dec = pylzma.decompressobj(maxlength=self._start+self.size)
         self._file.seek(self._src_start)
-        dec.decompress(self._folder.coders[0]['properties'])
+        properties = self._folder.coders[0].get('properties', None)
+        if properties:
+            decompressor.decompress(properties)
         total = self.compressed
         if total is None:
             remaining = self._start+self.size
             out = StringIO()
             while remaining > 0:
                 data = self._file.read(1024)
-                tmp = dec.decompress(data, remaining)
+                if checkremaining:
+                    tmp = decompressor.decompress(data, remaining)
+                else:
+                    tmp = decompressor.decompress(data)
                 out.write(tmp)
                 remaining -= len(tmp)
             
             data = out.getvalue()
         else:
-            data = dec.decompress(self._file.read(total), self._start+self.size)
+            if checkremaining:
+                data = decompressor.decompress(self._file.read(total), self._start+self.size)
+            else:
+                data = decompressor.decompress(self._file.read(total))
         return data[self._start:self._start+self.size]
+    
+    def _read_lzma(self):
+        dec = pylzma.decompressobj(maxlength=self._start+self.size)
+        return self._read_from_decompressor(dec, checkremaining=True)
+        
+    def _read_zip(self):
+        dec = zlib.decompressobj(-15)
+        return self._read_from_decompressor(dec, checkremaining=True)
+        
+    def _read_bzip(self):
+        dec = bz2.BZ2Decompressor()
+        return self._read_from_decompressor(dec)
         
     def checkcrc(self):
         if self.digest is None:
@@ -542,22 +604,24 @@ class Archive7z(Base):
         maxsize = (self.solid and packinfo.packsizes[0]) or None
         for idx in xrange(files.numfiles):
             info = files.files[idx]
+            if info['emptystream']:
+                continue
+            
             folder = folders[fidx]
-            if not info['emptystream']:
-                info['compressed'] = (not self.solid and packsizes[obidx]) or None
-                info['uncompressed'] = unpacksizes[obidx]
-                file = ArchiveFile(info, pos, src_pos, unpacksizes[obidx], folder, self, maxsize=maxsize)
-                if subinfo.digestsdefined[obidx]:
-                    file.digest = subinfo.digests[obidx]
-                self.files.append(file)
-                if self.solid:
-                    pos += unpacksizes[obidx]
-                else:
-                    src_pos += packsizes[obidx]
-                obidx += 1
+            info['compressed'] = (not self.solid and packsizes[obidx]) or None
+            info['uncompressed'] = unpacksizes[obidx]
+            file = ArchiveFile(info, pos, src_pos, unpacksizes[obidx], folder, self, maxsize=maxsize)
+            if subinfo.digestsdefined[obidx]:
+                file.digest = subinfo.digests[obidx]
+            self.files.append(file)
+            if self.solid:
+                pos += unpacksizes[obidx]
+            else:
+                src_pos += packsizes[obidx]
+            obidx += 1
 
-                if not self.solid:
-                    fidx += 1
+            if not self.solid:
+                fidx += 1
             
         self.numfiles = len(self.files)
         self.filenames = map(lambda x: x.filename, self.files)

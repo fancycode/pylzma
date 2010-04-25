@@ -24,7 +24,7 @@
 #
 import os
 import pylzma
-from py7zlib import Archive7z
+from py7zlib import Archive7z, EncryptedArchiveError
 import unittest
 
 try:
@@ -90,6 +90,30 @@ class Test7ZipFiles(unittest.TestCase):
             cf = archive.getmember(filename)
             self.failUnlessEqual(len(cf.read()), cf.uncompressed)
 
+    def test_encrypted_no_password(self):
+        # test loading of encrypted files without password (can read archived filenames)
+        fp = file(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb')
+        archive = Archive7z(fp)
+        filenames = archive.getnames()
+        self.failUnlessEqual(sorted(archive.getnames()), sorted([u'test1.txt',  u'test/test2.txt']))
+        self.failUnlessRaises(EncryptedArchiveError, archive.getmember(u'test1.txt').read)
+        self.failUnlessRaises(EncryptedArchiveError, archive.getmember(u'test/test2.txt').read)
+
+    def test_deflate(self):
+        # test loading of deflate compressed files
+        self._test_archive('deflate.7z')
+
+    def test_deflate64(self):
+        # test loading of deflate64 compressed files
+        self._test_archive('deflate64.7z')
+
+    def test_bzip2(self):
+        # test loading of bzip2 compressed files
+        self._test_archive('bzip2.7z')
+
+    def test_copy(self):
+        # test loading of copy compressed files
+        self._test_archive('copy.7z')
 
 def suite():
     suite = unittest.TestSuite()
