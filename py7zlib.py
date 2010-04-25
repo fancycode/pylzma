@@ -478,7 +478,7 @@ class ArchiveFile:
     
     def _read_copy(self, coder, input):
         self._file.seek(self._src_start)
-        return self._file.read(self.uncompressed)
+        return self._file.read(self.uncompressed)[self._start:self._start+self.size]
     
     def _read_from_decompressor(self, coder, decompressor, checkremaining=False):
         data = ''
