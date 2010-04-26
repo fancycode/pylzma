@@ -29,7 +29,10 @@ import pylzma
 from struct import pack, unpack
 from zlib import crc32
 import zlib
-import bz2
+try:
+    import bz2
+except ImportError:
+    bz2 = None
 from cStringIO import StringIO
 
 MAGIC_7Z                         = '7z\xbc\xaf\x27\x1c'
@@ -78,7 +81,7 @@ class EncryptedArchiveError(ArchiveError):
 class UnsupportedCompressionMethodError(ArchiveError):
     pass
 
-class Base:
+class Base(object):
     """ base class with support for various basic read/write functions """
     
     def _readReal64Bit(self, file):
@@ -116,7 +119,14 @@ class Base:
             mask >>= 1
         
         return result
-        
+
+    def checkcrc(self, crc, data):
+        check = crc32(data)
+        # make crc unsigned
+        # XXX: better way to do this?
+        check = unpack('<l', pack('<L', check))[0]
+        return crc == check
+
 
 class PackInfo(Base):
     """ informations about packed streams """
@@ -428,7 +438,7 @@ class Header(Base):
         if id != PROPERTY_END:
             raise FormatError, 'end id expected but %s found' % (repr(id))
 
-class ArchiveFile:
+class ArchiveFile(Base):
     """ wrapper around a file in the archive """
     
     def __init__(self, info, start, src_start, size, folder, archive, maxsize=None):
@@ -448,8 +458,9 @@ class ArchiveFile:
             COMPRESSION_METHOD_COPY: '_read_copy',
             COMPRESSION_METHOD_LZMA: '_read_lzma',
             COMPRESSION_METHOD_MISC_ZIP: '_read_zip',
-            COMPRESSION_METHOD_MISC_BZIP: '_read_bzip',
         }
+        if bz2 is not None:
+            self._decoders[COMPRESSION_METHOD_MISC_BZIP] = '_read_bzip'
 
     def reset(self):
         self.pos = 0
@@ -527,11 +538,8 @@ class ArchiveFile:
             
         self.reset()
         data = self.read()
-        crc = crc32(data)
-        # make crc unsigned
-        # XXX: better way to do this?
-        crc = unpack('<l', pack('<L', crc))[0]
-        return crc == self.digest
+        return super(ArchiveFile, self).checkcrc(self.digest, data)
+        
 
 class Archive7z(Base):
     """ the archive itself """
@@ -551,13 +559,14 @@ class Archive7z(Base):
         data = file.read(4)
         self.nextheadercrc = unpack('<l', data)[0]
         crc = crc32(data, crc)
+        crc = unpack('<l', pack('<L', crc))[0]
         if crc != self.startheadercrc:
             raise FormatError, 'invalid header data'
         self.afterheader = file.tell()
         
         file.seek(self.nextheaderofs, 1)
         buffer = StringIO(file.read(self.nextheadersize))
-        if crc32(buffer.getvalue()) != self.nextheadercrc:
+        if not self.checkcrc(self.nextheadercrc, buffer.getvalue()):
             raise FormatError, 'invalid header data'
         
         while True:
@@ -580,7 +589,7 @@ class Archive7z(Base):
                     data += pylzma.decompress(props+tmp, maxlength=folder.unpacksizes[idx])
                 
                 if folder.digestdefined:
-                    if folder.crc != crc32(data):
+                    if not self.checkcrc(folder.crc, data):
                         raise FormatError, 'invalid block data'
                         
             buffer = StringIO(data)

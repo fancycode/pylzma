@@ -29,18 +29,17 @@ from test import test_support
 
 USAGE_FILE = os.path.join('..', 'doc', 'usage.txt')
 
-if sys.version_info[:2] < (2,4):
-    raise ImportError, 'Python 2.4 or above required.'
-
 ROOT = os.path.abspath(os.path.split(__file__)[0])
 sys.path.insert(0, ROOT)
 
 def suite():
-    return doctest.DocFileSuite(USAGE_FILE)
+    suite = unittest.TestSuite()
+    if sys.version_info[:2] < (2,4):
+        import warnings
+        warnings.warn('Python 2.4 or above required to run doctests')
+    else:
+        suite.addTest(doctest.DocFileSuite(USAGE_FILE))
+    return suite
 
-def test_main():
-    doctest.testfile(USAGE_FILE)
-
-if __name__ == "__main__":
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
+if __name__ == '__main__':
+    unittest.main(defaultTest='suite')
