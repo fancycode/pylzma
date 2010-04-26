@@ -42,7 +42,7 @@ typedef struct {
     PyObject *inFile;
 } CCompressionFileObject;
 
-static const char
+static char
 doc_compfile_read[] = \
     "docstring is todo\n";
 
@@ -55,7 +55,7 @@ pylzma_compfile_read(CCompressionFileObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|i", &bufsize))
         return NULL;
 
-    while (!bufsize || self->outStream.size < bufsize)
+    while (!bufsize || self->outStream.size < (size_t) bufsize)
     {
         Py_BEGIN_ALLOW_THREADS
         res = LzmaEnc_CodeOneBlock(self->encoder, False, 0, 0);
@@ -70,7 +70,7 @@ pylzma_compfile_read(CCompressionFileObject *self, PyObject *args)
     }
     
     if (bufsize)
-        length = min(bufsize, self->outStream.size);
+        length = min((size_t) bufsize, self->outStream.size);
     else
         length = self->outStream.size;
     
