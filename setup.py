@@ -119,7 +119,7 @@ setup(
     author = "Joachim Bauch",
     author_email = "mail@joachim-bauch.de",
     url = "http://www.joachim-bauch.de/projects/pylzma/",
-    download_url = "http://pypi.python.org/pylzma/",
+    download_url = "http://pypi.python.org/pypi/pylzma/",
     license = 'LGPL',
     keywords = "lzma compression",
     long_description = long_descr,
