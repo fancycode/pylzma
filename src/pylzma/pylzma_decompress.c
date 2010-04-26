@@ -72,7 +72,7 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
             Py_DECREF(result);
             result = NULL;
             PyErr_Format(PyExc_TypeError, "Error while decompressing: %d", res);
-        } else if (destLen < totallength) {
+        } else if (destLen < (size_t) totallength) {
             _PyString_Resize(&result, destLen);
         }
         return result;
