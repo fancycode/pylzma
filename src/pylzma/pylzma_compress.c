@@ -72,7 +72,11 @@ pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
     CHECK_RANGE(algorithm,          0,   2, "algorithm must be between 0 and 2");
     
     if (matchfinder != NULL) {
+#if (PY_VERSION_HEX >= 0x02050000)
         PyErr_WarnEx(PyExc_DeprecationWarning, "matchfinder selection is deprecated and will be ignored", 1);
+#else
+        PyErr_Warn(PyExc_DeprecationWarning, "matchfinder selection is deprecated and will be ignored");
+#endif
     }
     
     encoder = LzmaEnc_Create(&allocator);

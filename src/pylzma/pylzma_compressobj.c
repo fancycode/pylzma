@@ -164,7 +164,11 @@ pylzma_comp_init(CCompressionObject *self, PyObject *args, PyObject *kwargs)
     CHECK_RANGE(posBits,            0,   4, "posBits must be between 0 and 4");
 
     if (matchfinder != NULL) {
+#if (PY_VERSION_HEX >= 0x02050000)
         PyErr_WarnEx(PyExc_DeprecationWarning, "matchfinder selection is deprecated and will be ignored", 1);
+#else
+        PyErr_Warn(PyExc_DeprecationWarning, "matchfinder selection is deprecated and will be ignored");
+#endif
     }
     
     self->encoder = LzmaEnc_Create(&allocator);

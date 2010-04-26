@@ -139,7 +139,11 @@ pylzma_compfile_init(CCompressionFileObject *self, PyObject *args, PyObject *kwa
     CHECK_RANGE(algorithm,          0,   2, "algorithm must be between 0 and 2");
     
     if (matchfinder != NULL) {
+#if (PY_VERSION_HEX >= 0x02050000)
         PyErr_WarnEx(PyExc_DeprecationWarning, "matchfinder selection is deprecated and will be ignored", 1);
+#else
+        PyErr_Warn(PyExc_DeprecationWarning, "matchfinder selection is deprecated and will be ignored");
+#endif
     }
     
     if (PyString_Check(inFile)) {
