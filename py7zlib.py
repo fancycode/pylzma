@@ -29,10 +29,7 @@ import pylzma
 from struct import pack, unpack
 from zlib import crc32
 import zlib
-try:
-    import bz2
-except ImportError:
-    bz2 = None
+import bz2
 from cStringIO import StringIO
 
 MAGIC_7Z                         = '7z\xbc\xaf\x27\x1c'
@@ -121,10 +118,7 @@ class Base(object):
         return result
 
     def checkcrc(self, crc, data):
-        check = crc32(data)
-        # make crc unsigned
-        # XXX: better way to do this?
-        check = unpack('<l', pack('<L', check))[0]
+        check = crc32(data) & 0xffffffffL
         return crc == check
 
 
@@ -224,7 +218,7 @@ class Digests(Base):
     
     def __init__(self, file, count):
         self.defined = self._readBoolean(file, count, checkall=1)
-        self.crcs = [unpack('<l', file.read(4))[0] for x in xrange(count)]
+        self.crcs = [unpack('<L', file.read(4))[0] for x in xrange(count)]
     
 UnpackDigests = Digests
 
@@ -458,9 +452,8 @@ class ArchiveFile(Base):
             COMPRESSION_METHOD_COPY: '_read_copy',
             COMPRESSION_METHOD_LZMA: '_read_lzma',
             COMPRESSION_METHOD_MISC_ZIP: '_read_zip',
+            COMPRESSION_METHOD_MISC_BZIP: '_read_bzip',
         }
-        if bz2 is not None:
-            self._decoders[COMPRESSION_METHOD_MISC_BZIP] = '_read_bzip'
 
     def reset(self):
         self.pos = 0
@@ -551,15 +544,14 @@ class Archive7z(Base):
             raise FormatError, 'not a 7z file'
         self.version = unpack('BB', file.read(2))
 
-        self.startheadercrc = unpack('<l', file.read(4))[0]
+        self.startheadercrc = unpack('<L', file.read(4))[0]
         self.nextheaderofs, data = self._readReal64Bit(file)
         crc = crc32(data)
         self.nextheadersize, data = self._readReal64Bit(file)
         crc = crc32(data, crc)
         data = file.read(4)
-        self.nextheadercrc = unpack('<l', data)[0]
-        crc = crc32(data, crc)
-        crc = unpack('<l', pack('<L', crc))[0]
+        self.nextheadercrc = unpack('<L', data)[0]
+        crc = crc32(data, crc) & 0xffffffffL
         if crc != self.startheadercrc:
             raise FormatError, 'invalid header data'
         self.afterheader = file.tell()

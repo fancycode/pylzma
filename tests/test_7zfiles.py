@@ -23,7 +23,6 @@
 # $Id$
 #
 import os
-import sys
 import pylzma
 from py7zlib import Archive7z, EncryptedArchiveError
 import unittest
@@ -110,12 +109,9 @@ class Test7ZipFiles(unittest.TestCase):
         # test loading of deflate64 compressed files
         self._test_archive('deflate64.7z')
 
-    if sys.version_info[:2] >= (2,4):
-        # the bz2 module is available starting with Python 2.4
-        
-        def test_bzip2(self):
-            # test loading of bzip2 compressed files
-            self._test_archive('bzip2.7z')
+    def test_bzip2(self):
+        # test loading of bzip2 compressed files
+        self._test_archive('bzip2.7z')
 
     def test_copy(self):
         # test loading of copy compressed files
