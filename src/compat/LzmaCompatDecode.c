@@ -6,6 +6,8 @@ LZMA SDK 4.01 Copyright (c) 1999-2004 Igor Pavlov (2004-02-15)
 Converted to a state machine by Amir Szekely
 */
 
+#include <stdlib.h>
+
 #include "LzmaCompatDecode.h"
 
 #define LEAVE { goto saveStateAndReturn; }
