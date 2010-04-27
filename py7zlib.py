@@ -31,6 +31,11 @@ from zlib import crc32
 import zlib
 import bz2
 from cStringIO import StringIO
+try:
+    from functools import reduce
+except ImportError:
+    # reduce is available in functools starting with Python 2.6
+    pass
 
 MAGIC_7Z                         = '7z\xbc\xaf\x27\x1c'
 

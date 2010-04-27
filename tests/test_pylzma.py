@@ -39,11 +39,9 @@ ALL_CHARS = ''.join([chr(x) for x in xrange(256)])
 _random_strings = {}
 def generate_random(size, choice=random.choice, ALL_CHARS=ALL_CHARS):
     global _random_strings
-    if _random_strings.has_key(size):
-        return _random_strings[size]
-        
-    s = ''.join([choice(ALL_CHARS) for x in xrange(size)])
-    _random_strings[size] = s
+    s = _random_strings.get(size, None)
+    if s is None:
+        s = _random_strings[size] = ''.join([choice(ALL_CHARS) for x in xrange(size)])
     return s
 
 class TestPyLZMA(unittest.TestCase):
