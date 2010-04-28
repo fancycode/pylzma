@@ -24,6 +24,8 @@
 #
 import sys, os
 from warnings import warn
+from distutils.ccompiler import new_compiler
+from distutils.msvccompiler import MSVCCompiler
 
 from ez_setup import use_setuptools
 use_setuptools()
@@ -82,8 +84,9 @@ c_files = ['src/pylzma/pylzma.c', 'src/pylzma/pylzma_decompressobj.c', 'src/pylz
 compile_args = []
 link_args = []
 macros = []
-if IS_WINDOWS:
-    macros.append(('WIN32', 1))
+compiler = new_compiler()
+if IS_WINDOWS and isinstance(compiler, MSVCCompiler):
+    # set flags only available when using MSVC
     if COMPILE_DEBUG:
         compile_args.append('/Zi')
         compile_args.append('/MTd')
