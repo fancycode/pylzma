@@ -97,6 +97,9 @@ WRes Semaphore_Close(CSemaphore *p) { return MyCloseHandle(&p->handle); }
 
 WRes CriticalSection_Init(CCriticalSection *p)
 {
+#ifdef __MINGW32__
+  InitializeCriticalSection(p);
+#else
   /* InitializeCriticalSection can raise only STATUS_NO_MEMORY exception */
   __try
   {
@@ -104,6 +107,7 @@ WRes CriticalSection_Init(CCriticalSection *p)
     /* InitializeCriticalSectionAndSpinCount(p, 0); */
   }
   __except (EXCEPTION_EXECUTE_HANDLER) { return 1; }
+#endif
   return 0;
 }
 
