@@ -26,10 +26,17 @@
 #include "pylzma.h"
 #include "pylzma_streams.h"
 
+#ifdef _WIN32
+// Initial size of output streams
+#define INITIAL_BLOCKSIZE   1048576
+// Maximum number of bytes to increase output streams
+#define MAX_BLOCKSIZE       16777216
+#else
 // Initial size of output streams
 #define INITIAL_BLOCKSIZE   262144
 // Maximum number of bytes to increase output streams
 #define MAX_BLOCKSIZE       1048576
+#endif
 
 static SRes
 MemoryInStream_Read(void *p, void *buf, size_t *size)
