@@ -110,11 +110,6 @@ extens = [
               extra_link_args=link_args),
 ]
 
-if IS_WINDOWS:
-    operating_system = 'Microsoft :: Windows'
-else:
-    operating_system = 'POSIX :: Linux'
-
 setup(
     name = "pylzma",
     version = version,
@@ -126,14 +121,13 @@ setup(
     license = 'LGPL',
     keywords = "lzma compression",
     long_description = long_descr,
-    platforms = sys.platform,
     classifiers = [
         'Development Status :: 5 - Production/Stable',
         'Programming Language :: Python',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)',
-        'Operating System :: %s' % operating_system,
+        'Operating System :: OS Independent',
     ],
     py_modules = modules,
     ext_modules = extens,
