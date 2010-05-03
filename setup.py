@@ -23,12 +23,9 @@
 # $Id$
 #
 import sys, os
-import optparse
 from warnings import warn
 from distutils import log
-from distutils.ccompiler import new_compiler
 from distutils.command.build_ext import build_ext as _build_ext
-from distutils.errors import DistutilsPlatformError
 from distutils.msvccompiler import MSVCCompiler
 
 from ez_setup import use_setuptools
@@ -87,6 +84,15 @@ please contact mail@joachim-bauch.de for more informations.""" % (sys.platform),
             ext.define_macros.append(('COMPRESS_MF_MT', 1))
             ext.sources += ('src/sdk/LzFindMt.c', 'src/sdk/Threads.c', )
         
+        if isinstance(self.compiler, MSVCCompiler):
+            # set flags only available when using MSVC
+            if COMPILE_DEBUG:
+                ext.extra_compile_args.append('/Zi')
+                ext.extra_compile_args.append('/MTd')
+                ext.extra_link_args.append('/DEBUG')
+            else:
+                ext.extra_compile_args.append('/MT')
+        
         _build_ext.build_extension(self, ext)
 
 descr = "Python bindings for the LZMA library by Igor Pavlov."
@@ -100,25 +106,6 @@ c_files = ['src/pylzma/pylzma.c', 'src/pylzma/pylzma_decompressobj.c', 'src/pylz
 compile_args = []
 link_args = []
 macros = []
-class SilentOptionParser(optparse.OptionParser):
-    def error(self, msg):
-        # ignore errors
-        pass
-parser = SilentOptionParser()
-parser.add_option('--compiler', dest='compiler', default=None)
-(options, args) = parser.parse_args()
-try:
-    compiler = new_compiler(compiler=options.compiler)
-except DistutilsPlatformError:
-    compiler = None
-if IS_WINDOWS and isinstance(compiler, MSVCCompiler):
-    # set flags only available when using MSVC
-    if COMPILE_DEBUG:
-        compile_args.append('/Zi')
-        compile_args.append('/MTd')
-        link_args.append('/DEBUG')
-    else:
-        compile_args.append('/MT')
 lzma_files = ('src/sdk/LzFind.c', 'src/sdk/LzmaDec.c', 'src/sdk/LzmaEnc.c', )
 if ENABLE_COMPATIBILITY:
     c_files += ('src/pylzma/pylzma_decompress_compat.c', 'src/pylzma/pylzma_decompressobj_compat.c', )
