@@ -25,7 +25,9 @@
 import sys, os
 import optparse
 from warnings import warn
+from distutils import log
 from distutils.ccompiler import new_compiler
+from distutils.command.build_ext import build_ext as _build_ext
 from distutils.errors import DistutilsPlatformError
 from distutils.msvccompiler import MSVCCompiler
 
@@ -65,15 +67,27 @@ if sys.platform == 'darwin':
 
 library_dirs = []
 
+# platforms that multithreaded compression is supported on
 mt_platforms = (
     'win32',
 )
 
-if ENABLE_MULTITHREADING and not sys.platform in mt_platforms:
-    warn("""\
+class build_ext(_build_ext):
+
+    def build_extension(self, ext):
+        self.with_mt = ENABLE_MULTITHREADING
+        if self.with_mt and not sys.platform in mt_platforms:
+            warn("""\
 Multithreading is not supported on the platform "%s",
 please contact mail@joachim-bauch.de for more informations.""" % (sys.platform), UnsupportedPlatformWarning)
-    ENABLE_MULTITHREADING = False
+            self.with_mt = False
+
+        if self.with_mt:
+            log.info('adding support for multithreaded compression')
+            ext.define_macros.append(('COMPRESS_MF_MT', 1))
+            ext.sources += ('src/sdk/LzFindMt.c', 'src/sdk/Threads.c', )
+        
+        _build_ext.build_extension(self, ext)
 
 descr = "Python bindings for the LZMA library by Igor Pavlov."
 long_descr = """PyLZMA provides a platform independent way to read and write data
@@ -105,11 +119,7 @@ if IS_WINDOWS and isinstance(compiler, MSVCCompiler):
         link_args.append('/DEBUG')
     else:
         compile_args.append('/MT')
-if ENABLE_MULTITHREADING:
-    macros.append(('COMPRESS_MF_MT', 1))
 lzma_files = ('src/sdk/LzFind.c', 'src/sdk/LzmaDec.c', 'src/sdk/LzmaEnc.c', )
-if ENABLE_MULTITHREADING:
-    lzma_files += ('src/sdk/LzFindMt.c', 'src/sdk/Threads.c', )
 if ENABLE_COMPATIBILITY:
     c_files += ('src/pylzma/pylzma_decompress_compat.c', 'src/pylzma/pylzma_decompressobj_compat.c', )
     lzma_files += ('src/compat/LzmaCompatDecode.c', )
@@ -143,6 +153,9 @@ setup(
     ],
     py_modules = modules,
     ext_modules = extens,
+    cmdclass = {
+        'build_ext': build_ext,
+    },
     test_suite = 'tests.suite',
     zip_safe = False,
 )
