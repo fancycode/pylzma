@@ -23,8 +23,10 @@
 # $Id$
 #
 import sys, os
+import optparse
 from warnings import warn
 from distutils.ccompiler import new_compiler
+from distutils.errors import DistutilsPlatformError
 from distutils.msvccompiler import MSVCCompiler
 
 from ez_setup import use_setuptools
@@ -84,7 +86,17 @@ c_files = ['src/pylzma/pylzma.c', 'src/pylzma/pylzma_decompressobj.c', 'src/pylz
 compile_args = []
 link_args = []
 macros = []
-compiler = new_compiler()
+class SilentOptionParser(optparse.OptionParser):
+    def error(self, msg):
+        # ignore errors
+        pass
+parser = SilentOptionParser()
+parser.add_option('--compiler', dest='compiler', default=None)
+(options, args) = parser.parse_args()
+try:
+    compiler = new_compiler(compiler=options.compiler)
+except DistutilsPlatformError:
+    compiler = None
 if IS_WINDOWS and isinstance(compiler, MSVCCompiler):
     # set flags only available when using MSVC
     if COMPILE_DEBUG:
