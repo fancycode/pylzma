@@ -291,15 +291,15 @@ class SubstreamsInfo(Base):
                 
             id = file.read(1)
 
+        numdigests = 0
+        numdigeststotal = 0
+        for i in xrange(numfolders):
+            numsubstreams = self.numunpackstreams[i]
+            if numsubstreams != 1 or not folders[i].digestdefined:
+                numdigests += numsubstreams
+            numdigeststotal += numsubstreams
+        
         if id == PROPERTY_CRC:
-            numdigests = 0
-            numdigeststotal = 0
-            for i in xrange(numfolders):
-                numsubstreams = self.numunpackstreams[i]
-                if numsubstreams != 1 or not folders[i].digestdefined:
-                    numdigests += numsubstreams
-                numdigeststotal += numsubstreams
-            
             digests = Digests(file, numdigests)
             didx = 0
             for i in xrange(numfolders):

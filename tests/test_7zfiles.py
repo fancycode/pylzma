@@ -117,6 +117,18 @@ class Test7ZipFiles(unittest.TestCase):
         # test loading of copy compressed files
         self._test_archive('copy.7z')
 
+    def test_regress_1(self):
+        # prevent regression bug #1 reported by mail
+        fp = file(os.path.join(ROOT, 'data', 'regress_1.7z'), 'rb')
+        archive = Archive7z(fp)
+        filenames = archive.getnames()
+        self.failUnlessEqual(len(filenames), 1)
+        cf = archive.getmember(filenames[0])
+        self.failIfEqual(cf, None)
+        self.failUnless(cf.checkcrc())
+        data = cf.read()
+        self.failUnlessEqual(len(data), cf.size)
+
 def suite():
     suite = unittest.TestSuite()
 
