@@ -26,7 +26,6 @@ import sys, os
 from warnings import warn
 from distutils import log
 from distutils.command.build_ext import build_ext as _build_ext
-from distutils.msvccompiler import MSVCCompiler
 
 from ez_setup import use_setuptools
 use_setuptools()
@@ -68,6 +67,15 @@ library_dirs = []
 mt_platforms = (
     'win32',
 )
+
+if IS_WINDOWS:
+    # don't try to import MSVC compiler on non-windows platforms
+    # as this triggers unnecessary warnings
+    from distutils.msvccompiler import MSVCCompiler
+else:
+    class MSVCCompiler(object):
+        # dummy marker class
+        pass
 
 class build_ext(_build_ext):
 
