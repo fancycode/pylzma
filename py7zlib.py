@@ -37,6 +37,8 @@ except ImportError:
     # reduce is available in functools starting with Python 2.6
     pass
 
+READ_BLOCKSIZE                   = 16384
+
 MAGIC_7Z                         = '7z\xbc\xaf\x27\x1c'
 
 PROPERTY_END                     = '\x00'
@@ -502,7 +504,7 @@ class ArchiveFile(Base):
             remaining = self._start+self.size
             out = StringIO()
             while remaining > 0:
-                data = self._file.read(1024)
+                data = self._file.read(READ_BLOCKSIZE)
                 if checkremaining:
                     tmp = decompressor.decompress(data, remaining)
                 else:
