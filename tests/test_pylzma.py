@@ -221,6 +221,11 @@ class TestPyLZMA(unittest.TestCase):
         outfile.write(decompress.flush())
         self.failUnless(data == outfile.getvalue())
 
+    def test_bugzilla_13(self):
+        # prevent regression of bugzilla #13
+        fp = pylzma.compressfile('/tmp/test')
+        self.failUnless(isinstance(fp, pylzma.compressfile))
+
 def suite():
     suite = unittest.TestSuite()
 

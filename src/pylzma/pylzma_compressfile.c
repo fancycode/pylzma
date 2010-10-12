@@ -34,6 +34,12 @@
 #include "pylzma_compress.h"
 #include "pylzma_compressfile.h"
 
+void
+pylzma_init_compfile()
+{
+    PycString_IMPORT;
+}
+
 typedef struct {
     PyObject_HEAD
     CLzmaEncHandle encoder;

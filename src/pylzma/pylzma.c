@@ -24,7 +24,6 @@
  */
 
 #include <Python.h>
-#include <cStringIO.h>
 
 #include "../sdk/7zVersion.h"
 
@@ -98,7 +97,7 @@ initpylzma(void)
     PyModule_AddStringConstant(m, "SDK_COPYRIGHT", MY_COPYRIGHT);
     PyModule_AddStringConstant(m, "SDK_VERSION_COPYRIGHT_DATE", MY_VERSION_COPYRIGHT_DATE);
 
-    PycString_IMPORT;
+    pylzma_init_compfile();
 
 #if defined(WITH_THREAD)
     PyEval_InitThreads();
