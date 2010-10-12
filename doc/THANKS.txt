@@ -8,3 +8,4 @@ Helmut Jarausch             - jarausch <at> igpm.rwth-aachen <dot> de
 Nikolaus Rath               - nikolaus <at> rath <dot> org
 David Agnew                 - prescindor <at> gmail <dot> com
 Sofring Chow                - sofring912 <at> gmail <dot> com
+David Turon                 - turon.david <at> seznam <dot> cz
