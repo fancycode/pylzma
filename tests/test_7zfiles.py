@@ -24,7 +24,7 @@
 #
 import os
 import pylzma
-from py7zlib import Archive7z, EncryptedArchiveError
+from py7zlib import Archive7z, NoPasswordGivenError, WrongPasswordError
 import unittest
 
 try:
@@ -98,8 +98,26 @@ class Test7ZipFiles(unittest.TestCase):
         archive = Archive7z(fp)
         filenames = archive.getnames()
         self.failUnlessEqual(sorted(archive.getnames()), sorted([u'test1.txt',  u'test/test2.txt']))
-        self.failUnlessRaises(EncryptedArchiveError, archive.getmember(u'test1.txt').read)
-        self.failUnlessRaises(EncryptedArchiveError, archive.getmember(u'test/test2.txt').read)
+        self.failUnlessRaises(NoPasswordGivenError, archive.getmember(u'test1.txt').read)
+        self.failUnlessRaises(NoPasswordGivenError, archive.getmember(u'test/test2.txt').read)
+
+    def test_encrypted_password(self):
+        # test loading of encrypted files with correct password
+        fp = file(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb')
+        archive = Archive7z(fp, password=u'secret')
+        filenames = archive.getnames()
+        for filename in filenames:
+            cf = archive.getmember(filename)
+            self.failUnlessEqual(len(cf.read()), cf.uncompressed)
+
+    def test_encrypted_wong_password(self):
+        # test loading of encrypted files with wrong password
+        fp = file(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb')
+        archive = Archive7z(fp, password=u'password')
+        filenames = archive.getnames()
+        for filename in filenames:
+            cf = archive.getmember(filename)
+            self.failUnlessRaises(WrongPasswordError, cf.read)
 
     def test_deflate(self):
         # test loading of deflate compressed files

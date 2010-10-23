@@ -37,6 +37,19 @@ except ImportError:
     # reduce is available in functools starting with Python 2.6
     pass
 
+try:
+    import M2Crypto
+    from M2Crypto import EVP
+except ImportError:
+    # support for encrypted files is optional
+    M2Crypto = None
+
+try:
+    from hashlib import sha256
+except ImportError:
+    # hashlib is optional for some encrypted archives
+    sha256 = None
+
 READ_BLOCKSIZE                   = 16384
 
 MAGIC_7Z                         = '7z\xbc\xaf\x27\x1c'
@@ -72,6 +85,7 @@ COMPRESSION_METHOD_CRYPTO        = '\x06'
 COMPRESSION_METHOD_MISC          = '\x04'
 COMPRESSION_METHOD_MISC_ZIP      = '\x04\x01'
 COMPRESSION_METHOD_MISC_BZIP     = '\x04\x02'
+COMPRESSION_METHOD_7Z_AES256_SHA256 = '\x06\xf1\x07\x01'
 
 class ArchiveError(Exception):
     pass
@@ -83,6 +97,15 @@ class EncryptedArchiveError(ArchiveError):
     pass
 
 class UnsupportedCompressionMethodError(ArchiveError):
+    pass
+
+class DecryptionError(ArchiveError):
+    pass
+
+class NoPasswordGivenError(DecryptionError):
+    pass
+
+class WrongPasswordError(DecryptionError):
     pass
 
 class Base(object):
@@ -461,6 +484,14 @@ class ArchiveFile(Base):
             COMPRESSION_METHOD_MISC_ZIP: '_read_zip',
             COMPRESSION_METHOD_MISC_BZIP: '_read_bzip',
         }
+        if M2Crypto is not None:
+            if sha256 is not None:
+                self._decoders.update({
+                    COMPRESSION_METHOD_7Z_AES256_SHA256: '_read_7z_aes256_sha256',
+                })
+
+    def _is_encrypted(self):
+        return COMPRESSION_METHOD_7Z_AES256_SHA256 in [x['method'] for x in self._folder.coders]
 
     def reset(self):
         self.pos = 0
@@ -472,26 +503,25 @@ class ArchiveFile(Base):
         data = None
         for coder in self._folder.coders:
             method = coder['method']
-            if method[0] == COMPRESSION_METHOD_CRYPTO:
-                raise EncryptedArchiveError("encrypted archives are not supported yet")
-            
             decoder = None
             while method and decoder is None:
                 decoder = self._decoders.get(method, None)
                 method = method[:-1]
             
             if decoder is None:
-                raise UnsupportedCompressionMethodError(coder['method'])
+                raise UnsupportedCompressionMethodError(repr(coder['method']))
             
             data = getattr(self, decoder)(coder, data)
         
         return data
     
     def _read_copy(self, coder, input):
-        self._file.seek(self._src_start)
-        return self._file.read(self.uncompressed)[self._start:self._start+self.size]
+        if not input:
+            self._file.seek(self._src_start)
+            input = self._file.read(self.uncompressed)
+        return input[self._start:self._start+self.size]
     
-    def _read_from_decompressor(self, coder, decompressor, checkremaining=False):
+    def _read_from_decompressor(self, coder, decompressor, input, checkremaining=False):
         data = ''
         idx = 0
         cnt = 0
@@ -500,7 +530,7 @@ class ArchiveFile(Base):
         if properties:
             decompressor.decompress(properties)
         total = self.compressed
-        if total is None:
+        if not input and total is None:
             remaining = self._start+self.size
             out = StringIO()
             while remaining > 0:
@@ -514,24 +544,71 @@ class ArchiveFile(Base):
             
             data = out.getvalue()
         else:
+            if not input:
+                input = self._file.read(total)
             if checkremaining:
-                data = decompressor.decompress(self._file.read(total), self._start+self.size)
+                data = decompressor.decompress(input, self._start+self.size)
             else:
-                data = decompressor.decompress(self._file.read(total))
+                data = decompressor.decompress(input)
         return data[self._start:self._start+self.size]
     
     def _read_lzma(self, coder, input):
         dec = pylzma.decompressobj(maxlength=self._start+self.size)
-        return self._read_from_decompressor(coder, dec, checkremaining=True)
+        try:
+            return self._read_from_decompressor(coder, dec, input, checkremaining=True)
+        except ValueError:
+            if self._is_encrypted():
+                raise WrongPasswordError('invalid password')
+            
+            raise
         
     def _read_zip(self, coder, input):
         dec = zlib.decompressobj(-15)
-        return self._read_from_decompressor(coder, dec, checkremaining=True)
+        return self._read_from_decompressor(coder, dec, input, checkremaining=True)
         
     def _read_bzip(self, coder, input):
         dec = bz2.BZ2Decompressor()
-        return self._read_from_decompressor(coder, dec)
+        return self._read_from_decompressor(coder, dec, input)
+    
+    def _read_7z_aes256_sha256(self, coder, input):
+        if not self._archive.password:
+            raise NoPasswordGivenError()
         
+        # TODO: this needs some sanity checks
+        firstbyte = ord(coder['properties'][0])
+        numcyclespower = firstbyte & 0x3f
+        if firstbyte & 0xc0 != 0:
+            saltsize = (firstbyte >> 7) & 1
+            ivsize = (firstbyte >> 6) & 1
+            
+            secondbyte = ord(coder['properties'][1])
+            saltsize += (secondbyte >> 4)
+            ivsize += (secondbyte & 0x0f)
+            
+            assert len(coder['properties']) == 2+saltsize+ivsize
+            salt = coder['properties'][2:2+saltsize]
+            iv = coder['properties'][2+saltsize:2+saltsize+ivsize]
+            assert len(salt) == saltsize
+            assert len(iv) == ivsize
+            assert numcyclespower <= 24
+            if ivsize < 16:
+                iv += '\x00'*(16-ivsize)
+        else:
+            salt = iv = ''
+        
+        password = self._archive.password.encode('utf-16-le')
+        key = pylzma.calculate_key(password, numcyclespower, salt=salt)
+        cipher = pylzma.AESDecrypt(key, iv=iv)
+        if not input:
+            self._file.seek(self._src_start)
+            uncompressed_size = self.uncompressed
+            if uncompressed_size & 0x0f:
+                # we need a multiple of 16 bytes
+                uncompressed_size += 16 - (uncompressed_size & 0x0f)
+            input = self._file.read(uncompressed_size)
+        result = cipher.decrypt(input)
+        return result
+    
     def checkcrc(self):
         if self.digest is None:
             return True
@@ -544,8 +621,9 @@ class ArchiveFile(Base):
 class Archive7z(Base):
     """ the archive itself """
     
-    def __init__(self, file):
+    def __init__(self, file, password=None):
         self._file = file
+        self.password = password
         self.header = file.read(len(MAGIC_7Z))
         if self.header != MAGIC_7Z:
             raise FormatError, 'not a 7z file'

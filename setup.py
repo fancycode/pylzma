@@ -53,7 +53,9 @@ libraries = []
 if IS_WINDOWS:
     libraries += ['user32', 'oleaut32']
 
-include_dirs = []
+include_dirs = [
+    'src/sdk',
+]
 
 if sys.platform == 'darwin':
     # additional include directories are required when compiling on Darwin platforms
@@ -110,11 +112,14 @@ try: version = open('version.txt', 'rb').read().strip()
 except: version = 'unknown'
 modules = ['py7zlib']
 c_files = ['src/pylzma/pylzma.c', 'src/pylzma/pylzma_decompressobj.c', 'src/pylzma/pylzma_compressfile.c',
-           'src/pylzma/pylzma_decompress.c', 'src/pylzma/pylzma_compress.c', 'src/pylzma/pylzma_streams.c']
+           'src/pylzma/pylzma_decompress.c', 'src/pylzma/pylzma_compress.c', 'src/pylzma/pylzma_streams.c', \
+           'src/pylzma/pylzma_aes.c']
 compile_args = []
 link_args = []
 macros = []
-lzma_files = ('src/sdk/LzFind.c', 'src/sdk/LzmaDec.c', 'src/sdk/LzmaEnc.c', )
+lzma_files = ('src/sdk/LzFind.c', 'src/sdk/LzmaDec.c', 'src/sdk/LzmaEnc.c', \
+    'src/7zip/C/CpuArch.c', 'src/7zip/C/Aes.c', 'src/7zip/C/AesOpt.c', \
+    'src/7zip/C/Sha256.c')
 if ENABLE_COMPATIBILITY:
     c_files += ('src/pylzma/pylzma_decompress_compat.c', 'src/pylzma/pylzma_decompressobj_compat.c', )
     lzma_files += ('src/compat/LzmaCompatDecode.c', )
@@ -151,6 +156,10 @@ setup(
     cmdclass = {
         'build_ext': build_ext,
     },
+    extras_require = {
+        'decrypt': ['m2crypto'],
+    },
+    tests_require = ['pylzma[decrypt]'],
     test_suite = 'tests.suite',
     zip_safe = False,
 )
