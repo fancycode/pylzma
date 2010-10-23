@@ -135,6 +135,11 @@ extens = [
               extra_link_args=link_args),
 ]
 
+install_requires = []
+if sys.version_info[:2] < (2, 5):
+    # hashlib is available starting with Python2.5
+    install_requires.append('hashlib')
+
 setup(
     name = "pylzma",
     version = version,
@@ -159,6 +164,7 @@ setup(
     cmdclass = {
         'build_ext': build_ext,
     },
+    install_requires = install_requires,
     extras_require = {
         'decrypt': ['m2crypto'],
     },

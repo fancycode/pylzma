@@ -44,11 +44,7 @@ except ImportError:
     # support for encrypted files is optional
     M2Crypto = None
 
-try:
-    from hashlib import sha256
-except ImportError:
-    # hashlib is optional for some encrypted archives
-    sha256 = None
+from hashlib import sha256
 
 READ_BLOCKSIZE                   = 16384
 
@@ -485,10 +481,9 @@ class ArchiveFile(Base):
             COMPRESSION_METHOD_MISC_BZIP: '_read_bzip',
         }
         if M2Crypto is not None:
-            if sha256 is not None:
-                self._decoders.update({
-                    COMPRESSION_METHOD_7Z_AES256_SHA256: '_read_7z_aes256_sha256',
-                })
+            self._decoders.update({
+                COMPRESSION_METHOD_7Z_AES256_SHA256: '_read_7z_aes256_sha256',
+            })
 
     def _is_encrypted(self):
         return COMPRESSION_METHOD_7Z_AES256_SHA256 in [x['method'] for x in self._folder.coders]
