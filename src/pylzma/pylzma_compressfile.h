@@ -26,7 +26,7 @@
 #ifndef ___PYLZMA_COMPRESSFILE__H___
 #define ___PYLZMA_COMPRESSFILE__H___
 
-void pylzma_init_compfile();
+void pylzma_init_compfile(void);
 extern PyTypeObject CCompressionFileObject_Type;
 
 #define CompressionFileObject_Check(v)   ((v)->ob_type == &CCompressionFileObject_Type)

@@ -35,7 +35,7 @@
 #include "pylzma_compressfile.h"
 
 void
-pylzma_init_compfile()
+pylzma_init_compfile(void)
 {
     PycString_IMPORT;
 }
