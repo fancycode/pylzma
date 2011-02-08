@@ -98,13 +98,13 @@ pylzma_calculate_key(PyObject *self, PyObject *args, PyObject *kwargs)
         for (; pos < 32; pos++)
             key[pos] = 0;
     } else {
-        Py_BEGIN_ALLOW_THREADS
         CSha256 sha;
-        Sha256_Init(&sha);
         long round;
         int i;
         long rounds = (long) 1 << cycles;
         unsigned char temp[8] = { 0,0,0,0,0,0,0,0 };
+        Py_BEGIN_ALLOW_THREADS
+        Sha256_Init(&sha);
         for (round = 0; round < rounds; round++) {
             Sha256_Update(&sha, (Byte *) salt, saltlen);
             Sha256_Update(&sha, (Byte *) password, pwlen);

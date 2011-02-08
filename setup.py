@@ -99,6 +99,7 @@ please contact mail@joachim-bauch.de for more informations.""" % (sys.platform),
         
         if isinstance(self.compiler, MSVCCompiler):
             # set flags only available when using MSVC
+            ext.extra_link_args.append('/MANIFEST')
             if COMPILE_DEBUG:
                 ext.extra_compile_args.append('/Zi')
                 ext.extra_compile_args.append('/MTd')
