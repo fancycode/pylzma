@@ -72,6 +72,17 @@ static void MyCPUID(UInt32 function, UInt32 *a, UInt32 *b, UInt32 *c, UInt32 *d)
 
   #else
 
+    #if !defined(MY_CPU_64BIT)
+    /* fix GCC build error with -fPIC by storing ebx value before calling cpuid */
+ 	__asm__ __volatile__(
+ 		"pushl %%ebx \n\t"
+ 		"cpuid \n\t"
+ 		"movl %%ebx, %1 \n\t"
+ 		"popl %%ebx \n\t"
+ 		: "=a"(*a), "=r"(*b), "=c"(*c), "=d"(*d)
+ 		: "a"(function)
+ 		: "cc");
+    #else
  	__asm__ __volatile__ (
  		"cpuid"
  		: "=a" (*a) ,
@@ -79,7 +90,7 @@ static void MyCPUID(UInt32 function, UInt32 *a, UInt32 *b, UInt32 *c, UInt32 *d)
  		  "=c" (*c) ,
  		  "=d" (*d)
 		: "0" (function)) ;
-
+    #endif
   #endif
   
   #else
