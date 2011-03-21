@@ -26,6 +26,7 @@ import sys, os
 from warnings import warn
 from distutils import log
 from distutils.command.build_ext import build_ext as _build_ext
+from version import get_git_version
 
 try:
     from setuptools import setup, Extension
@@ -112,8 +113,6 @@ please contact mail@joachim-bauch.de for more informations.""" % (sys.platform),
 descr = "Python bindings for the LZMA library by Igor Pavlov."
 long_descr = """PyLZMA provides a platform independent way to read and write data
 that has been compressed or can be decompressed by the LZMA library by Igor Pavlov."""
-try: version = open('version.txt', 'rb').read().strip()
-except: version = 'unknown'
 modules = ['py7zlib']
 c_files = ['src/pylzma/pylzma.c', 'src/pylzma/pylzma_decompressobj.c', 'src/pylzma/pylzma_compressfile.c',
            'src/pylzma/pylzma_decompress.c', 'src/pylzma/pylzma_compress.c', 'src/pylzma/pylzma_streams.c', \
@@ -143,7 +142,7 @@ if sys.version_info[:2] < (2, 5):
 
 setup(
     name = "pylzma",
-    version = version,
+    version = get_git_version(),
     description = descr,
     author = "Joachim Bauch",
     author_email = "mail@joachim-bauch.de",
