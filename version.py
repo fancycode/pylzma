@@ -46,7 +46,10 @@ def call_git_describe(abbrev=4):
                   stdout=PIPE, stderr=PIPE)
         p.stderr.close()
         line = p.stdout.readlines()[0]
-        return line.strip()
+        version = line.strip()
+        if version[:1] == 'v':
+            version = version[1:]
+        return version
 
     except:
         return None
