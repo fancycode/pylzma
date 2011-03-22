@@ -28,18 +28,13 @@ from distutils import log
 from distutils.command.build_ext import build_ext as _build_ext
 from version import get_git_version
 
-if sys.version_info[:2] < (3, 0):
-    # build with egg support on Python2.x
-    try:
-        from setuptools import setup, Extension
-    except ImportError:
-        from ez_setup import use_setuptools
-        use_setuptools()
+try:
+    from setuptools import setup, Extension
+except ImportError:
+    from distribute_setup import use_setuptools
+    use_setuptools()
 
-        from setuptools import setup, Extension
-else:
-    # Python3 doesn't support setuptools yet
-    from distutils.core import setup, Extension
+    from setuptools import setup, Extension
 
 class UnsupportedPlatformWarning(Warning):
     pass
@@ -145,9 +140,14 @@ if sys.version_info[:2] < (2, 5):
     # hashlib is available starting with Python2.5
     install_requires.append('hashlib')
 
+tests_require = []
+if sys.version_info[:2] < (3, 0):
+    # m2crypto is not working on Python 3 yet
+    tests_require.append('pylzma[decrypt]')
+
 setup(
     name = "pylzma",
-    version = get_git_version(),
+    version = get_git_version().decode('utf-8'),
     description = descr,
     author = "Joachim Bauch",
     author_email = "mail@joachim-bauch.de",
@@ -173,7 +173,7 @@ setup(
     extras_require = {
         'decrypt': ['m2crypto'],
     },
-    tests_require = ['pylzma[decrypt]'],
+    tests_require = tests_require,
     test_suite = 'tests.suite',
     zip_safe = False,
 )
