@@ -159,6 +159,7 @@ setup(
     classifiers = [
         'Development Status :: 5 - Production/Stable',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)',
