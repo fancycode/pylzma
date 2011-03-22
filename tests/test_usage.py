@@ -36,7 +36,7 @@ def suite():
     if sys.version_info[:2] < (2,4):
         import warnings
         warnings.warn('Python 2.4 or above required to run doctests')
-    else:
+    elif sys.version_info[:2] < (3, 0):
         suite.addTest(doctest.DocFileSuite(USAGE_FILE))
     return suite
 
