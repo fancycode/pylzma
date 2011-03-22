@@ -24,7 +24,9 @@
  */
 
 #include <Python.h>
+#if PY_MAJOR_VERSION < 3
 #include <cStringIO.h>
+#endif
 
 #include "../sdk/LzmaEnc.h"
 #include "../sdk/Types.h"
@@ -37,7 +39,9 @@
 void
 pylzma_init_compfile(void)
 {
+#if PY_MAJOR_VERSION < 3
     PycString_IMPORT;
+#endif
 }
 
 typedef struct {
@@ -80,7 +84,7 @@ pylzma_compfile_read(CCompressionFileObject *self, PyObject *args)
     else
         length = self->outStream.size;
     
-    result = PyString_FromStringAndSize((const char *)self->outStream.data, length);
+    result = PyBytes_FromStringAndSize((const char *)self->outStream.data, length);
     if (result == NULL) {
         PyErr_NoMemory();
         goto exit;
@@ -103,11 +107,13 @@ static void
 pylzma_compfile_dealloc(CCompressionFileObject *self)
 {
     DEC_AND_NULL(self->inFile);
-    LzmaEnc_Destroy(self->encoder, &allocator, &allocator);
+    if (self->encoder != NULL) {
+        LzmaEnc_Destroy(self->encoder, &allocator, &allocator);
+    }
     if (self->outStream.data != NULL) {
         free(self->outStream.data);
     }
-    self->ob_type->tp_free((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static int
@@ -152,7 +158,11 @@ pylzma_compfile_init(CCompressionFileObject *self, PyObject *args, PyObject *kwa
 #endif
     }
     
-    if (PyString_Check(inFile)) {
+    if (PyBytes_Check(inFile)) {
+#if PY_MAJOR_VERSION >= 3
+        PyErr_SetString(PyExc_TypeError, "first parameter must be a file-like object");
+        return -1;
+#else
         // create new cStringIO object from string
         inFile = PycStringIO->NewInput(inFile);
         if (inFile == NULL)
@@ -160,8 +170,9 @@ pylzma_compfile_init(CCompressionFileObject *self, PyObject *args, PyObject *kwa
             PyErr_NoMemory();
             return -1;
         }
+#endif
     } else if (!PyObject_HasAttrString(inFile, "read")) {
-        PyErr_SetString(PyExc_ValueError, "first parameter must be a file-like object");
+        PyErr_SetString(PyExc_TypeError, "first parameter must be a file-like object");
         return -1;
     } else {
         // protect object from being refcounted out...
@@ -215,9 +226,7 @@ exit:
 
 PyTypeObject
 CCompressionFileObject_Type = {
-    //PyObject_HEAD_INIT(&PyType_Type)
-    PyObject_HEAD_INIT(NULL)
-    0,
+    PyVarObject_HEAD_INIT(NULL, 0)
     "pylzma.compressfile",                  /* char *tp_name; */
     sizeof(CCompressionFileObject),      /* int tp_basicsize; */
     0,                                   /* int tp_itemsize;       // not used much */

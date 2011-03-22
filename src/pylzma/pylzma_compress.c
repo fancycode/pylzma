@@ -119,7 +119,7 @@ pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     
-    result = PyString_FromStringAndSize((const char *) outStream.data, outStream.size);
+    result = PyBytes_FromStringAndSize((const char *) outStream.data, outStream.size);
     
 exit:
     if (encoder != NULL) {

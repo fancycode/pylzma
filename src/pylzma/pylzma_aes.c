@@ -28,6 +28,8 @@
 #include "../7zip/C/Aes.h"
 #include "../sdk/Types.h"
 
+#include "pylzma.h"
+
 typedef struct {
     PyObject_HEAD
     int offset;
@@ -88,9 +90,9 @@ aesdecrypt_decrypt(CAESDecryptObject *self, PyObject *args)
         return NULL;
     }
     
-    result = PyString_FromStringAndSize(data, length);
-    out = PyString_AS_STRING(result);
-    outlength = PyString_Size(result);
+    result = PyBytes_FromStringAndSize(data, length);
+    out = PyBytes_AS_STRING(result);
+    outlength = PyBytes_Size(result);
     Py_BEGIN_ALLOW_THREADS
     g_AesCbc_Decode(self->aes + self->offset, (Byte *) out, outlength / AES_BLOCK_SIZE);
     Py_END_ALLOW_THREADS
@@ -105,9 +107,7 @@ aesdecrypt_methods[] = {
 
 PyTypeObject
 CAESDecrypt_Type = {
-    //PyObject_HEAD_INIT(&PyType_Type)
-    PyObject_HEAD_INIT(NULL)
-    0,
+    PyVarObject_HEAD_INIT(NULL, 0)
     "pylzma.AESDecrypt",                 /* char *tp_name; */
     sizeof(CAESDecryptObject),           /* int tp_basicsize; */
     0,                                   /* int tp_itemsize;       // not used much */

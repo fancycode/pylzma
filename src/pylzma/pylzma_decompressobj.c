@@ -96,7 +96,7 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
             }
             memcpy(self->unconsumed_tail + self->unconsumed_length, data, length);
             self->unconsumed_length += length;
-            return PyString_FromString("");
+            return PyBytes_FromString("");
         }
 
         self->unconsumed_length += length;
@@ -139,16 +139,16 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
     avail_in = self->unconsumed_length;
     if (avail_in == 0) {
         // no more bytes to decompress
-        return PyString_FromString("");
+        return PyBytes_FromString("");
     }
     
-    result = PyString_FromStringAndSize(NULL, bufsize);
+    result = PyBytes_FromStringAndSize(NULL, bufsize);
     if (result == NULL) {
         PyErr_NoMemory();
         goto exit;
     }
     
-    next_out = (unsigned char *) PyString_AS_STRING(result);
+    next_out = (unsigned char *) PyBytes_AS_STRING(result);
     Py_BEGIN_ALLOW_THREADS
     // Decompress until EOS marker is reached
     inProcessed = avail_in;
@@ -187,7 +187,7 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
     }
     
     self->unconsumed_length = avail_in;
-    _PyString_Resize(&result, outProcessed);
+    _PyBytes_Resize(&result, outProcessed);
     
 exit:
     return result;
@@ -215,15 +215,15 @@ pylzma_decomp_flush(CDecompressionObject *self, PyObject *args)
     
     if (avail_out == 0) {
         // no more remaining data
-        return PyString_FromString("");
+        return PyBytes_FromString("");
     }
     
-    result = PyString_FromStringAndSize(NULL, avail_out);
+    result = PyBytes_FromStringAndSize(NULL, avail_out);
     if (result == NULL) {
         return NULL;
     }
     
-    tmp = (unsigned char *)PyString_AS_STRING(result);
+    tmp = (unsigned char *) PyBytes_AS_STRING(result);
     outsize = 0;
     while (1) {
         Py_BEGIN_ALLOW_THREADS
@@ -274,16 +274,16 @@ pylzma_decomp_flush(CDecompressionObject *self, PyObject *args)
         avail_out -= outProcessed;
         
         // Output buffer is full, might be more data for decompression
-        if (_PyString_Resize(&result, outsize+BLOCK_SIZE) != 0) {
+        if (_PyBytes_Resize(&result, outsize+BLOCK_SIZE) != 0) {
             goto exit;
         }
         
         avail_out += BLOCK_SIZE;
-        tmp = (unsigned char *)PyString_AS_STRING(result) + outsize;
+        tmp = (unsigned char *) PyBytes_AS_STRING(result) + outsize;
     }
     
-    if (outsize != PyString_GET_SIZE(result)) {
-        _PyString_Resize(&result, outsize);
+    if (outsize != PyBytes_GET_SIZE(result)) {
+        _PyBytes_Resize(&result, outsize);
     }
     
 exit:
@@ -331,14 +331,12 @@ pylzma_decomp_dealloc(CDecompressionObject *self)
 {
     LzmaDec_Free(&self->state, &allocator);
     FREE_AND_NULL(self->unconsumed_tail);
-    self->ob_type->tp_free((PyObject*) self);
+    Py_TYPE(self)->tp_free((PyObject*) self);
 }
 
 PyTypeObject
 CDecompressionObject_Type = {
-    //PyObject_HEAD_INIT(&PyType_Type)
-    PyObject_HEAD_INIT(NULL)
-    0,
+    PyVarObject_HEAD_INIT(NULL, 0)
     "pylzma.decompressobj",              /* char *tp_name; */
     sizeof(CDecompressionObject),        /* int tp_basicsize; */
     0,                                   /* int tp_itemsize;       // not used much */

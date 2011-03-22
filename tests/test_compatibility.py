@@ -27,14 +27,19 @@ try:
 except ImportError:
     from md5 import new as md5
 import random
+import sys
 import pylzma
 import unittest
 from binascii import unhexlify
 
 if not hasattr(pylzma, 'decompress_compat'):
-    raise ImportError, 'no compatibility support available'
+    raise ImportError('no compatibility support available')
 
-ALL_CHARS = ''.join([chr(x) for x in xrange(256)])
+if sys.version_info[:2] < (3, 0):
+    def bytes(s, encoding):
+        return s
+
+ALL_CHARS = [bytes(chr(x), 'ascii') for x in range(128)]
 
 # cache random strings to speed up tests
 _random_strings = {}
@@ -42,13 +47,13 @@ def generate_random(size, choice=random.choice, ALL_CHARS=ALL_CHARS):
     global _random_strings
     s = _random_strings.get(size, None)
     if s is None:
-        s = _random_strings[size] = ''.join([choice(ALL_CHARS) for x in xrange(size)])
+        s = _random_strings[size] = bytes('', 'ascii').join([choice(ALL_CHARS) for x in range(size)])
     return s
 
 class TestPyLZMACompability(unittest.TestCase):
     
     def setUp(self):
-        self.plain = 'hello, this is a test string'
+        self.plain = bytes('hello, this is a test string', 'ascii')
         self.plain_with_eos = unhexlify('5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c127731a214ff7031c000')
         self.plain_without_eos = unhexlify('5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c115edbe9')
         
@@ -59,7 +64,7 @@ class TestPyLZMACompability(unittest.TestCase):
 
     def test_compression_decompression_noeos(self):
         # call compression and decompression on random data of various sizes
-        for i in xrange(18):
+        for i in range(18):
             size = 1 << i
             original = generate_random(size)
             result = pylzma.decompress_compat(pylzma.compress(original, eos=0))[:size]
@@ -67,7 +72,7 @@ class TestPyLZMACompability(unittest.TestCase):
 
     def test_multi(self):
         # call compression and decompression multiple times to detect memory leaks...
-        for x in xrange(4):
+        for x in range(4):
             self.test_compression_decompression_noeos()
 
 def suite():

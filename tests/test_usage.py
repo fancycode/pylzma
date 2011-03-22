@@ -25,7 +25,6 @@
 import os, sys
 import unittest
 import doctest
-from test import test_support
 
 USAGE_FILE = os.path.join('..', 'doc', 'usage.txt')
 

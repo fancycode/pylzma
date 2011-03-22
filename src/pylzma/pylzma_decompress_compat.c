@@ -104,7 +104,7 @@ PyObject *pylzma_decompress_compat(PyObject *self, PyObject *args)
             break;
     }
 
-    result = PyString_FromStringAndSize(output, stream.totalOut);
+    result = PyBytes_FromStringAndSize(output, stream.totalOut);
     
 exit:
     free_lzma_stream(&stream);

@@ -28,13 +28,18 @@ from distutils import log
 from distutils.command.build_ext import build_ext as _build_ext
 from version import get_git_version
 
-try:
-    from setuptools import setup, Extension
-except ImportError:
-    from ez_setup import use_setuptools
-    use_setuptools()
+if sys.version_info[:2] < (3, 0):
+    # build with egg support on Python2.x
+    try:
+        from setuptools import setup, Extension
+    except ImportError:
+        from ez_setup import use_setuptools
+        use_setuptools()
 
-    from setuptools import setup, Extension
+        from setuptools import setup, Extension
+else:
+    # Python3 doesn't support setuptools yet
+    from distutils.core import setup, Extension
 
 class UnsupportedPlatformWarning(Warning):
     pass

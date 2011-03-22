@@ -24,6 +24,7 @@
  */
 
 #include <Python.h>
+#include <structmember.h>
 
 #include "pylzma.h"
 #include "pylzma_decompress_compat.h"
@@ -61,10 +62,10 @@ static PyObject *pylzma_decomp_decompress(CCompatDecompressionObject *self, PyOb
     if (max_length && max_length < length)
         length = max_length;
     
-    if (!(result = PyString_FromStringAndSize(NULL, length)))
+    if (!(result = PyBytes_FromStringAndSize(NULL, length)))
         return NULL;
     
-    self->stream.next_out = (unsigned char *)PyString_AS_STRING(result);
+    self->stream.next_out = (unsigned char *) PyBytes_AS_STRING(result);
     self->stream.avail_out = length;
     
     Py_BEGIN_ALLOW_THREADS
@@ -81,11 +82,11 @@ static PyObject *pylzma_decomp_decompress(CCompatDecompressionObject *self, PyOb
         if (max_length && length > max_length)
             length = max_length;
         
-        if (_PyString_Resize(&result, length) < 0)
+        if (_PyBytes_Resize(&result, length) < 0)
             goto exit;
         
         self->stream.avail_out = length - old_length;
-        self->stream.next_out = (Byte *)PyString_AS_STRING(result) + old_length;
+        self->stream.next_out = (Byte *) PyBytes_AS_STRING(result) + old_length;
         
         Py_BEGIN_ALLOW_THREADS
         res = lzmaCompatDecode(&self->stream);
@@ -134,7 +135,7 @@ static PyObject *pylzma_decomp_decompress(CCompatDecompressionObject *self, PyOb
     */
     if (res == LZMA_STREAM_END) {
         Py_XDECREF(self->unused_data);  /* Free original empty string */
-        self->unused_data = PyString_FromStringAndSize((char *)self->stream.next_in, self->stream.avail_in);
+        self->unused_data = PyBytes_FromStringAndSize((char *) self->stream.next_in, self->stream.avail_in);
         if (self->unused_data == NULL) {
             PyErr_NoMemory();
             DEC_AND_NULL(result);
@@ -142,7 +143,7 @@ static PyObject *pylzma_decomp_decompress(CCompatDecompressionObject *self, PyOb
         }
     }
     
-    _PyString_Resize(&result, self->stream.totalOut - start_total_out);
+    _PyBytes_Resize(&result, self->stream.totalOut - start_total_out);
     
 exit:
     return result;    
@@ -163,7 +164,7 @@ static PyObject *pylzma_decomp_reset(CCompatDecompressionObject *self, PyObject 
     self->unconsumed_length = 0;
     
     Py_DECREF(self->unused_data);
-    self->unused_data = PyString_FromString("");
+    self->unused_data = PyBytes_FromString("");
     CHECK_NULL(self->unused_data);
     
     result = Py_None;
@@ -187,33 +188,20 @@ static void pylzma_decomp_dealloc(CCompatDecompressionObject *self)
     PyObject_Del(self);
 }
 
-static PyObject *pylzma_decomp_getattr(CCompatDecompressionObject *self, char *attrname)
-{
-    if (strcmp(attrname, "unused_data") == 0) {
-        Py_INCREF(self->unused_data);
-        return self->unused_data;
-    } else
-        return Py_FindMethod(pylzma_decomp_compat_methods, (PyObject *)self, attrname);
-}
-
-static int pylzma_decomp_setattr(CCompatDecompressionObject *self, char *attrname, PyObject *value)
-{
-    // disable setting of attributes
-    PyErr_Format(PyExc_AttributeError, "no attribute named '%s'", attrname);
-    return -1;
-}
+PyMemberDef pylzma_decomp_compat_members[] = {
+    {"unused_data", T_OBJECT_EX, offsetof(CCompatDecompressionObject, unused_data), READONLY, NULL},
+    {NULL},
+};
 
 PyTypeObject CompatDecompressionObject_Type = {
-  //PyObject_HEAD_INIT(&PyType_Type)
-  PyObject_HEAD_INIT(NULL)
-  0,
+  PyVarObject_HEAD_INIT(NULL, 0)
   "LZMACompatDecompress",              /* char *tp_name; */
   sizeof(CCompatDecompressionObject),  /* int tp_basicsize; */
   0,                                   /* int tp_itemsize;       // not used much */
   (destructor)pylzma_decomp_dealloc,   /* destructor tp_dealloc; */
   NULL,                                /* printfunc  tp_print;   */
-  (getattrfunc)pylzma_decomp_getattr,  /* getattrfunc  tp_getattr; // __getattr__ */
-  (setattrfunc)pylzma_decomp_setattr,  /* setattrfunc  tp_setattr;  // __setattr__ */
+  NULL,                                /* getattrfunc  tp_getattr; // __getattr__ */
+  NULL,                                /* setattrfunc  tp_setattr;  // __setattr__ */
   NULL,                                /* cmpfunc  tp_compare;  // __cmp__ */
   NULL,                                /* reprfunc  tp_repr;    // __repr__ */
   NULL,                                /* PyNumberMethods *tp_as_number; */
@@ -222,6 +210,28 @@ PyTypeObject CompatDecompressionObject_Type = {
   NULL,                                /* hashfunc tp_hash;     // __hash__ */
   NULL,                                /* ternaryfunc tp_call;  // __call__ */
   NULL,                                /* reprfunc tp_str;      // __str__ */
+  NULL,                                /* tp_getattro*/
+  NULL,                                /* tp_setattro*/
+  NULL,                                /* tp_as_buffer*/
+  Py_TPFLAGS_DEFAULT,                  /* tp_flags*/
+  "Compat decompression class",        /* tp_doc */
+  NULL,                                /* tp_traverse */
+  NULL,                                /* tp_clear */
+  NULL,                                /* tp_richcompare */
+  0,                                   /* tp_weaklistoffset */
+  NULL,                                /* tp_iter */
+  NULL,                                /* tp_iternext */
+  pylzma_decomp_compat_methods,        /* tp_methods */
+  pylzma_decomp_compat_members,        /* tp_members */
+  NULL,                                /* tp_getset */
+  NULL,                                /* tp_base */
+  NULL,                                /* tp_dict */
+  NULL,                                /* tp_descr_get */
+  NULL,                                /* tp_descr_set */
+  0,                                   /* tp_dictoffset */
+  NULL,                                /* tp_init */
+  NULL,                                /* tp_alloc */
+  NULL,                                /* tp_new */
 };
 
 const char doc_decompressobj_compat[] = \
@@ -240,7 +250,7 @@ PyObject *pylzma_decompressobj_compat(PyObject *self, PyObject *args)
     result->unconsumed_tail = NULL;
     result->unconsumed_length = 0;
 
-    result->unused_data = PyString_FromString("");
+    result->unused_data = PyBytes_FromString("");
     if (result->unused_data == NULL)
     {
         PyErr_NoMemory();

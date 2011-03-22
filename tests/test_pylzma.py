@@ -30,10 +30,16 @@ except ImportError:
 import pylzma
 import unittest
 from binascii import unhexlify
-from cStringIO import StringIO
-from StringIO import StringIO as PyStringIO
+try:
+    from io import BytesIO
+except ImportError:
+    from cStringIO import StringIO as BytesIO
 
-ALL_CHARS = ''.join([chr(x) for x in xrange(256)])
+if sys.version_info[:2] < (3, 0):
+    def bytes(s, encoding):
+        return s
+
+ALL_CHARS = [bytes(chr(x), 'ascii') for x in range(128)]
 
 # cache random strings to speed up tests
 _random_strings = {}
@@ -41,13 +47,13 @@ def generate_random(size, choice=random.choice, ALL_CHARS=ALL_CHARS):
     global _random_strings
     s = _random_strings.get(size, None)
     if s is None:
-        s = _random_strings[size] = ''.join([choice(ALL_CHARS) for x in xrange(size)])
+        s = _random_strings[size] = bytes('', 'ascii').join([choice(ALL_CHARS) for x in range(size)])
     return s
 
 class TestPyLZMA(unittest.TestCase):
     
     def setUp(self):
-        self.plain = 'hello, this is a test string'
+        self.plain = bytes('hello, this is a test string', 'ascii')
         self.plain_with_eos = unhexlify('5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c127731a214ff7031c000')
         self.plain_without_eos = unhexlify('5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c115edbe9')
         
@@ -73,7 +79,7 @@ class TestPyLZMA(unittest.TestCase):
 
     def test_compression_decompression_eos(self):
         # call compression and decompression on random data of various sizes
-        for i in xrange(18):
+        for i in range(18):
             size = 1 << i
             original = generate_random(size)
             result = pylzma.decompress(pylzma.compress(original, eos=1))
@@ -82,7 +88,7 @@ class TestPyLZMA(unittest.TestCase):
 
     def test_compression_decompression_noeos(self):
         # call compression and decompression on random data of various sizes
-        for i in xrange(18):
+        for i in range(18):
             size = 1 << i
             original = generate_random(size)
             result = pylzma.decompress(pylzma.compress(original, eos=0), maxlength=size)
@@ -90,7 +96,7 @@ class TestPyLZMA(unittest.TestCase):
 
     def test_multi(self):
         # call compression and decompression multiple times to detect memory leaks...
-        for x in xrange(4):
+        for x in range(4):
             self.test_compression_decompression_eos()
             self.test_compression_decompression_noeos()
 
@@ -130,8 +136,8 @@ class TestPyLZMA(unittest.TestCase):
     def test_decompression_streaming(self):
         # test decompressing with one byte at a time...
         decompress = pylzma.decompressobj()
-        infile = StringIO(self.plain_with_eos)
-        outfile = StringIO()
+        infile = BytesIO(self.plain_with_eos)
+        outfile = BytesIO()
         while 1:
             data = infile.read(1)
             if not data: break
@@ -142,8 +148,8 @@ class TestPyLZMA(unittest.TestCase):
     def test_decompression_streaming_noeos(self):
         # test decompressing with one byte at a time...
         decompress = pylzma.decompressobj(maxlength=len(self.plain))
-        infile = StringIO(self.plain_without_eos)
-        outfile = StringIO()
+        infile = BytesIO(self.plain_without_eos)
+        outfile = BytesIO()
         while 1:
             data = infile.read(1)
             if not data: break
@@ -155,8 +161,8 @@ class TestPyLZMA(unittest.TestCase):
         # test compressing with one byte at a time...
         # XXX: disabled as LZMA doesn't support streaming compression yet
         compress = pylzma.compressobj(eos=1)
-        infile = StringIO(self.plain)
-        outfile = StringIO()
+        infile = BytesIO(self.plain)
+        outfile = BytesIO()
         while 1:
             data = infile.read(1)
             if not data: break
@@ -167,8 +173,8 @@ class TestPyLZMA(unittest.TestCase):
 
     def test_compression_file(self):
         # test compressing from file-like object (C class)
-        infile = StringIO(self.plain)
-        outfile = StringIO()
+        infile = BytesIO(self.plain)
+        outfile = BytesIO()
         compress = pylzma.compressfile(infile, eos=1)
         while 1:
             data = compress.read(1)
@@ -177,30 +183,33 @@ class TestPyLZMA(unittest.TestCase):
         check = pylzma.decompress(outfile.getvalue())
         self.assertEqual(check, self.plain)
 
-    def test_compression_file_python(self):
-        # test compressing from file-like object (Python class)
-        infile = PyStringIO(self.plain)
-        outfile = PyStringIO()
-        compress = pylzma.compressfile(infile, eos=1)
-        while 1:
-            data = compress.read(1)
-            if not data: break
-            outfile.write(data)
-        check = pylzma.decompress(outfile.getvalue())
-        self.assertEqual(check, self.plain)
+    if sys.version_info[:2] < (3, 0):
+        
+        def test_compression_file_python(self):
+            # test compressing from file-like object (Python class)
+            from StringIO import StringIO as PyStringIO
+            infile = PyStringIO(self.plain)
+            outfile = PyStringIO()
+            compress = pylzma.compressfile(infile, eos=1)
+            while 1:
+                data = compress.read(1)
+                if not data: break
+                outfile.write(data)
+            check = pylzma.decompress(outfile.getvalue())
+            self.assertEqual(check, self.plain)
 
     def test_compress_large_string(self):
         # decompress large block of repeating data, string version (bug reported by Christopher Perkins)
-        data = "asdf"*123456
+        data = bytes("asdf", 'ascii')*123456
         compressed = pylzma.compress(data)
         self.failUnless(data == pylzma.decompress(compressed))
 
     def test_compress_large_stream(self):
         # decompress large block of repeating data, stream version (bug reported by Christopher Perkins)
-        data = "asdf"*123456
+        data = bytes("asdf", 'ascii')*123456
         decompress = pylzma.decompressobj()
-        infile = StringIO(pylzma.compress(data))
-        outfile = StringIO()
+        infile = BytesIO(pylzma.compress(data))
+        outfile = BytesIO()
         while 1:
             tmp = infile.read(1)
             if not tmp: break
@@ -210,10 +219,10 @@ class TestPyLZMA(unittest.TestCase):
 
     def test_compress_large_stream_bigchunks(self):
         # decompress large block of repeating data, stream version with big chunks
-        data = "asdf"*123456
+        data = bytes("asdf", 'ascii')*123456
         decompress = pylzma.decompressobj()
-        infile = StringIO(pylzma.compress(data))
-        outfile = StringIO()
+        infile = BytesIO(pylzma.compress(data))
+        outfile = BytesIO()
         while 1:
             tmp = infile.read(1024)
             if not tmp: break
@@ -223,8 +232,11 @@ class TestPyLZMA(unittest.TestCase):
 
     def test_bugzilla_13(self):
         # prevent regression of bugzilla #13
-        fp = pylzma.compressfile('/tmp/test')
-        self.failUnless(isinstance(fp, pylzma.compressfile))
+        if sys.version_info[:2] < (3, 0):
+            fp = pylzma.compressfile('/tmp/test')
+            self.failUnless(isinstance(fp, pylzma.compressfile))
+        else:
+            self.failUnlessRaises(TypeError, pylzma.compressfile, '/tmp/test')
 
 def suite():
     suite = unittest.TestSuite()

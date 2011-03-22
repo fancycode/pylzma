@@ -70,7 +70,7 @@ pylzma_calculate_key(PyObject *self, PyObject *args, PyObject *kwargs)
     
     if (pysalt == Py_None) {
         pysalt = NULL;
-    } else if (!PyString_Check(pysalt)) {
+    } else if (!PyBytes_Check(pysalt)) {
         PyErr_Format(PyExc_TypeError, "salt must be a string, got a %s", pysalt->ob_type->tp_name);
         return NULL;
     }
@@ -81,8 +81,8 @@ pylzma_calculate_key(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     
     if (pysalt != NULL) {
-        salt = PyString_AS_STRING(pysalt);
-        saltlen = PyString_Size(pysalt);
+        salt = PyBytes_AS_STRING(pysalt);
+        saltlen = PyBytes_Size(pysalt);
     } else {
         salt = NULL;
         saltlen = 0;
@@ -117,7 +117,7 @@ pylzma_calculate_key(PyObject *self, PyObject *args, PyObject *kwargs)
         Py_END_ALLOW_THREADS
     }
     
-    return PyString_FromStringAndSize(key, 32);
+    return PyBytes_FromStringAndSize(key, 32);
 }
 
 PyMethodDef
@@ -138,28 +138,50 @@ static void *Alloc(void *p, size_t size) { p = p; return malloc(size); }
 static void Free(void *p, void *address) { p = p; free(address); }
 ISzAlloc allocator = { Alloc, Free };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef
+pylzma_module = {
+   PyModuleDef_HEAD_INIT,
+   "pylzma",
+   NULL,
+   -1,
+   methods
+};
+#define RETURN_MODULE_ERROR     return NULL
+#else
+#define RETURN_MODULE_ERROR     return
+#endif
+
 PyMODINIT_FUNC
+#if PY_MAJOR_VERSION >= 3
+PyInit_pylzma(void)
+#else
 initpylzma(void)
+#endif
 {
     PyObject *m;
 
     CDecompressionObject_Type.tp_new = PyType_GenericNew;
     if (PyType_Ready(&CDecompressionObject_Type) < 0)
-        return;
+        RETURN_MODULE_ERROR;
 #if 0
     CCompressionObject_Type.tp_new = PyType_GenericNew;
     if (PyType_Ready(&CCompressionObject_Type) < 0)
-        return;
+        RETURN_MODULE_ERROR;
 #endif
     CCompressionFileObject_Type.tp_new = PyType_GenericNew;
     if (PyType_Ready(&CCompressionFileObject_Type) < 0)
-        return;
+        RETURN_MODULE_ERROR;
 
     CAESDecrypt_Type.tp_new = PyType_GenericNew;
     if (PyType_Ready(&CAESDecrypt_Type) < 0)
-        return;
+        RETURN_MODULE_ERROR;
 
+#if PY_MAJOR_VERSION >= 3
+    m = PyModule_Create(&pylzma_module);
+#else
     m = Py_InitModule("pylzma", methods);
+#endif
 
     Py_INCREF(&CDecompressionObject_Type);
     PyModule_AddObject(m, "decompressobj", (PyObject *)&CDecompressionObject_Type);
@@ -192,5 +214,8 @@ initpylzma(void)
     _pylzma_interpreterState = PyThreadState_Get()->interp;
 #endif
 
+#endif
+#if PY_MAJOR_VERSION >= 3
+    return m;
 #endif
 }

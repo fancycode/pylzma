@@ -57,12 +57,12 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
     
     if (totallength != -1) {
         // We know the decompressed size, run simple case
-        result = PyString_FromStringAndSize(NULL, totallength);
+        result = PyBytes_FromStringAndSize(NULL, totallength);
         if (result == NULL) {
             return NULL;
         }
         
-        tmp = (Byte *) PyString_AS_STRING(result);
+        tmp = (Byte *) PyBytes_AS_STRING(result);
         srcLen = length - LZMA_PROPS_SIZE;
         destLen = totallength;
         Py_BEGIN_ALLOW_THREADS
@@ -73,7 +73,7 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
             result = NULL;
             PyErr_Format(PyExc_TypeError, "Error while decompressing: %d", res);
         } else if (destLen < (size_t) totallength) {
-            _PyString_Resize(&result, destLen);
+            _PyBytes_Resize(&result, destLen);
         }
         return result;
     }
@@ -117,7 +117,7 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
     } else if (res != SZ_OK) {
         PyErr_Format(PyExc_TypeError, "Error while decompressing: %d", res);
     } else {
-        result = PyString_FromStringAndSize((const char *) outStream.data, outStream.size);
+        result = PyBytes_FromStringAndSize((const char *) outStream.data, outStream.size);
     }
     
 exit:

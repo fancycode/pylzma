@@ -121,11 +121,11 @@ PythonInStream_Read(void *p, void *buf, size_t *size)
     if (data == NULL) {
         PyErr_Print();
         res = SZ_ERROR_READ;
-    } else if (!PyString_Check(data)) {
+    } else if (!PyBytes_Check(data)) {
         res = SZ_ERROR_READ;
     } else {
-        *size = PyString_GET_SIZE(data);
-        memcpy(buf, PyString_AS_STRING(data), min(*size, toread));
+        *size = PyBytes_GET_SIZE(data);
+        memcpy(buf, PyBytes_AS_STRING(data), min(*size, toread));
         res = SZ_OK;
     }
     Py_XDECREF(data);    

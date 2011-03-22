@@ -76,6 +76,26 @@ PyInterpreterState* _pylzma_interpreterState;
 #define END_BLOCK_THREADS
 #endif
 
+#if (PY_VERSION_HEX < 0x02060000)
+#define PyBytes_Check(ob)                       PyString_Check(ob)
+#define PyBytes_AS_STRING(ob)                   PyString_AS_STRING(ob)
+#define PyBytes_GET_SIZE(ob)                    PyString_GET_SIZE(ob)
+#define PyBytes_Size(ob)                        PyString_Size(ob)
+#define PyBytes_FromString(data)                PyString_FromString(data)
+#define PyBytes_FromStringAndSize(data, size)   PyString_FromStringAndSize(data, size)
+#define _PyBytes_Resize(data, newsize)          _PyString_Resize(data, newsize)
+#endif
+
+#if !defined(Py_TYPE)
+#define Py_TYPE(ob)     ((ob)->ob_type)
+#endif
+
+#if !defined(PyVarObject_HEAD_INIT)
+#define PyVarObject_HEAD_INIT(ob, size)    \
+    PyObject_HEAD_INIT(NULL) \
+    0,
+#endif
+
 extern ISzAlloc allocator;
 
 #endif
