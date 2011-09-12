@@ -541,11 +541,10 @@ class ArchiveFile(Base):
             input = self._file.read(self.uncompressed)
         return input[self._start:self._start+self.size]
     
-    def _read_from_decompressor(self, coder, decompressor, input, checkremaining=False):
+    def _read_from_decompressor(self, coder, decompressor, input, checkremaining=False, with_cache=False):
         data = ''
         idx = 0
         cnt = 0
-        self._file.seek(self._src_start)
         properties = coder.get('properties', None)
         if properties:
             decompressor.decompress(properties)
@@ -553,9 +552,18 @@ class ArchiveFile(Base):
         if not input and total is None:
             remaining = self._start+self.size
             out = BytesIO()
+            cache = getattr(self._folder, '_decompress_cache', None)
+            if cache is not None:
+                data, pos, decompressor = cache
+                out.write(data)
+                remaining -= len(data)
+                self._file.seek(pos)
+            else:
+                self._file.seek(self._src_start)
+            checkremaining = checkremaining and not self._folder.solid
             while remaining > 0:
                 data = self._file.read(READ_BLOCKSIZE)
-                if checkremaining:
+                if checkremaining or (with_cache and len(data) < READ_BLOCKSIZE):
                     tmp = decompressor.decompress(data, remaining)
                 else:
                     tmp = decompressor.decompress(data)
@@ -564,8 +572,13 @@ class ArchiveFile(Base):
                 remaining -= len(tmp)
             
             data = out.getvalue()
+            if with_cache and self._folder.solid:
+                # don't decompress start of solid archive for next file
+                # TODO: limit size of cached data
+                self._folder._decompress_cache = (data, self._file.tell(), decompressor)
         else:
             if not input:
+                self._file.seek(self._src_start)
                 input = self._file.read(total)
             if checkremaining:
                 data = decompressor.decompress(input, self._start+self.size)
@@ -576,7 +589,7 @@ class ArchiveFile(Base):
     def _read_lzma(self, coder, input):
         dec = pylzma.decompressobj(maxlength=self._start+self.size)
         try:
-            return self._read_from_decompressor(coder, dec, input, checkremaining=True)
+            return self._read_from_decompressor(coder, dec, input, checkremaining=True, with_cache=True)
         except ValueError:
             if self._is_encrypted():
                 raise WrongPasswordError('invalid password')
@@ -719,9 +732,9 @@ class Archive7z(Base):
                 continue
             
             folder = folders[fidx]
-            self.solid = subinfo.numunpackstreams[fidx] > 1
-            maxsize = (self.solid and packinfo.packsizes[fidx]) or None
-            if self.solid:
+            folder.solid = subinfo.numunpackstreams[fidx] > 1
+            maxsize = (folder.solid and packinfo.packsizes[fidx]) or None
+            if folder.solid:
                 # file is part of solid archive
                 info['compressed'] = None
             elif obidx < len(packsizes):
@@ -735,7 +748,7 @@ class Archive7z(Base):
             if subinfo.digestsdefined[obidx]:
                 file.digest = subinfo.digests[obidx]
             self.files.append(file)
-            if self.solid:
+            if folder.solid:
                 pos += unpacksizes[obidx]
             else:
                 src_pos += info['compressed']

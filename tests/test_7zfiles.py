@@ -174,7 +174,6 @@ class Test7ZipFiles(unittest.TestCase):
             cf = archive.getmember(filename)
             self.failUnlessEqual(len(cf.read()), cf.uncompressed)
 
-
 def suite():
     suite = unittest.TestSuite()
 
