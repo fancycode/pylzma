@@ -559,6 +559,7 @@ class ArchiveFile(Base):
                     tmp = decompressor.decompress(data, remaining)
                 else:
                     tmp = decompressor.decompress(data)
+                assert len(tmp) > 0
                 out.write(tmp)
                 remaining -= len(tmp)
             
@@ -700,20 +701,17 @@ class Archive7z(Base):
         subinfo = self.header.main_streams.substreamsinfo
         packsizes = packinfo.packsizes
         self.solid = packinfo.numstreams == 1
-        if self.solid:
-            # the files are stored in substreams
-            if hasattr(subinfo, 'unpacksizes'):
-                unpacksizes = subinfo.unpacksizes
-            else:
-                unpacksizes = [x.unpacksizes[0] for x in folders]
+        if hasattr(subinfo, 'unpacksizes'):
+            unpacksizes = subinfo.unpacksizes
         else:
-            # every file has it's own folder with compressed data
             unpacksizes = [x.unpacksizes[0] for x in folders]
         
         fidx = 0
         obidx = 0
         src_pos = self.afterheader
         pos = 0
+        folder_start = 0
+        folder_pos = src_pos
         maxsize = (self.solid and packinfo.packsizes[0]) or None
         for idx in range(files.numfiles):
             info = files.files[idx]
@@ -721,7 +719,17 @@ class Archive7z(Base):
                 continue
             
             folder = folders[fidx]
-            info['compressed'] = (not self.solid and packsizes[obidx]) or None
+            self.solid = subinfo.numunpackstreams[fidx] > 1
+            maxsize = (self.solid and packinfo.packsizes[fidx]) or None
+            if self.solid:
+                # file is part of solid archive
+                info['compressed'] = None
+            elif obidx < len(packsizes):
+                # file is compressed
+                info['compressed'] = packsizes[obidx]
+            else:
+                # file is not compressed
+                info['compressed'] = unpacksizes[obidx]
             info['uncompressed'] = unpacksizes[obidx]
             file = ArchiveFile(info, pos, src_pos, unpacksizes[obidx], folder, self, maxsize=maxsize)
             if subinfo.digestsdefined[obidx]:
@@ -730,12 +738,14 @@ class Archive7z(Base):
             if self.solid:
                 pos += unpacksizes[obidx]
             else:
-                src_pos += packsizes[obidx]
+                src_pos += info['compressed']
             obidx += 1
-
-            if not self.solid:
+            if idx >= subinfo.numunpackstreams[fidx]+folder_start:
+                folder_pos += packinfo.packsizes[fidx]
+                src_pos = folder_pos
+                folder_start = idx
                 fidx += 1
-            
+        
         self.numfiles = len(self.files)
         self.filenames = map(lambda x: x.filename, self.files)
         
@@ -763,7 +773,7 @@ class Archive7z(Base):
             
         for f in self.files:
             extra = (f.compressed and '%10d ' % (f.compressed)) or ' '
-            print ('%10d%s%s %s' % (f.size, extra, hex(f.digest)[2:-1], f.filename))
+            print ('%10d%s%.8x %s' % (f.size, extra, f.digest, f.filename))
             
 if __name__ == '__main__':
     f = Archive7z(open('test.7z', 'rb'))

@@ -165,6 +165,16 @@ class Test7ZipFiles(unittest.TestCase):
         data = cf.read()
         self.failUnlessEqual(len(data), cf.size)
 
+    def test_bugzilla_16(self):
+        # sample file for bugzilla #16
+        fp = open(os.path.join(ROOT, 'data', 'bugzilla_16.7z'), 'rb')
+        archive = Archive7z(fp)
+        filenames = archive.getnames()
+        for filename in filenames:
+            cf = archive.getmember(filename)
+            self.failUnlessEqual(len(cf.read()), cf.uncompressed)
+
+
 def suite():
     suite = unittest.TestSuite()
 
