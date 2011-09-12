@@ -97,6 +97,15 @@ COMPRESSION_METHOD_MISC_ZIP      = unhexlify('0401')  # '\x04\x01'
 COMPRESSION_METHOD_MISC_BZIP     = unhexlify('0402')  # '\x04\x02'
 COMPRESSION_METHOD_7Z_AES256_SHA256 = unhexlify('06f10701')  # '\x06\xf1\x07\x01'
 
+# number of seconds between 1601/01/01 and 1970/01/01
+# used to adjust 7z FILETIME to Python timestamp
+TIMESTAMP_ADJUST                 = -11644477200 
+
+def toTimestamp(filetime):
+    """Convert 7z FILETIME to Python timestamp."""
+    # FILETIME is 100-nanosecond intervals since 1601/01/01 (UTC)
+    return (filetime / 10000000.0) + TIMESTAMP_ADJUST
+
 class ArchiveError(Exception):
     pass
 
@@ -384,9 +393,11 @@ class FilesInfo(Base):
     def _readTimes(self, file, files, name):
         defined = self._readBoolean(file, len(files), checkall=1)
         
+        # NOTE: the "external" flag is currently ignored, should be 0x00
+        external = file.read(1)
         for i in range(len(files)):
             if defined[i]:
-                files[i][name] = self._readReal64Bit(file)[0] #unpack('<L', file.read(4))[0]
+                files[i][name] = toTimestamp(self._readReal64Bit(file)[0])
             else:
                 files[i][name] = None
 
