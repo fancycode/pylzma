@@ -73,8 +73,6 @@ else:
     def bytes(s, encoding):
         return s
 
-from hashlib import sha256
-
 READ_BLOCKSIZE                   = 16384
 
 MAGIC_7Z                         = unhexlify('377abcaf271c')  # '7z\xbc\xaf\x27\x1c'

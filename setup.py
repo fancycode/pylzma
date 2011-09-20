@@ -136,14 +136,7 @@ extens = [
 ]
 
 install_requires = []
-if sys.version_info[:2] < (2, 5):
-    # hashlib is available starting with Python2.5
-    install_requires.append('hashlib')
-
 tests_require = []
-if sys.version_info[:2] < (3, 0):
-    # m2crypto is not working on Python 3 yet
-    tests_require.append('pylzma[decrypt]')
 
 setup(
     name = "pylzma",
