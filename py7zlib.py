@@ -26,6 +26,7 @@
 """
 
 from binascii import unhexlify
+from datetime import datetime
 import pylzma
 from struct import pack, unpack
 from zlib import crc32
@@ -47,6 +48,27 @@ try:
 except ImportError:
     # support for encrypted files is optional
     M2Crypto = None
+
+try:
+    from pytz import UTC
+except ImportError:
+    # pytz is optional, define own "UTC" timestamp
+    # reference implementation from Python documentation
+    from datetime import timedelta, tzinfo
+
+    ZERO = timedelta(0)
+
+    class UTC(tzinfo):
+        """UTC"""
+
+        def utcoffset(self, dt):
+            return ZERO
+
+        def tzname(self, dt):
+            return "UTC"
+
+        def dst(self, dt):
+            return ZERO    
 
 try:
     unicode
@@ -97,9 +119,9 @@ COMPRESSION_METHOD_MISC_ZIP      = unhexlify('0401')  # '\x04\x01'
 COMPRESSION_METHOD_MISC_BZIP     = unhexlify('0402')  # '\x04\x02'
 COMPRESSION_METHOD_7Z_AES256_SHA256 = unhexlify('06f10701')  # '\x06\xf1\x07\x01'
 
-# number of seconds between 1601/01/01 and 1970/01/01
+# number of seconds between 1601/01/01 and 1970/01/01 (UTC)
 # used to adjust 7z FILETIME to Python timestamp
-TIMESTAMP_ADJUST                 = -11644477200 
+TIMESTAMP_ADJUST                 = -11644473600
 
 def toTimestamp(filetime):
     """Convert 7z FILETIME to Python timestamp."""
@@ -126,6 +148,16 @@ class NoPasswordGivenError(DecryptionError):
 
 class WrongPasswordError(DecryptionError):
     pass
+
+class ArchiveTimestamp(long):
+    """Windows FILETIME timestamp."""
+    
+    def __repr__(self):
+        return '%s(%d)' % (type(self).__name__, self)
+    
+    def as_datetime(self):
+        """Convert FILETIME to Python datetime object."""
+        return datetime.fromtimestamp(toTimestamp(self), UTC)
 
 class Base(object):
     """ base class with support for various basic read/write functions """
@@ -397,7 +429,7 @@ class FilesInfo(Base):
         external = file.read(1)
         for i in range(len(files)):
             if defined[i]:
-                files[i][name] = toTimestamp(self._readReal64Bit(file)[0])
+                files[i][name] = ArchiveTimestamp(self._readReal64Bit(file)[0])
             else:
                 files[i][name] = None
 

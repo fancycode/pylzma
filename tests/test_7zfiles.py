@@ -25,7 +25,7 @@
 from datetime import datetime
 import os
 import pylzma
-from py7zlib import Archive7z, NoPasswordGivenError, WrongPasswordError
+from py7zlib import Archive7z, NoPasswordGivenError, WrongPasswordError, UTC
 import sys
 import unittest
 
@@ -59,16 +59,18 @@ class Test7ZipFiles(unittest.TestCase):
         self.failUnlessEqual(archive.getmember('test2.txt'), None)
         cf = archive.getmember('test1.txt')
         self.failUnless(cf.checkcrc())
-        self.failUnlessEqual(datetime.fromtimestamp(cf.lastwritetime).replace(microsecond=0), \
-            datetime(2006, 3, 15, 21, 43, 48))
+        self.failUnlessEqual(cf.lastwritetime / 10000000, 12786932628)
+        self.failUnlessEqual(cf.lastwritetime.as_datetime().replace(microsecond=0), \
+            datetime(2006, 3, 15, 21, 43, 48, 0, UTC))
         self.failUnlessEqual(cf.read(), bytes('This file is located in the root.', 'ascii'))
         cf.reset()
         self.failUnlessEqual(cf.read(), bytes('This file is located in the root.', 'ascii'))
 
         cf = archive.getmember('test/test2.txt')
         self.failUnless(cf.checkcrc())
-        self.failUnlessEqual(datetime.fromtimestamp(cf.lastwritetime).replace(microsecond=0), \
-            datetime(2006, 3, 15, 21, 43, 36))
+        self.failUnlessEqual(cf.lastwritetime / 10000000, 12786932616)
+        self.failUnlessEqual(cf.lastwritetime.as_datetime().replace(microsecond=0), \
+            datetime(2006, 3, 15, 21, 43, 36, 0, UTC))
         self.failUnlessEqual(cf.read(), bytes('This file is located in a folder.', 'ascii'))
         cf.reset()
         self.failUnlessEqual(cf.read(), bytes('This file is located in a folder.', 'ascii'))
