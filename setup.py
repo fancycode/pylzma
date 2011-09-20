@@ -172,7 +172,7 @@ setup(
     },
     install_requires = install_requires,
     extras_require = {
-        'decrypt': ['m2crypto'],
+        'decrypt': [],
     },
     tests_require = tests_require,
     test_suite = 'tests.suite',

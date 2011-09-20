@@ -43,13 +43,6 @@ except ImportError:
     pass
 
 try:
-    import M2Crypto
-    from M2Crypto import EVP
-except ImportError:
-    # support for encrypted files is optional
-    M2Crypto = None
-
-try:
     from pytz import UTC
 except ImportError:
     # pytz is optional, define own "UTC" timestamp
@@ -536,11 +529,8 @@ class ArchiveFile(Base):
             COMPRESSION_METHOD_LZMA: '_read_lzma',
             COMPRESSION_METHOD_MISC_ZIP: '_read_zip',
             COMPRESSION_METHOD_MISC_BZIP: '_read_bzip',
+            COMPRESSION_METHOD_7Z_AES256_SHA256: '_read_7z_aes256_sha256',
         }
-        if M2Crypto is not None:
-            self._decoders.update({
-                COMPRESSION_METHOD_7Z_AES256_SHA256: '_read_7z_aes256_sha256',
-            })
 
     def _is_encrypted(self):
         return COMPRESSION_METHOD_7Z_AES256_SHA256 in [x['method'] for x in self._folder.coders]
