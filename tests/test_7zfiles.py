@@ -176,6 +176,12 @@ class Test7ZipFiles(unittest.TestCase):
             cf = archive.getmember(filename)
             self.failUnlessEqual(len(cf.read()), cf.uncompressed)
 
+    def test_empty(self):
+        # decompress empty archive
+        fp = open(os.path.join(ROOT, 'data', 'empty.7z'), 'rb')
+        archive = Archive7z(fp)
+        self.failUnlessEqual(archive.getnames(), [])
+
 def suite():
     suite = unittest.TestSuite()
 

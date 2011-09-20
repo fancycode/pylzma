@@ -714,7 +714,7 @@ class Archive7z(Base):
         
         while True:
             id = buffer.read(1)
-            if id == PROPERTY_HEADER:
+            if not id or id == PROPERTY_HEADER:
                 break
                 
             if id != PROPERTY_ENCODED_HEADER:
@@ -737,9 +737,15 @@ class Archive7z(Base):
                         
             buffer = BytesIO(data)
         
-        self.header = Header(buffer)
         self.files = []
+        if not id:
+            # empty archive
+            self.solid = False
+            self.numfiles = 0
+            self.filenames = []
+            return
         
+        self.header = Header(buffer)
         files = self.header.files
         folders = self.header.main_streams.unpackinfo.folders
         packinfo = self.header.main_streams.packinfo
