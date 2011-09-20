@@ -28,6 +28,7 @@
 #include "../sdk/7zVersion.h"
 #include "../7zip/C/Sha256.h"
 #include "../7zip/C/Aes.h"
+#include "../7zip/C/Bra.h"
 
 #include "pylzma.h"
 #include "pylzma_compress.h"
@@ -120,6 +121,75 @@ pylzma_calculate_key(PyObject *self, PyObject *args, PyObject *kwargs)
     return PyBytes_FromStringAndSize(key, 32);
 }
 
+const char
+doc_bcj_x86_convert[] = \
+    "bcj_x86_convert(data) -- Perform BCJ x86 conversion.";
+
+static PyObject *
+pylzma_bcj_x86_convert(PyObject *self, PyObject *args)
+{
+    char *data;
+    int length;
+    int encoding=0;
+    PyObject *result;
+    
+    if (!PyArg_ParseTuple(args, "s#|i", &data, &length, &encoding)) {
+        return NULL;
+    }
+    
+    if (!length) {
+        return PyString_FromString("");
+    }
+    
+    result = PyString_FromStringAndSize(data, length);
+    if (result != NULL) {
+        UInt32 state;
+        Py_BEGIN_ALLOW_THREADS
+        x86_Convert_Init(state);
+        x86_Convert((Byte *) PyString_AS_STRING(data), length, 0, &state, encoding);
+        Py_END_ALLOW_THREADS
+    }
+    
+    return result;
+}
+
+#define DEFINE_BCJ_CONVERTER(id, name) \
+const char \
+doc_bcj_##id##_convert[] = \
+    "bcj_" #id "_convert(data) -- Perform BCJ " #name " conversion."; \
+\
+static PyObject * \
+pylzma_bcj_##id##_convert(PyObject *self, PyObject *args) \
+{ \
+    char *data; \
+    int length; \
+    int encoding=0; \
+    PyObject *result; \
+     \
+    if (!PyArg_ParseTuple(args, "s#|i", &data, &length, &encoding)) { \
+        return NULL; \
+    } \
+     \
+    if (!length) { \
+        return PyString_FromString(""); \
+    } \
+     \
+    result = PyString_FromStringAndSize(data, length); \
+    if (result != NULL) { \
+        Py_BEGIN_ALLOW_THREADS \
+        name##_Convert((Byte *) PyString_AS_STRING(data), length, 0, encoding); \
+        Py_END_ALLOW_THREADS \
+    } \
+     \
+    return result; \
+}
+
+DEFINE_BCJ_CONVERTER(arm, ARM);
+DEFINE_BCJ_CONVERTER(armt, ARMT);
+DEFINE_BCJ_CONVERTER(ppc, PPC);
+DEFINE_BCJ_CONVERTER(sparc, SPARC);
+DEFINE_BCJ_CONVERTER(ia64, IA64);
+
 PyMethodDef
 methods[] = {
     // exported functions
@@ -131,6 +201,13 @@ methods[] = {
     {"decompressobj_compat", (PyCFunction)pylzma_decompressobj_compat, METH_VARARGS,                 (char *)&doc_decompressobj_compat},
 #endif
     {"calculate_key",   (PyCFunction)pylzma_calculate_key,  METH_VARARGS | METH_KEYWORDS,   (char *)&doc_calculate_key},
+    // BCJ
+    {"bcj_x86_convert",     (PyCFunction)pylzma_bcj_x86_convert,    METH_VARARGS,   (char *)&doc_bcj_x86_convert},
+    {"bcj_arm_convert",     (PyCFunction)pylzma_bcj_arm_convert,    METH_VARARGS,   (char *)&doc_bcj_arm_convert},
+    {"bcj_armt_convert",    (PyCFunction)pylzma_bcj_armt_convert,   METH_VARARGS,   (char *)&doc_bcj_armt_convert},
+    {"bcj_ppc_convert",     (PyCFunction)pylzma_bcj_ppc_convert,    METH_VARARGS,   (char *)&doc_bcj_ppc_convert},
+    {"bcj_sparc_convert",   (PyCFunction)pylzma_bcj_sparc_convert,  METH_VARARGS,   (char *)&doc_bcj_sparc_convert},
+    {"bcj_ia64_convert",    (PyCFunction)pylzma_bcj_ia64_convert,   METH_VARARGS,   (char *)&doc_bcj_ia64_convert},
     {NULL, NULL},
 };
 

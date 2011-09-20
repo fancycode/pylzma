@@ -122,7 +122,8 @@ link_args = []
 macros = []
 lzma_files = ('src/sdk/LzFind.c', 'src/sdk/LzmaDec.c', 'src/sdk/LzmaEnc.c', \
     'src/7zip/C/CpuArch.c', 'src/7zip/C/Aes.c', 'src/7zip/C/AesOpt.c', \
-    'src/7zip/C/Sha256.c')
+    'src/7zip/C/Sha256.c', 'src/7zip/C/Bra.c', 'src/7zip/C/Bra86.c', \
+    'src/7zip/C/BraIA64.c')
 if ENABLE_COMPATIBILITY:
     c_files += ('src/pylzma/pylzma_decompress_compat.c', 'src/pylzma/pylzma_decompressobj_compat.c', )
     lzma_files += ('src/compat/LzmaCompatDecode.c', )
