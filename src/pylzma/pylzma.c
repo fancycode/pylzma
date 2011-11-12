@@ -146,7 +146,7 @@ pylzma_bcj_x86_convert(PyObject *self, PyObject *args)
         UInt32 state;
         Py_BEGIN_ALLOW_THREADS
         x86_Convert_Init(state);
-        x86_Convert((Byte *) PyString_AS_STRING(data), length, 0, &state, encoding);
+        x86_Convert((Byte *) PyString_AS_STRING(result), length, 0, &state, encoding);
         Py_END_ALLOW_THREADS
     }
     
