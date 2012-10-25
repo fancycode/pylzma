@@ -124,9 +124,11 @@ pylzma_comp_dealloc(CCompressionObject *self)
     LzmaEnc_Destroy(self->encoder, &allocator, &allocator);
     if (self->outStream.data != NULL) {
         free(self->outStream.data);
+        self->outStream.data = NULL;
     }
     if (self->inStream.data != NULL) {
         free(self->inStream.data);
+        self->inStream.data = NULL;
     }
     self->ob_type->tp_free((PyObject*)self);
 }

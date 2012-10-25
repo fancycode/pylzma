@@ -127,6 +127,7 @@ exit:
     }
     if (outStream.data != NULL) {
         free(outStream.data);
+        outStream.data = NULL;
     }
     
     return result;
