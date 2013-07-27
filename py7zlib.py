@@ -61,8 +61,13 @@ except ImportError:
             return "UTC"
 
         def dst(self, dt):
-            return ZERO    
-
+            return ZERO
+        
+        def __call__(self):
+            return self
+        
+    UTC = UTC()
+    
 try:
     unicode
 except NameError:
@@ -787,16 +792,12 @@ class Archive7z(Base):
         
         self.numfiles = len(self.files)
         self.filenames = map(lambda x: x.filename, self.files)
+        self.files_dict = {x.filename: x for x in self.files}
         
     # interface like TarFile
         
     def getmember(self, name):
-        # XXX: store files in dictionary
-        for f in self.files:
-            if f.filename == name:
-                return f
-                
-        return None
+        return self.files_dict.get(name, None)
         
     def getmembers(self):
         return self.files
