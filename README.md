@@ -1,9 +1,8 @@
-Python bindings for LZMA
-------------------------
+# Python bindings for LZMA
 
-PyLZMA Copyright (C) 2004-2010 Joachim Bauch
-7-Zip Copyright (C) 1999-2010 Igor Pavlov
-LZMA SDK Copyright (C) 1999-2010 Igor Pavlov
+* **PyLZMA** Copyright (C) 2004-2010 Joachim Bauch
+* **7-Zip** Copyright (C) 1999-2010 Igor Pavlov
+* **LZMA SDK** Copyright (C) 1999-2010 Igor Pavlov
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
