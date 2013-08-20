@@ -1,7 +1,7 @@
 Thanks to the following people for providing feedback and/or patches:
 
-Christopher Perkins         - chris <at> percious <dot> com
-oneirotekt                  - oneirotekt <at> zogblaster <dot> com
+Christopher Perkins.         - chris <at> percious <dot> com
+oneirotekt.                  - oneirotekt <at> zogblaster <dot> com
 Patrick Mézard              - patrick <dot> mezard <at> gmail <dot> com
 Stefan Schwendeler          - kungpfui <at> bierbuden <dot> de
 Helmut Jarausch             - jarausch <at> igpm.rwth-aachen <dot> de
