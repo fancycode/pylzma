@@ -786,7 +786,10 @@ class Archive7z(Base):
                 fidx += 1
         
         self.numfiles = len(self.files)
-        self.filenames = map(lambda x: x.filename, self.files)
+        if self.numfiles == 1:
+            self.filenames = [getattr(self.files[0], 'filename', self._file.name[:-3])]
+        else:
+            self.filenames = map(lambda x: x.filename, self.files)
         
     # interface like TarFile
         
