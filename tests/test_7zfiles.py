@@ -59,7 +59,7 @@ class Test7ZipFiles(unittest.TestCase):
         self.failUnlessEqual(archive.getmember('test2.txt'), None)
         cf = archive.getmember('test1.txt')
         self.failUnless(cf.checkcrc())
-        self.failUnlessEqual(cf.lastwritetime / 10000000, 12786932628)
+        self.failUnlessEqual(cf.lastwritetime // 10000000, 12786932628)
         self.failUnlessEqual(cf.lastwritetime.as_datetime().replace(microsecond=0), \
             datetime(2006, 3, 15, 21, 43, 48, 0, UTC))
         self.failUnlessEqual(cf.read(), bytes('This file is located in the root.', 'ascii'))
@@ -68,7 +68,7 @@ class Test7ZipFiles(unittest.TestCase):
 
         cf = archive.getmember('test/test2.txt')
         self.failUnless(cf.checkcrc())
-        self.failUnlessEqual(cf.lastwritetime / 10000000, 12786932616)
+        self.failUnlessEqual(cf.lastwritetime // 10000000, 12786932616)
         self.failUnlessEqual(cf.lastwritetime.as_datetime().replace(microsecond=0), \
             datetime(2006, 3, 15, 21, 43, 36, 0, UTC))
         self.failUnlessEqual(cf.read(), bytes('This file is located in a folder.', 'ascii'))
@@ -191,7 +191,7 @@ class Test7ZipFiles(unittest.TestCase):
         self.failIfEqual(cf, None)
         data = cf.read()
         self.failUnlessEqual(len(data), cf.uncompressed)
-        self.failUnlessEqual(data, 'Hello GitHub issue #14.\n')
+        self.failUnlessEqual(data, bytes('Hello GitHub issue #14.\n', 'ascii'))
 
         # accessing by name returns an arbitrary compressed streams
         # if both don't have a name in the archive
@@ -202,19 +202,19 @@ class Test7ZipFiles(unittest.TestCase):
         self.failIfEqual(cf, None)
         data = cf.read()
         self.failUnlessEqual(len(data), cf.uncompressed)
-        self.failUnless(data in ('Hello GitHub issue #14 1/2.\n', 'Hello GitHub issue #14 2/2.\n'))
+        self.failUnless(data in (bytes('Hello GitHub issue #14 1/2.\n', 'ascii'), bytes('Hello GitHub issue #14 2/2.\n', 'ascii')))
 
         # accessing by index returns both values
         cf = archive.getmember(0)
         self.failIfEqual(cf, None)
         data = cf.read()
         self.failUnlessEqual(len(data), cf.uncompressed)
-        self.failUnlessEqual(data, 'Hello GitHub issue #14 1/2.\n')
+        self.failUnlessEqual(data, bytes('Hello GitHub issue #14 1/2.\n', 'ascii'))
         cf = archive.getmember(1)
         self.failIfEqual(cf, None)
         data = cf.read()
         self.failUnlessEqual(len(data), cf.uncompressed)
-        self.failUnlessEqual(data, 'Hello GitHub issue #14 2/2.\n')
+        self.failUnlessEqual(data, bytes('Hello GitHub issue #14 2/2.\n', 'ascii'))
 
 def suite():
     suite = unittest.TestSuite()

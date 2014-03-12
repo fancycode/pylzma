@@ -138,15 +138,15 @@ pylzma_bcj_x86_convert(PyObject *self, PyObject *args)
     }
     
     if (!length) {
-        return PyString_FromString("");
+        return PyBytes_FromString("");
     }
     
-    result = PyString_FromStringAndSize(data, length);
+    result = PyBytes_FromStringAndSize(data, length);
     if (result != NULL) {
         UInt32 state;
         Py_BEGIN_ALLOW_THREADS
         x86_Convert_Init(state);
-        x86_Convert((Byte *) PyString_AS_STRING(result), length, 0, &state, encoding);
+        x86_Convert((Byte *) PyBytes_AS_STRING(result), length, 0, &state, encoding);
         Py_END_ALLOW_THREADS
     }
     
@@ -171,13 +171,13 @@ pylzma_bcj_##id##_convert(PyObject *self, PyObject *args) \
     } \
      \
     if (!length) { \
-        return PyString_FromString(""); \
+        return PyBytes_FromString(""); \
     } \
      \
-    result = PyString_FromStringAndSize(data, length); \
+    result = PyBytes_FromStringAndSize(data, length); \
     if (result != NULL) { \
         Py_BEGIN_ALLOW_THREADS \
-        name##_Convert((Byte *) PyString_AS_STRING(result), length, 0, encoding); \
+        name##_Convert((Byte *) PyBytes_AS_STRING(result), length, 0, encoding); \
         Py_END_ALLOW_THREADS \
     } \
      \

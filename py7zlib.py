@@ -62,7 +62,12 @@ except ImportError:
             return "UTC"
 
         def dst(self, dt):
-            return ZERO    
+            return ZERO
+
+        def _call__(self):
+            return self
+
+    UTC = UTC()
 
 try:
     unicode
@@ -73,6 +78,12 @@ except NameError:
 else:
     def bytes(s, encoding):
         return s
+
+try:
+    long
+except NameError:
+    # Python 3.x
+    long = int
 
 READ_BLOCKSIZE                   = 16384
 
@@ -796,7 +807,7 @@ class Archive7z(Base):
                 fidx += 1
         
         self.numfiles = len(self.files)
-        self.filenames = map(lambda x: x.filename, self.files)
+        self.filenames = list(map(lambda x: x.filename, self.files))
         
     # interface like TarFile
         
