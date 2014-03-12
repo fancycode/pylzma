@@ -31,7 +31,7 @@ from version import get_git_version
 try:
     from setuptools import setup, Extension
 except ImportError:
-    from distribute_setup import use_setuptools
+    from ez_setup import use_setuptools
     use_setuptools()
 
     from setuptools import setup, Extension
