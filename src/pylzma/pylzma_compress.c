@@ -64,6 +64,7 @@ pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
                                                                   &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos, &multithreading, &matchfinder))
         return NULL;
     
+    outStream.data = NULL;
     CHECK_RANGE(dictionary,         0,  27, "dictionary must be between 0 and 27");
     CHECK_RANGE(fastBytes,          5, 273, "fastBytes must be between 5 and 273");
     CHECK_RANGE(literalContextBits, 0,   8, "literalContextBits must be between 0 and 8");

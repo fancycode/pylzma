@@ -238,6 +238,10 @@ class TestPyLZMA(unittest.TestCase):
         else:
             self.failUnlessRaises(TypeError, pylzma.compressfile, '/tmp/test')
 
+    def test_github_10(self):
+        # prevent regression of github #10
+        self.failUnlessRaises(ValueError, pylzma.compress, bytes("foo", 'ascii'), dictionary=100)
+
 def suite():
     suite = unittest.TestSuite()
 
