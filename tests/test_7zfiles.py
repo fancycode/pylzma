@@ -182,6 +182,40 @@ class Test7ZipFiles(unittest.TestCase):
         archive = Archive7z(fp)
         self.failUnlessEqual(archive.getnames(), [])
 
+    def test_github_14(self):
+        # decompress content without filename
+        fp = open(os.path.join(ROOT, 'data', 'github_14.7z'), 'rb')
+        archive = Archive7z(fp)
+        self.failUnlessEqual(archive.getnames(), ['github_14'])
+        cf = archive.getmember('github_14')
+        self.failIfEqual(cf, None)
+        data = cf.read()
+        self.failUnlessEqual(len(data), cf.uncompressed)
+        self.failUnlessEqual(data, 'Hello GitHub issue #14.\n')
+
+        # accessing by name returns an arbitrary compressed streams
+        # if both don't have a name in the archive
+        fp = open(os.path.join(ROOT, 'data', 'github_14_multi.7z'), 'rb')
+        archive = Archive7z(fp)
+        self.failUnlessEqual(archive.getnames(), ['github_14_multi', 'github_14_multi'])
+        cf = archive.getmember('github_14_multi')
+        self.failIfEqual(cf, None)
+        data = cf.read()
+        self.failUnlessEqual(len(data), cf.uncompressed)
+        self.failUnless(data in ('Hello GitHub issue #14 1/2.\n', 'Hello GitHub issue #14 2/2.\n'))
+
+        # accessing by index returns both values
+        cf = archive.getmember(0)
+        self.failIfEqual(cf, None)
+        data = cf.read()
+        self.failUnlessEqual(len(data), cf.uncompressed)
+        self.failUnlessEqual(data, 'Hello GitHub issue #14 1/2.\n')
+        cf = archive.getmember(1)
+        self.failIfEqual(cf, None)
+        data = cf.read()
+        self.failUnlessEqual(len(data), cf.uncompressed)
+        self.failUnlessEqual(data, 'Hello GitHub issue #14 2/2.\n')
+
 def suite():
     suite = unittest.TestSuite()
 

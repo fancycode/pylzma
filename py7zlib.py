@@ -32,6 +32,7 @@ from struct import pack, unpack
 from zlib import crc32
 import zlib
 import bz2
+import os
 try:
     from io import BytesIO
 except ImportError:
@@ -521,6 +522,15 @@ class ArchiveFile(Base):
         self._maxsize = maxsize
         for k, v in info.items():
             setattr(self, k, v)
+        if not hasattr(self, 'filename'):
+            # compressed file is stored without a name, generate one
+            try:
+                basefilename = self._file.name
+            except AttributeError:
+                # 7z archive file doesn't have a name
+                self.filename = 'contents'
+            else:
+                self.filename = os.path.splitext(os.path.basename(basefilename))[0]
         self.reset()
         self._decoders = {
             COMPRESSION_METHOD_COPY: '_read_copy',
@@ -791,6 +801,12 @@ class Archive7z(Base):
     # interface like TarFile
         
     def getmember(self, name):
+        if isinstance(name, (int, long)):
+            try:
+                return self.files[name]
+            except IndexError:
+                return None
+
         # XXX: store files in dictionary
         for f in self.files:
             if f.filename == name:
