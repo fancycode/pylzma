@@ -177,7 +177,7 @@ pylzma_bcj_##id##_convert(PyObject *self, PyObject *args) \
     result = PyString_FromStringAndSize(data, length); \
     if (result != NULL) { \
         Py_BEGIN_ALLOW_THREADS \
-        name##_Convert((Byte *) PyString_AS_STRING(data), length, 0, encoding); \
+        name##_Convert((Byte *) PyString_AS_STRING(result), length, 0, encoding); \
         Py_END_ALLOW_THREADS \
     } \
      \
