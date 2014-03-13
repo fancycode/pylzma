@@ -747,6 +747,7 @@ class Archive7z(Base):
             buffer = BytesIO(data)
         
         self.files = []
+        self.files_map = {}
         if not id:
             # empty archive
             self.solid = False
@@ -808,6 +809,7 @@ class Archive7z(Base):
         
         self.numfiles = len(self.files)
         self.filenames = list(map(lambda x: x.filename, self.files))
+        self.files_map.update([(x.filename, x) for x in self.files])
         
     # interface like TarFile
         
@@ -818,12 +820,7 @@ class Archive7z(Base):
             except IndexError:
                 return None
 
-        # XXX: store files in dictionary
-        for f in self.files:
-            if f.filename == name:
-                return f
-                
-        return None
+        return self.files_map.get(name, None)
         
     def getmembers(self):
         return self.files
