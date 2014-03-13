@@ -1,4 +1,5 @@
 import unittest
+import sys
 
 # some Python 2.3 unittest compatibility fixes
 if not hasattr(unittest.TestCase, 'assertTrue'):
@@ -16,6 +17,9 @@ def suite():
     suite = unittest.TestSuite()
 
     for testcase in glob(os.path.join(os.path.dirname(__file__), 'test_*.py')):
+        if 'usage' in testcase and sys.version_info[:2] >= (3, 0):
+            continue
+
         mod_name = os.path.basename(testcase).split('.')[0]
         full_name = '%s.%s' % (mod_base, mod_name)
 
