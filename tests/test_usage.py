@@ -25,11 +25,25 @@
 import os, sys
 import unittest
 import doctest
+import tempfile
+import atexit
+import errno
+import shutil
 
-USAGE_FILE = os.path.join('..', 'doc', 'usage.txt')
+USAGE_FILE = os.path.join('..', 'doc', 'USAGE.md')
 
 ROOT = os.path.abspath(os.path.split(__file__)[0])
 sys.path.insert(0, ROOT)
+
+def cleanup(path):
+    try:
+        shutil.rmtree(path)
+    except EnvironmentError, e:
+        if e.errno != errno.ENOENT:
+            raise
+
+def tearDown(tmpdir, *args):
+    cleanup(tmpdir)
 
 def suite():
     suite = unittest.TestSuite()
@@ -37,7 +51,14 @@ def suite():
         import warnings
         warnings.warn('Python 2.4 or above required to run doctests')
     elif sys.version_info[:2] < (3, 0):
-        suite.addTest(doctest.DocFileSuite(USAGE_FILE))
+        # simple conversion from Markdown
+        data = file(os.path.join(ROOT, USAGE_FILE), 'rb').read()
+        data = data.replace('```python', '').replace('```', '')
+        tmpdir = tempfile.mkdtemp()
+        atexit.register(cleanup, tmpdir)
+        filename = os.path.join(tmpdir, 'USAGE.md')
+        file(filename, 'wb').write(data)
+        suite.addTest(doctest.DocFileSuite(filename, module_relative=False, tearDown=lambda *args: tearDown(tmpdir, *args)))
     return suite
 
 if __name__ == '__main__':

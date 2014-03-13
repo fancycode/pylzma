@@ -8,26 +8,26 @@ In this document, some samples of the PyLZMA library will be given.
 First, we need to import the module
 
 ```python
-  import pylzma 
+    >>> import pylzma 
 ```
 
 
 The easiest usage is compression and decompression in one step
   
 ```python
-  compressed = pylzma.compress('Hello world!')
-  pylzma.decompress(compressed)
-  >>> 'Hello world!' 
-``` 
+    >>> compressed = pylzma.compress('Hello world!')
+    >>> pylzma.decompress(compressed)
+    'Hello world!'
+```
 
 
 For compression, additional parameters can be specified
 
 ```python
-  compressed = pylzma.compress('Hello world!', dictionary=10)
-  pylzma.decompress(compressed)
-  >>> 'Hello world!'
-``` 
+    >>> compressed = pylzma.compress('Hello world!', dictionary=10)
+    >>> pylzma.decompress(compressed)
+    'Hello world!'
+```
 
 
 ## Other available parameters are:
@@ -81,23 +81,23 @@ For compression, additional parameters can be specified
   size must be stored by the application and used when decompressing:
   
 ```python
-  compressed1 = pylzma.compress('Hello world!', eos=1)
-  compressed2 = pylzma.compress('Hello world!', eos=0)
-  len(compressed1) > len(compressed2)
-  >>>True
+    >>> compressed1 = pylzma.compress('Hello world!', eos=1)
+    >>> compressed2 = pylzma.compress('Hello world!', eos=0)
+    >>> len(compressed1) > len(compressed2)
+    True
 ```
 
 ```python
-  pylzma.decompress(compressed2)
-  >>>Traceback (most recent call last):
-  ...
-  ValueError: data error during decompression
+    >>> pylzma.decompress(compressed2)
+    Traceback (most recent call last):
+    ...
+    ValueError: data error during decompression
 ```
 
 ```python
-  pylzma.decompress(compressed2, maxlength=12)
-  >>>'Hello world!'
-```  
+    >>> pylzma.decompress(compressed2, maxlength=12)
+    'Hello world!'
+```
 
   If you don't know the total uncompressed size, you can use the compatibility
   decompression function from pylzma version 0.0.3.  Be aware that this old
@@ -105,43 +105,45 @@ For compression, additional parameters can be specified
   `pylzma.decompress` whenever possible.
 
 ```python
-  pylzma.decompress_compat(compressed2)
-  >>>'Hello world!'
+    >>> pylzma.decompress_compat(compressed2)
+    'Hello world!'
 ```
 
 If you need to compress larger amounts of data, you should use the streaming
-version of the library.  If supports compressing any file-like objects::
+version of the library.  If supports compressing any file-like objects:
 
 ```python
-  from cStringIO import StringIO
-  fp = StringIO('Hello world!')
-  c_fp = pylzma.compressfile(fp, eos=1)
-  compressed = ''
-  while True:
-    tmp = c_fp.read(1)
-    if not tmp: break
-      compressed += tmp
-  
-  pylzma.decompress(compressed)
-  >>>'Hello world!'
+    >>> from cStringIO import StringIO
+    >>> fp = StringIO('Hello world!')
+    >>> c_fp = pylzma.compressfile(fp, eos=1)
+    >>> compressed = ''
+    >>> while True:
+    ...     tmp = c_fp.read(1)
+    ...     if not tmp:
+    ...         break
+    ...     compressed += tmp
+    ... 
+    >>> pylzma.decompress(compressed)
+    'Hello world!'
 ```
 
 Using a similar technique, you can decompress large amounts of data without
-keeping everything in memory::
+keeping everything in memory:
   
 ```python
-  from cStringIO import StringIO
-  fp = StringIO(pylzma.compress('Hello world!'))
-  obj = pylzma.decompressobj()
-  plain = ''
-  while True:
-    tmp = fp.read(1)
-    if not tmp: break
-    plain += obj.decompress(tmp)
-  
-  plain += obj.flush()
-  plain
-  >>>'Hello world!'
+    >>> from cStringIO import StringIO
+    >>> fp = StringIO(pylzma.compress('Hello world!'))
+    >>> obj = pylzma.decompressobj()
+    >>> plain = ''
+    >>> while True:
+    ...     tmp = fp.read(1)
+    ...     if not tmp:
+    ...         break
+    ...     plain += obj.decompress(tmp)
+    ... 
+    >>> plain += obj.flush()
+    >>> plain
+    'Hello world!'
 ```
 
 However this only works for streams that contain the `End Of Stream` marker.
@@ -149,49 +151,51 @@ You must provide the size of the decompressed data if you don't include the
 EOS marker:
 
 ```python
-  from cStringIO import StringIO
-  fp = StringIO(pylzma.compress('Hello world!', eos=0))
-  obj = pylzma.decompressobj(maxlength=13)
-  plain = ''
-  while True:
-    tmp = fp.read(1)
-    if not tmp: break
-      plain += obj.decompress(tmp)
-  
-  plain += obj.flush()
-  >>>Traceback (most recent call last):
-  ...
-  ValueError: data error during decompression
+    >>> from cStringIO import StringIO
+    >>> fp = StringIO(pylzma.compress('Hello world!', eos=0))
+    >>> obj = pylzma.decompressobj(maxlength=13)
+    >>> plain = ''
+    >>> while True:
+    ...     tmp = fp.read(1)
+    ...     if not tmp: break
+    ...     plain += obj.decompress(tmp)
+    ... 
+    >>> plain += obj.flush()
+    Traceback (most recent call last):
+    ...
+    ValueError: data error during decompression
 ```
 
 ```python
-  obj.reset(maxlength=12)
-  fp.seek(0)
-  plain = ''
-  while True:
-    tmp = fp.read(1)
-    if not tmp: break
-      plain += obj.decompress(tmp)
-  
-  plain += obj.flush()
-  plain
-  >>> 'Hello world!'
+    >>> obj.reset(maxlength=12)
+    >>> fp.seek(0)
+    >>> plain = ''
+    >>> while True:
+    ...     tmp = fp.read(1)
+    ...     if not tmp: break
+    ...     plain += obj.decompress(tmp)
+    ... 
+    >>> plain += obj.flush()
+    >>> plain
+    'Hello world!'
 ```
 
 Please note that the compressed data is not compatible to the lzma.exe command
 line utility!  To get compatible data, you can use the following utility
-function::
+function:
 
 ```python
-  import struct
-  from cStringIO import StringIO
-  
-  def compress_compatible(data):
-    c = pylzma.compressfile(StringIO(data))
-    # LZMA header
-    result = c.read(5)
-    # size of uncompressed data
-    result += struct.pack('<Q', len(data))
-    # compressed data
-    return result + c.read()
-
+    >>> import struct
+    >>> from cStringIO import StringIO
+    >>> 
+    >>> def compress_compatible(data):
+    ...     c = pylzma.compressfile(StringIO(data))
+    ...     # LZMA header
+    ...     result = c.read(5)
+    ...     # size of uncompressed data
+    ...     result += struct.pack('<Q', len(data))
+    ...     # compressed data
+    ...     return result + c.read()
+    ... 
+    >>> 
+```
