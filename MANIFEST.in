@@ -1,4 +1,4 @@
-include ez_setup.py *.txt
+include ez_setup.py *.md LICENSE
 recursive-include doc *.*
 recursive-include src *.c *.h *.txt
 prune src/sdk.orig
