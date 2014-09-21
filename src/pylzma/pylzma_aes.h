@@ -1,7 +1,7 @@
 /*
  * Python Bindings for LZMA
  *
- * Copyright (c) 2004-2010 by Joachim Bauch, mail@joachim-bauch.de
+ * Copyright (c) 2004-2014 by Joachim Bauch, mail@joachim-bauch.de
  * 7-Zip Copyright (C) 1999-2010 Igor Pavlov
  * LZMA SDK Copyright (C) 1999-2010 Igor Pavlov
  *
