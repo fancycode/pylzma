@@ -6,3 +6,4 @@ dist
 *.so
 *.pyd
 RELEASE-VERSION
+src/pylzma/pylzma_version.h
