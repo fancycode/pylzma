@@ -39,6 +39,10 @@ except ImportError:
 class UnsupportedPlatformWarning(Warning):
     pass
 
+version = get_git_version()
+if isinstance(version, unicode):
+    version = version.encode('utf-8')
+
 # set this to any true value to enable multithreaded compression
 ENABLE_MULTITHREADING = True
 
@@ -97,7 +101,7 @@ please contact mail@joachim-bauch.de for more informations.""" % (sys.platform),
             log.info('adding support for multithreaded compression')
             ext.define_macros.append(('COMPRESS_MF_MT', 1))
             ext.sources += ('src/sdk/LzFindMt.c', 'src/sdk/Threads.c', )
-        
+
         if isinstance(self.compiler, MSVCCompiler):
             # set flags only available when using MSVC
             ext.extra_link_args.append('/MANIFEST')
@@ -107,7 +111,7 @@ please contact mail@joachim-bauch.de for more informations.""" % (sys.platform),
                 ext.extra_link_args.append('/DEBUG')
             else:
                 ext.extra_compile_args.append('/MT')
-        
+
         _build_ext.build_extension(self, ext)
 
 descr = "Python bindings for the LZMA library by Igor Pavlov."
@@ -141,7 +145,7 @@ tests_require = []
 
 setup(
     name = "pylzma",
-    version = get_git_version().decode('utf-8'),
+    version = version,
     description = descr,
     author = "Joachim Bauch",
     author_email = "mail@joachim-bauch.de",
