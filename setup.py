@@ -45,7 +45,9 @@ except NameError:
     # Python 3.x
     class unicode(object):
         def __new__(cls, s):
-            return s.decode('utf-8')
+            if isinstance(s, str):
+                return s
+            return s and s.decode('utf-8') or None
 
 version = get_git_version()
 if not isinstance(version, unicode):
