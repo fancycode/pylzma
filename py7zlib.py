@@ -33,6 +33,7 @@ from zlib import crc32
 import zlib
 import bz2
 import os
+import sys
 try:
     from io import BytesIO
 except ImportError:
@@ -828,15 +829,15 @@ class Archive7z(Base):
     def getnames(self):
         return self.filenames
 
-    def list(self, verbose=True):
-        print ('total %d files in %sarchive' % (self.numfiles, (self.solid and 'solid ') or ''))
+    def list(self, verbose=True, file=sys.stdout):
+        file.write('total %d files in %sarchive\n' % (self.numfiles, (self.solid and 'solid ') or ''))
         if not verbose:
-            print ('\n'.join(self.filenames))
+            file.write('\n'.join(self.filenames) + '\n')
             return
             
         for f in self.files:
             extra = (f.compressed and '%10d ' % (f.compressed)) or ' '
-            print ('%10d%s%.8x %s' % (f.size, extra, f.digest, f.filename))
+            file.write('%10d%s%.8x %s\n' % (f.size, extra, f.digest, f.filename))
             
 if __name__ == '__main__':
     f = Archive7z(open('test.7z', 'rb'))
