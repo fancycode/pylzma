@@ -31,6 +31,7 @@
 #include "../7zip/C/Bra.h"
 
 #include "pylzma.h"
+#include "pylzma_version.h"
 #include "pylzma_compress.h"
 #include "pylzma_decompress.h"
 #include "pylzma_decompressobj.h"
@@ -279,6 +280,8 @@ initpylzma(void)
     PyModule_AddStringConstant(m, "SDK_DATE", MY_DATE);
     PyModule_AddStringConstant(m, "SDK_COPYRIGHT", MY_COPYRIGHT);
     PyModule_AddStringConstant(m, "SDK_VERSION_COPYRIGHT_DATE", MY_VERSION_COPYRIGHT_DATE);
+
+    PyModule_AddStringConstant(m, "__version__", PYLZMA_VERSION);
 
     AesGenTables();
     pylzma_init_compfile();
