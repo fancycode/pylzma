@@ -39,6 +39,13 @@ except ImportError:
 class UnsupportedPlatformWarning(Warning):
     pass
 
+try:
+    unicode
+except NameError:
+    # Python 3.x
+    class unicode(object):
+        pass
+
 version = get_git_version()
 if isinstance(version, unicode):
     version = version.encode('utf-8')
