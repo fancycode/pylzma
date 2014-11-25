@@ -56,7 +56,10 @@ class TestPyLZMA(unittest.TestCase):
         self.plain = bytes('hello, this is a test string', 'ascii')
         self.plain_with_eos = unhexlify('5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c127731a214ff7031c000')
         self.plain_without_eos = unhexlify('5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c115edbe9')
-        
+
+    def test_version(self):
+        self.failIfEqual(pylzma.__version__, '')
+
     def test_compression_eos(self):
         # test compression with end of stream marker
         compressed = pylzma.compress(self.plain, eos=1)

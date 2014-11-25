@@ -280,6 +280,12 @@ initpylzma(void)
     PyModule_AddStringConstant(m, "SDK_COPYRIGHT", MY_COPYRIGHT);
     PyModule_AddStringConstant(m, "SDK_VERSION_COPYRIGHT_DATE", MY_VERSION_COPYRIGHT_DATE);
 
+#ifdef PYLZMA_VERSION
+    PyModule_AddStringConstant(m, "__version__", PYLZMA_VERSION);
+#else
+    PyModule_AddStringConstant(m, "__version__", "unreleased");
+#endif
+
     AesGenTables();
     pylzma_init_compfile();
 

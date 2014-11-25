@@ -141,6 +141,9 @@ if ENABLE_COMPATIBILITY:
     lzma_files += ('src/compat/LzmaCompatDecode.c', )
     macros.append(('WITH_COMPAT', 1))
 
+if version:
+    macros.append(('PYLZMA_VERSION', '"'+version+'"'))
+
 c_files += [os.path.normpath(os.path.join('.', x)) for x in lzma_files]
 extens = [
     Extension('pylzma', c_files, include_dirs=include_dirs, libraries=libraries,
