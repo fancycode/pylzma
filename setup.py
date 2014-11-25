@@ -44,11 +44,12 @@ try:
 except NameError:
     # Python 3.x
     class unicode(object):
-        pass
+        def __new__(cls, s):
+            return s.decode('utf-8')
 
 version = get_git_version()
-if isinstance(version, unicode):
-    version = version.encode('utf-8')
+if not isinstance(version, unicode):
+    version = unicode(version)
 
 # set this to any true value to enable multithreaded compression
 ENABLE_MULTITHREADING = True
