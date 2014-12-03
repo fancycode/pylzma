@@ -110,34 +110,33 @@ class Test7ZipFiles(unittest.TestCase):
                 cf = archive.getmember(filename)
                 self.assertEqual(len(cf.read()), cf.uncompressed)
 
-    if sys.version_info[:2] < (3, 0):
+    def test_encrypted_no_password(self):
+        # test loading of encrypted files without password (can read archived filenames)
+        with open(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb') as fp:
+            archive = Archive7z(fp)
+            filenames = archive.getnames()
+            self.assertEqual(sorted(archive.getnames()), sorted(['test1.txt', 'test/test2.txt']))
+            self.assertRaises(NoPasswordGivenError, archive.getmember('test1.txt').read)
+            self.assertRaises(NoPasswordGivenError, archive.getmember('test/test2.txt').read)
 
-        def test_encrypted_no_password(self):
-            # test loading of encrypted files without password (can read archived filenames)
-            with open(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb') as fp:
-                archive = Archive7z(fp)
-                filenames = archive.getnames()
-                self.assertEqual(sorted(archive.getnames()), sorted(['test1.txt', 'test/test2.txt']))
-                self.assertTrueRaises(NoPasswordGivenError, archive.getmember('test1.txt').read)
-                self.assertTrueRaises(NoPasswordGivenError, archive.getmember('test/test2.txt').read)
-
-        def test_encrypted_password(self):
-            # test loading of encrypted files with correct password
-            fp = open(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb')
+    def test_encrypted_password(self):
+        # test loading of encrypted files with correct password
+        with open(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb') as fp:
             archive = Archive7z(fp, password='secret')
             filenames = archive.getnames()
             for filename in filenames:
                 cf = archive.getmember(filename)
-                self.assertEqual(len(cf.read()), cf.uncompressed)
+                data = cf.read()
+                self.assertEqual(len(data), cf.uncompressed)
 
-        def test_encrypted_wong_password(self):
-            # test loading of encrypted files with wrong password
-            with open(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb') as fp:
-                archive = Archive7z(fp, password='password')
-                filenames = archive.getnames()
-                for filename in filenames:
-                    cf = archive.getmember(filename)
-                    self.assertTrueRaises(WrongPasswordError, cf.read)
+    def test_encrypted_wong_password(self):
+        # test loading of encrypted files with wrong password
+        with open(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb') as fp:
+            archive = Archive7z(fp, password='password')
+            filenames = archive.getnames()
+            for filename in filenames:
+                cf = archive.getmember(filename)
+                self.assertRaises(WrongPasswordError, cf.read)
 
     def test_deflate(self):
         # test loading of deflate compressed files
@@ -157,15 +156,15 @@ class Test7ZipFiles(unittest.TestCase):
 
     def test_regress_1(self):
         # prevent regression bug #1 reported by mail
-        fp = open(os.path.join(ROOT, 'data', 'regress_1.7z'), 'rb')
-        archive = Archive7z(fp)
-        filenames = list(archive.getnames())
-        self.assertEqual(len(filenames), 1)
-        cf = archive.getmember(filenames[0])
-        self.assertNotEqual(cf, None)
-        self.assertTrue(cf.checkcrc())
-        data = cf.read()
-        self.assertEqual(len(data), cf.size)
+        with open(os.path.join(ROOT, 'data', 'regress_1.7z'), 'rb') as fp:
+            archive = Archive7z(fp)
+            filenames = list(archive.getnames())
+            self.assertEqual(len(filenames), 1)
+            cf = archive.getmember(filenames[0])
+            self.assertNotEqual(cf, None)
+            self.assertTrue(cf.checkcrc())
+            data = cf.read()
+            self.assertEqual(len(data), cf.size)
 
     def test_bugzilla_16(self):
         # sample file for bugzilla #16
