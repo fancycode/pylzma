@@ -360,9 +360,9 @@ class SubstreamsInfo(Base):
                 self.numunpackstreams.append(1)
         
         if id == PROPERTY_SIZE:
-            sum = 0
             self.unpacksizes = []
             for i in range(len(self.numunpackstreams)):
+                sum = 0
                 for j in range(1, self.numunpackstreams[i]):
                     size = self._read64Bit(file)
                     self.unpacksizes.append(size)
@@ -803,6 +803,7 @@ class Archive7z(Base):
                 src_pos += info['compressed']
             obidx += 1
             if idx >= subinfo.numunpackstreams[fidx]+folder_start:
+                pos = 0
                 folder_pos += packinfo.packsizes[fidx]
                 src_pos = folder_pos
                 folder_start = idx
