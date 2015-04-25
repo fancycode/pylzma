@@ -153,6 +153,26 @@ class Test7ZipFiles(unittest.TestCase):
             cf = archive.getmember(filename)
             self.assertRaises(WrongPasswordError, cf.read)
 
+    def test_encrypted_names_no_password(self):
+        # test loading of files with encrypted names without password
+        fp = self._open_file(os.path.join(ROOT, 'data', 'encrypted-names.7z'), 'rb')
+        self.assertRaises(NoPasswordGivenError, Archive7z, fp)
+
+    def test_encrypted_names_password(self):
+        # test loading of files with encrypted names with correct password
+        fp = self._open_file(os.path.join(ROOT, 'data', 'encrypted-names.7z'), 'rb')
+        archive = Archive7z(fp, password='secret')
+        filenames = archive.getnames()
+        for filename in filenames:
+            cf = archive.getmember(filename)
+            self.assertEqual(len(cf.read()), cf.uncompressed)
+            self.assertTrue(cf.checkcrc(), 'crc failed for %s' % (filename))
+
+    def test_encrypted_names_wong_password(self):
+        # test loading of files with encrypted names with wrong password
+        fp = self._open_file(os.path.join(ROOT, 'data', 'encrypted-names.7z'), 'rb')
+        self.assertRaises(WrongPasswordError, Archive7z, fp, password='password')
+
     def test_deflate(self):
         # test loading of deflate compressed files
         self._test_archive('deflate.7z')

@@ -302,7 +302,10 @@ class Folder(Base):
             if b == index:
                 return idx
         return -1
-        
+
+    def isEncrypted(self):
+        return COMPRESSION_METHOD_7Z_AES256_SHA256 in [x['method'] for x in self.coders]
+
 class Digests(Base):
     """ holds a list of checksums """
     
@@ -558,7 +561,7 @@ class ArchiveFile(Base):
         }
 
     def _is_encrypted(self):
-        return COMPRESSION_METHOD_7Z_AES256_SHA256 in [x['method'] for x in self._folder.coders]
+        return self._folder.isEncrypted()
 
     def reset(self):
         self.pos = 0
@@ -744,17 +747,27 @@ class Archive7z(Base):
             file.seek(self.afterheader + 0)
             data = bytes('', 'ascii')
             idx = 0
+            src_start = self.afterheader
             for folder in streams.unpackinfo.folders:
-                file.seek(streams.packinfo.packpos, 1)
-                props = folder.coders[0]['properties']
-                for idx in range(len(streams.packinfo.packsizes)):
-                    tmp = file.read(streams.packinfo.packsizes[idx])
-                    data += pylzma.decompress(props+tmp, maxlength=folder.unpacksizes[idx])
-                
+                if folder.isEncrypted() and not password:
+                    raise NoPasswordGivenError()
+
+                src_start += streams.packinfo.packpos
+                size = folder.unpacksizes[-1]
+                info = {
+                    'compressed': streams.packinfo.packsizes[0],
+                    'uncompressed': folder.unpacksizes[0],
+                }
+                tmp = ArchiveFile(info, 0, src_start, size, folder, self)
+                folderdata = tmp.read()
+                src_start += size
+
                 if folder.digestdefined:
-                    if not self.checkcrc(folder.crc, data):
+                    if not self.checkcrc(folder.crc, folderdata):
                         raise FormatError('invalid block data')
-                        
+
+                data += folderdata
+
             buffer = BytesIO(data)
         
         self.files = []
