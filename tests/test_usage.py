@@ -38,7 +38,7 @@ sys.path.insert(0, ROOT)
 def cleanup(path):
     try:
         shutil.rmtree(path)
-    except EnvironmentError, e:
+    except EnvironmentError as e:
         if e.errno != errno.ENOENT:
             raise
 

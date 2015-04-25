@@ -53,27 +53,27 @@ ROOT = os.path.abspath(os.path.split(__file__)[0])
 class Test7ZipFiles(unittest.TestCase):
     
     def _test_archive(self, filename):
-        fp = open(os.path.join(ROOT, 'data', filename), 'rb')
-        archive = Archive7z(fp)
-        self.failUnlessEqual(sorted(archive.getnames()), ['test/test2.txt', 'test1.txt'])
-        self.failUnlessEqual(archive.getmember('test2.txt'), None)
-        cf = archive.getmember('test1.txt')
-        self.failUnless(cf.checkcrc())
-        self.failUnlessEqual(cf.lastwritetime // 10000000, 12786932628)
-        self.failUnlessEqual(cf.lastwritetime.as_datetime().replace(microsecond=0), \
-            datetime(2006, 3, 15, 21, 43, 48, 0, UTC))
-        self.failUnlessEqual(cf.read(), bytes('This file is located in the root.', 'ascii'))
-        cf.reset()
-        self.failUnlessEqual(cf.read(), bytes('This file is located in the root.', 'ascii'))
+        with open(os.path.join(ROOT, 'data', filename), 'rb') as fp:
+            archive = Archive7z(fp)
+            self.assertEqual(sorted(archive.getnames()), ['test/test2.txt', 'test1.txt'])
+            self.assertEqual(archive.getmember('test2.txt'), None)
+            cf = archive.getmember('test1.txt')
+            self.assertTrue(cf.checkcrc())
+            self.assertEqual(cf.lastwritetime // 10000000, 12786932628)
+            self.assertEqual(cf.lastwritetime.as_datetime().replace(microsecond=0), \
+                datetime(2006, 3, 15, 21, 43, 48, 0, UTC))
+            self.assertEqual(cf.read(), bytes('This file is located in the root.', 'ascii'))
+            cf.reset()
+            self.assertEqual(cf.read(), bytes('This file is located in the root.', 'ascii'))
 
-        cf = archive.getmember('test/test2.txt')
-        self.failUnless(cf.checkcrc())
-        self.failUnlessEqual(cf.lastwritetime // 10000000, 12786932616)
-        self.failUnlessEqual(cf.lastwritetime.as_datetime().replace(microsecond=0), \
-            datetime(2006, 3, 15, 21, 43, 36, 0, UTC))
-        self.failUnlessEqual(cf.read(), bytes('This file is located in a folder.', 'ascii'))
-        cf.reset()
-        self.failUnlessEqual(cf.read(), bytes('This file is located in a folder.', 'ascii'))
+            cf = archive.getmember('test/test2.txt')
+            self.assertTrue(cf.checkcrc())
+            self.assertEqual(cf.lastwritetime // 10000000, 12786932616)
+            self.assertEqual(cf.lastwritetime.as_datetime().replace(microsecond=0), \
+                datetime(2006, 3, 15, 21, 43, 36, 0, UTC))
+            self.assertEqual(cf.read(), bytes('This file is located in a folder.', 'ascii'))
+            cf.reset()
+            self.assertEqual(cf.read(), bytes('This file is located in a folder.', 'ascii'))
 
     def test_non_solid(self):
         # test loading of a non-solid archive
@@ -84,14 +84,14 @@ class Test7ZipFiles(unittest.TestCase):
         self._test_archive('solid.7z')
 
     def _test_umlaut_archive(self, filename):
-        fp = open(os.path.join(ROOT, 'data', filename), 'rb')
-        archive = Archive7z(fp)
-        self.failUnlessEqual(sorted(archive.getnames()), [unicode_string('t\xe4st.txt')])
-        self.failUnlessEqual(archive.getmember('test.txt'), None)
-        cf = archive.getmember(unicode_string('t\xe4st.txt'))
-        self.failUnlessEqual(cf.read(), bytes('This file contains a german umlaut in the filename.', 'ascii'))
-        cf.reset()
-        self.failUnlessEqual(cf.read(), bytes('This file contains a german umlaut in the filename.', 'ascii'))
+        with open(os.path.join(ROOT, 'data', filename), 'rb') as fp:
+            archive = Archive7z(fp)
+            self.assertEqual(sorted(archive.getnames()), [unicode_string('t\xe4st.txt')])
+            self.assertEqual(archive.getmember('test.txt'), None)
+            cf = archive.getmember(unicode_string('t\xe4st.txt'))
+            self.assertEqual(cf.read(), bytes('This file contains a german umlaut in the filename.', 'ascii'))
+            cf.reset()
+            self.assertEqual(cf.read(), bytes('This file contains a german umlaut in the filename.', 'ascii'))
         
     def test_non_solid_umlaut(self):
         # test loading of a non-solid archive containing files with umlauts
@@ -103,41 +103,40 @@ class Test7ZipFiles(unittest.TestCase):
 
     def test_bugzilla_4(self):
         # sample file for bugzilla #4
-        fp = open(os.path.join(ROOT, 'data', 'bugzilla_4.7z'), 'rb')
-        archive = Archive7z(fp)
-        filenames = archive.getnames()
-        for filename in filenames:
-            cf = archive.getmember(filename)
-            self.failUnlessEqual(len(cf.read()), cf.uncompressed)
-
-    if sys.version_info[:2] < (3, 0):
-
-        def test_encrypted_no_password(self):
-            # test loading of encrypted files without password (can read archived filenames)
-            fp = open(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb')
+        with open(os.path.join(ROOT, 'data', 'bugzilla_4.7z'), 'rb') as fp:
             archive = Archive7z(fp)
             filenames = archive.getnames()
-            self.failUnlessEqual(sorted(archive.getnames()), sorted(['test1.txt', 'test/test2.txt']))
-            self.failUnlessRaises(NoPasswordGivenError, archive.getmember('test1.txt').read)
-            self.failUnlessRaises(NoPasswordGivenError, archive.getmember('test/test2.txt').read)
+            for filename in filenames:
+                cf = archive.getmember(filename)
+                self.assertEqual(len(cf.read()), cf.uncompressed)
 
-        def test_encrypted_password(self):
-            # test loading of encrypted files with correct password
-            fp = open(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb')
+    def test_encrypted_no_password(self):
+        # test loading of encrypted files without password (can read archived filenames)
+        with open(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb') as fp:
+            archive = Archive7z(fp)
+            filenames = archive.getnames()
+            self.assertEqual(sorted(archive.getnames()), sorted(['test1.txt', 'test/test2.txt']))
+            self.assertRaises(NoPasswordGivenError, archive.getmember('test1.txt').read)
+            self.assertRaises(NoPasswordGivenError, archive.getmember('test/test2.txt').read)
+
+    def test_encrypted_password(self):
+        # test loading of encrypted files with correct password
+        with open(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb') as fp:
             archive = Archive7z(fp, password='secret')
             filenames = archive.getnames()
             for filename in filenames:
                 cf = archive.getmember(filename)
-                self.failUnlessEqual(len(cf.read()), cf.uncompressed)
+                data = cf.read()
+                self.assertEqual(len(data), cf.uncompressed)
 
-        def test_encrypted_wong_password(self):
-            # test loading of encrypted files with wrong password
-            fp = open(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb')
+    def test_encrypted_wong_password(self):
+        # test loading of encrypted files with wrong password
+        with open(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb') as fp:
             archive = Archive7z(fp, password='password')
             filenames = archive.getnames()
             for filename in filenames:
                 cf = archive.getmember(filename)
-                self.failUnlessRaises(WrongPasswordError, cf.read)
+                self.assertRaises(WrongPasswordError, cf.read)
 
     def test_deflate(self):
         # test loading of deflate compressed files
@@ -157,64 +156,64 @@ class Test7ZipFiles(unittest.TestCase):
 
     def test_regress_1(self):
         # prevent regression bug #1 reported by mail
-        fp = open(os.path.join(ROOT, 'data', 'regress_1.7z'), 'rb')
-        archive = Archive7z(fp)
-        filenames = list(archive.getnames())
-        self.failUnlessEqual(len(filenames), 1)
-        cf = archive.getmember(filenames[0])
-        self.failIfEqual(cf, None)
-        self.failUnless(cf.checkcrc())
-        data = cf.read()
-        self.failUnlessEqual(len(data), cf.size)
+        with open(os.path.join(ROOT, 'data', 'regress_1.7z'), 'rb') as fp:
+            archive = Archive7z(fp)
+            filenames = list(archive.getnames())
+            self.assertEqual(len(filenames), 1)
+            cf = archive.getmember(filenames[0])
+            self.assertNotEqual(cf, None)
+            self.assertTrue(cf.checkcrc())
+            data = cf.read()
+            self.assertEqual(len(data), cf.size)
 
     def test_bugzilla_16(self):
         # sample file for bugzilla #16
-        fp = open(os.path.join(ROOT, 'data', 'bugzilla_16.7z'), 'rb')
-        archive = Archive7z(fp)
-        filenames = archive.getnames()
-        for filename in filenames:
-            cf = archive.getmember(filename)
-            self.failUnlessEqual(len(cf.read()), cf.uncompressed)
+        with open(os.path.join(ROOT, 'data', 'bugzilla_16.7z'), 'rb') as fp:
+            archive = Archive7z(fp)
+            filenames = archive.getnames()
+            for filename in filenames:
+                cf = archive.getmember(filename)
+                self.assertEqual(len(cf.read()), cf.uncompressed)
 
     def test_empty(self):
         # decompress empty archive
-        fp = open(os.path.join(ROOT, 'data', 'empty.7z'), 'rb')
-        archive = Archive7z(fp)
-        self.failUnlessEqual(archive.getnames(), [])
+        with open(os.path.join(ROOT, 'data', 'empty.7z'), 'rb') as fp:
+            archive = Archive7z(fp)
+            self.assertEqual(archive.getnames(), [])
 
     def test_github_14(self):
         # decompress content without filename
-        fp = open(os.path.join(ROOT, 'data', 'github_14.7z'), 'rb')
-        archive = Archive7z(fp)
-        self.failUnlessEqual(archive.getnames(), ['github_14'])
-        cf = archive.getmember('github_14')
-        self.failIfEqual(cf, None)
-        data = cf.read()
-        self.failUnlessEqual(len(data), cf.uncompressed)
-        self.failUnlessEqual(data, bytes('Hello GitHub issue #14.\n', 'ascii'))
+        with open(os.path.join(ROOT, 'data', 'github_14.7z'), 'rb') as fp:
+            archive = Archive7z(fp)
+            self.assertEqual(archive.getnames(), ['github_14'])
+            cf = archive.getmember('github_14')
+            self.assertNotEqual(cf, None)
+            data = cf.read()
+            self.assertEqual(len(data), cf.uncompressed)
+            self.assertEqual(data, bytes('Hello GitHub issue #14.\n', 'ascii'))
 
         # accessing by name returns an arbitrary compressed streams
         # if both don't have a name in the archive
-        fp = open(os.path.join(ROOT, 'data', 'github_14_multi.7z'), 'rb')
-        archive = Archive7z(fp)
-        self.failUnlessEqual(archive.getnames(), ['github_14_multi', 'github_14_multi'])
-        cf = archive.getmember('github_14_multi')
-        self.failIfEqual(cf, None)
-        data = cf.read()
-        self.failUnlessEqual(len(data), cf.uncompressed)
-        self.failUnless(data in (bytes('Hello GitHub issue #14 1/2.\n', 'ascii'), bytes('Hello GitHub issue #14 2/2.\n', 'ascii')))
+        with open(os.path.join(ROOT, 'data', 'github_14_multi.7z'), 'rb') as fp:
+            archive = Archive7z(fp)
+            self.assertEqual(archive.getnames(), ['github_14_multi', 'github_14_multi'])
+            cf = archive.getmember('github_14_multi')
+            self.assertNotEqual(cf, None)
+            data = cf.read()
+            self.assertEqual(len(data), cf.uncompressed)
+            self.assertTrue(data in (bytes('Hello GitHub issue #14 1/2.\n', 'ascii'), bytes('Hello GitHub issue #14 2/2.\n', 'ascii')))
 
-        # accessing by index returns both values
-        cf = archive.getmember(0)
-        self.failIfEqual(cf, None)
-        data = cf.read()
-        self.failUnlessEqual(len(data), cf.uncompressed)
-        self.failUnlessEqual(data, bytes('Hello GitHub issue #14 1/2.\n', 'ascii'))
-        cf = archive.getmember(1)
-        self.failIfEqual(cf, None)
-        data = cf.read()
-        self.failUnlessEqual(len(data), cf.uncompressed)
-        self.failUnlessEqual(data, bytes('Hello GitHub issue #14 2/2.\n', 'ascii'))
+            # accessing by index returns both values
+            cf = archive.getmember(0)
+            self.assertNotEqual(cf, None)
+            data = cf.read()
+            self.assertEqual(len(data), cf.uncompressed)
+            self.assertEqual(data, bytes('Hello GitHub issue #14 1/2.\n', 'ascii'))
+            cf = archive.getmember(1)
+            self.assertNotEqual(cf, None)
+            data = cf.read()
+            self.assertEqual(len(data), cf.uncompressed)
+            self.assertEqual(data, bytes('Hello GitHub issue #14 2/2.\n', 'ascii'))
 
 def suite():
     suite = unittest.TestSuite()
