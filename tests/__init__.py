@@ -6,6 +6,12 @@ if not hasattr(unittest.TestCase, 'assertTrue'):
     unittest.TestCase.assertTrue = unittest.TestCase.failUnless
 if not hasattr(unittest.TestCase, 'assertFalse'):
     unittest.TestCase.assertFalse = unittest.TestCase.failIf
+if not hasattr(unittest.TestCase, 'assertEqual'):
+    unittest.TestCase.assertEqual = unittest.TestCase.failUnlessEqual
+if not hasattr(unittest.TestCase, 'assertNotEqual'):
+    unittest.TestCase.assertNotEqual = unittest.TestCase.failIfEqual
+if not hasattr(unittest.TestCase, 'assertRaises'):
+    unittest.TestCase.assertRaises = unittest.TestCase.failUnlessRaises
 
 mod_base = 'tests'
 

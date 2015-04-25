@@ -86,6 +86,8 @@ except NameError:
     # Python 3.x
     long = int
 
+IS_PYTHON3 = sys.version_info[0] == 3
+
 READ_BLOCKSIZE                   = 16384
 
 MAGIC_7Z                         = unhexlify('377abcaf271c')  # '7z\xbc\xaf\x27\x1c'
@@ -651,13 +653,17 @@ class ArchiveFile(Base):
             raise NoPasswordGivenError()
         
         # TODO: this needs some sanity checks
-        firstbyte = ord(coder['properties'][0])
+        firstbyte = coder['properties'][0]
+        if not IS_PYTHON3:
+            firstbyte = ord(firstbyte)
         numcyclespower = firstbyte & 0x3f
         if firstbyte & 0xc0 != 0:
             saltsize = (firstbyte >> 7) & 1
             ivsize = (firstbyte >> 6) & 1
             
-            secondbyte = ord(coder['properties'][1])
+            secondbyte = coder['properties'][1]
+            if not IS_PYTHON3:
+                secondbyte = ord(secondbyte)
             saltsize += (secondbyte >> 4)
             ivsize += (secondbyte & 0x0f)
             
@@ -668,9 +674,9 @@ class ArchiveFile(Base):
             assert len(iv) == ivsize
             assert numcyclespower <= 24
             if ivsize < 16:
-                iv += '\x00'*(16-ivsize)
+                iv += bytes('\x00'*(16-ivsize), 'ascii')
         else:
-            salt = iv = ''
+            salt = iv = bytes('', 'ascii')
         
         password = self._archive.password.encode('utf-16-le')
         key = pylzma.calculate_key(password, numcyclespower, salt=salt)

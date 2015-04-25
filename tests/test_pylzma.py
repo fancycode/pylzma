@@ -58,7 +58,7 @@ class TestPyLZMA(unittest.TestCase):
         self.plain_without_eos = unhexlify('5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c115edbe9')
 
     def test_version(self):
-        self.failIfEqual(pylzma.__version__, '')
+        self.assertNotEqual(pylzma.__version__, '')
 
     def test_compression_eos(self):
         # test compression with end of stream marker
@@ -205,7 +205,7 @@ class TestPyLZMA(unittest.TestCase):
         # decompress large block of repeating data, string version (bug reported by Christopher Perkins)
         data = bytes("asdf", 'ascii')*123456
         compressed = pylzma.compress(data)
-        self.failUnless(data == pylzma.decompress(compressed))
+        self.assertTrue(data == pylzma.decompress(compressed))
 
     def test_compress_large_stream(self):
         # decompress large block of repeating data, stream version (bug reported by Christopher Perkins)
@@ -218,7 +218,7 @@ class TestPyLZMA(unittest.TestCase):
             if not tmp: break
             outfile.write(decompress.decompress(tmp))
         outfile.write(decompress.flush())
-        self.failUnless(data == outfile.getvalue())
+        self.assertTrue(data == outfile.getvalue())
 
     def test_compress_large_stream_bigchunks(self):
         # decompress large block of repeating data, stream version with big chunks
@@ -231,19 +231,19 @@ class TestPyLZMA(unittest.TestCase):
             if not tmp: break
             outfile.write(decompress.decompress(tmp))
         outfile.write(decompress.flush())
-        self.failUnless(data == outfile.getvalue())
+        self.assertTrue(data == outfile.getvalue())
 
     def test_bugzilla_13(self):
         # prevent regression of bugzilla #13
         if sys.version_info[:2] < (3, 0):
             fp = pylzma.compressfile('/tmp/test')
-            self.failUnless(isinstance(fp, pylzma.compressfile))
+            self.assertTrue(isinstance(fp, pylzma.compressfile))
         else:
-            self.failUnlessRaises(TypeError, pylzma.compressfile, '/tmp/test')
+            self.assertRaises(TypeError, pylzma.compressfile, '/tmp/test')
 
     def test_github_10(self):
         # prevent regression of github #10
-        self.failUnlessRaises(ValueError, pylzma.compress, bytes("foo", 'ascii'), dictionary=100)
+        self.assertRaises(ValueError, pylzma.compress, bytes("foo", 'ascii'), dictionary=100)
 
 def suite():
     suite = unittest.TestSuite()
