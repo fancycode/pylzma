@@ -144,7 +144,7 @@ if ENABLE_COMPATIBILITY:
     macros.append(('WITH_COMPAT', 1))
 
 if version:
-    macros.append(('PYLZMA_VERSION', '"'+version+'"'))
+    macros.append(('PYLZMA_VERSION', version))
 
 c_files += [os.path.normpath(os.path.join('.', x)) for x in lzma_files]
 extens = [

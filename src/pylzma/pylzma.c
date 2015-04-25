@@ -48,6 +48,9 @@
 PyInterpreterState* _pylzma_interpreterState = NULL;
 #endif
 
+#define STRINGIZE(x) #x
+#define STRINGIZE_VALUE_OF(x) STRINGIZE(x)
+
 const char
 doc_calculate_key[] = \
     "calculate_key(password, cycles, salt=None, digest='sha256') -- Calculate decryption key.";
@@ -281,7 +284,7 @@ initpylzma(void)
     PyModule_AddStringConstant(m, "SDK_VERSION_COPYRIGHT_DATE", MY_VERSION_COPYRIGHT_DATE);
 
 #ifdef PYLZMA_VERSION
-    PyModule_AddStringConstant(m, "__version__", PYLZMA_VERSION);
+    PyModule_AddStringConstant(m, "__version__", STRINGIZE_VALUE_OF(PYLZMA_VERSION));
 #else
     PyModule_AddStringConstant(m, "__version__", "unreleased");
 #endif
