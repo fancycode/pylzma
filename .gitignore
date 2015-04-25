@@ -6,3 +6,4 @@ dist
 *.so
 *.pyd
 RELEASE-VERSION
+/tests/data/ux.stackexchange.com.7z

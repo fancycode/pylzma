@@ -23,6 +23,7 @@
 # $Id$
 #
 from datetime import datetime
+import errno
 import os
 import pylzma
 from py7zlib import Archive7z, NoPasswordGivenError, WrongPasswordError, UTC
@@ -228,6 +229,25 @@ class Test7ZipFiles(unittest.TestCase):
         data = cf.read()
         self.assertEqual(len(data), cf.uncompressed)
         self.assertEqual(data, bytes('Hello GitHub issue #14 2/2.\n', 'ascii'))
+
+    def test_github_17(self):
+        try:
+            fp = self._open_file(os.path.join(ROOT, 'data', 'ux.stackexchange.com.7z'), 'rb')
+        except EnvironmentError:
+            e = sys.exc_info()[1]
+            if e.errno != errno.ENOENT:
+                raise
+
+            # test is optional
+            import warnings
+            warnings.warn("File 'ux.stackexchange.com.7z' was not found, please download manually. Test will be skipped.")
+            return
+
+        archive = Archive7z(fp)
+        for name in archive.getnames():
+            member = archive.getmember(name)
+            self.assertNotEqual(member, None, name)
+            self.assertTrue(member.checkcrc(), 'crc failed for %s' % (name))
 
 def suite():
     suite = unittest.TestSuite()

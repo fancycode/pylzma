@@ -155,6 +155,9 @@ class NoPasswordGivenError(DecryptionError):
 class WrongPasswordError(DecryptionError):
     pass
 
+class DecompressionError(ArchiveError):
+    pass
+
 class ArchiveTimestamp(long):
     """Windows FILETIME timestamp."""
     
@@ -611,7 +614,8 @@ class ArchiveFile(Base):
                     tmp = decompressor.decompress(data, remaining)
                 else:
                     tmp = decompressor.decompress(data)
-                assert len(tmp) > 0
+                if not tmp and not data:
+                    raise DecompressionError('end of stream while decompressing')
                 out.write(tmp)
                 remaining -= len(tmp)
             
@@ -776,9 +780,9 @@ class Archive7z(Base):
         
         fidx = 0
         obidx = 0
+        streamidx = 0
         src_pos = self.afterheader
         pos = 0
-        folder_start = 0
         folder_pos = src_pos
         maxsize = (self.solid and packinfo.packsizes[0]) or None
         for idx in range(files.numfiles):
@@ -787,14 +791,16 @@ class Archive7z(Base):
                 continue
             
             folder = folders[fidx]
-            folder.solid = subinfo.numunpackstreams[fidx] > 1
+            if streamidx == 0:
+                folder.solid = subinfo.numunpackstreams[fidx] > 1
+
             maxsize = (folder.solid and packinfo.packsizes[fidx]) or None
-            if folder.solid:
+            if pos > 0:
                 # file is part of solid archive
                 info['compressed'] = None
-            elif obidx < len(packsizes):
+            elif fidx < len(packsizes):
                 # file is compressed
-                info['compressed'] = packsizes[obidx]
+                info['compressed'] = packsizes[fidx]
             else:
                 # file is not compressed
                 info['compressed'] = unpacksizes[obidx]
@@ -808,12 +814,13 @@ class Archive7z(Base):
             else:
                 src_pos += info['compressed']
             obidx += 1
-            if idx >= subinfo.numunpackstreams[fidx]+folder_start:
+            streamidx += 1
+            if streamidx >= subinfo.numunpackstreams[fidx]:
                 pos = 0
                 folder_pos += packinfo.packsizes[fidx]
                 src_pos = folder_pos
-                folder_start = idx
                 fidx += 1
+                streamidx = 0
         
         self.numfiles = len(self.files)
         self.filenames = list(map(lambda x: x.filename, self.files))
