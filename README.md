@@ -1,6 +1,6 @@
 # Python bindings for LZMA
 
-* **PyLZMA** Copyright (C) 2004-2014 Joachim Bauch
+* **PyLZMA** Copyright (C) 2004-2015 Joachim Bauch
 * **7-Zip** Copyright (C) 1999-2010 Igor Pavlov
 * **LZMA SDK** Copyright (C) 1999-2010 Igor Pavlov
 
