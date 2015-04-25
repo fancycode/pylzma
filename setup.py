@@ -50,7 +50,7 @@ except NameError:
             return s and s.decode('utf-8') or None
 
 version = get_git_version()
-if not isinstance(version, unicode):
+if version and not isinstance(version, unicode):
     version = unicode(version)
 
 # set this to any true value to enable multithreaded compression
