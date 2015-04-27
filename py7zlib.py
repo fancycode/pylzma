@@ -146,7 +146,7 @@ def calculate_crc32(data, value=None, blocksize=1024*1024):
         value = crc32(data[pos:pos+blocksize], value)
         pos += blocksize
 
-    return value & 0xffffffffL
+    return value & 0xffffffff
 
 class ArchiveError(Exception):
     pass
