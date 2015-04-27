@@ -134,6 +134,20 @@ def toTimestamp(filetime):
     # FILETIME is 100-nanosecond intervals since 1601/01/01 (UTC)
     return (filetime / 10000000.0) + TIMESTAMP_ADJUST
 
+def calculate_crc32(data, value=None, blocksize=1024*1024):
+    """Calculate CRC32 of strings with arbitrary lengths."""
+    length = len(data)
+    pos = blocksize
+    if value:
+        value = crc32(data[:pos], value)
+    else:
+        value = crc32(data[:pos])
+    while pos < length:
+        value = crc32(data[pos:pos+blocksize], value)
+        pos += blocksize
+
+    return value & 0xffffffffL
+
 class ArchiveError(Exception):
     pass
 
@@ -208,7 +222,7 @@ class Base(object):
         return result
 
     def checkcrc(self, crc, data):
-        check = crc32(data) & 0xffffffffL
+        check = calculate_crc32(data)
         return crc == check
 
 
@@ -720,12 +734,12 @@ class Archive7z(Base):
 
         self.startheadercrc = unpack('<L', file.read(4))[0]
         self.nextheaderofs, data = self._readReal64Bit(file)
-        crc = crc32(data)
+        crc = calculate_crc32(data)
         self.nextheadersize, data = self._readReal64Bit(file)
-        crc = crc32(data, crc)
+        crc = calculate_crc32(data, crc)
         data = file.read(4)
         self.nextheadercrc = unpack('<L', data)[0]
-        crc = crc32(data, crc) & 0xffffffffL
+        crc = calculate_crc32(data, crc)
         if crc != self.startheadercrc:
             raise FormatError('invalid header data')
         self.afterheader = file.tell()
