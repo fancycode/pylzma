@@ -208,7 +208,7 @@ class Base(object):
         return result
 
     def checkcrc(self, crc, data):
-        check = crc32(data) & 0xffffffff
+        check = crc32(data) & 0xffffffffL
         return crc == check
 
 
@@ -725,7 +725,7 @@ class Archive7z(Base):
         crc = crc32(data, crc)
         data = file.read(4)
         self.nextheadercrc = unpack('<L', data)[0]
-        crc = crc32(data, crc) & 0xffffffff
+        crc = crc32(data, crc) & 0xffffffffL
         if crc != self.startheadercrc:
             raise FormatError('invalid header data')
         self.afterheader = file.tell()
