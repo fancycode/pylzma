@@ -30,10 +30,13 @@
 
 #include "pylzma.h"
 
+#define ALIGNMENT       16
+#define ALIGNMENT_MASK  (ALIGNMENT-1)
+
 typedef struct {
     PyObject_HEAD
-    int offset;
-    UInt32 aes[AES_NUM_IVMRK_WORDS+3];
+    Byte aesBuf[(AES_NUM_IVMRK_WORDS*sizeof(UInt32)) + ALIGNMENT];
+    UInt32 *aes;
 } CAESDecryptObject;
 
 int
@@ -49,14 +52,22 @@ aesdecrypt_init(CAESDecryptObject *self, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|s#s#", kwlist, &key, &keylength, &iv, &ivlength))
         return -1;
     
-    self->offset = ((0 - (unsigned)(ptrdiff_t)self->aes) & 0xF) / sizeof(UInt32);
+    memset(&self->aesBuf, 0, sizeof(self->aesBuf));
+    self->aes = (UInt32 *) self->aesBuf;
+    // AES code expects aligned memory
+    int offset = ((uintptr_t) self->aes) & (ALIGNMENT_MASK);
+    if (offset != 0) {
+        self->aes = (UInt32 *) &self->aesBuf[ALIGNMENT - offset];
+        assert(((uintptr_t) self->aes & ALIGNMENT_MASK) == 0);
+    }
+
     if (keylength > 0) {
         if (keylength != 16 && keylength != 24 && keylength != 32) {
             PyErr_Format(PyExc_TypeError, "key must be 16, 24 or 32 bytes, got %d", keylength);
             return -1;
         }
 
-        Aes_SetKey_Dec(self->aes + self->offset + 4, (Byte *) key, keylength); 
+        Aes_SetKey_Dec(self->aes + 4, (Byte *) key, keylength);
     }
     if (ivlength > 0) {
         if (ivlength != AES_BLOCK_SIZE) {
@@ -64,7 +75,7 @@ aesdecrypt_init(CAESDecryptObject *self, PyObject *args, PyObject *kwargs)
             return -1;
         }
 
-        AesCbc_Init(self->aes + self->offset, (Byte *) iv); 
+        AesCbc_Init(self->aes, (Byte *) iv);
     }
     return 0;
 }
@@ -81,6 +92,7 @@ aesdecrypt_decrypt(CAESDecryptObject *self, PyObject *args)
     PyObject *result;
     char *out;
     int outlength;
+    char *tmpdata = NULL;
     
     if (!PyArg_ParseTuple(args, "s#", &data, &length))
         return NULL;
@@ -90,12 +102,41 @@ aesdecrypt_decrypt(CAESDecryptObject *self, PyObject *args)
         return NULL;
     }
     
-    result = PyBytes_FromStringAndSize(data, length);
+    result = PyBytes_FromStringAndSize(NULL, length);
+    if (result == NULL) {
+        return NULL;
+    }
+
     out = PyBytes_AS_STRING(result);
     outlength = PyBytes_Size(result);
     Py_BEGIN_ALLOW_THREADS
-    g_AesCbc_Decode(self->aes + self->offset, (Byte *) out, outlength / AES_BLOCK_SIZE);
+    // AES code expects aligned memory
+    if ((uintptr_t) out & ALIGNMENT_MASK) {
+        tmpdata = out = (char *) malloc(length + ALIGNMENT);
+        if (tmpdata == NULL) {
+            goto exit;
+        }
+
+        int offset = (uintptr_t) tmpdata & ALIGNMENT_MASK;
+        if (offset != 0) {
+            out = tmpdata + (ALIGNMENT - offset);
+        }
+        assert(((uintptr_t) out & ALIGNMENT_MASK) == 0);
+    }
+    memcpy(out, data, length);
+    g_AesCbc_Decode(self->aes, (Byte *) out, outlength / AES_BLOCK_SIZE);
+    if (tmpdata != NULL) {
+        memcpy(PyBytes_AS_STRING(result), out, length);
+    }
+
+exit:
     Py_END_ALLOW_THREADS
+    if (out == NULL) {
+        Py_DECREF(result);
+        result = NULL;
+        PyErr_NoMemory();
+    }
+    free(tmpdata);
     return result;
 }
 
