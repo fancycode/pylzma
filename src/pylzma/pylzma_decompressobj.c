@@ -31,12 +31,12 @@
 static int
 pylzma_decomp_init(CDecompressionObject *self, PyObject *args, PyObject *kwargs)
 {
-    int max_length = -1;
+    PY_LONG_LONG max_length = -1;
     
     // possible keywords for this function
     static char *kwlist[] = {"maxlength", NULL};
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i", kwlist, &max_length))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|L", kwlist, &max_length))
         return -1;
     
     if (max_length == 0 || max_length < -1) {
@@ -64,12 +64,14 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
     PyObject *result=NULL;
     unsigned char *data;
     Byte *next_in, *next_out;
-    int length, res, bufsize=BLOCK_SIZE;
+    PARSE_LENGTH_TYPE length;
+    int res;
+    PY_LONG_LONG bufsize=BLOCK_SIZE;
     SizeT avail_in;
     SizeT inProcessed, outProcessed;
     ELzmaStatus status;
     
-    if (!PyArg_ParseTuple(args, "s#|i", &data, &length, &bufsize)){
+    if (!PyArg_ParseTuple(args, "s#|L", &data, &length, &bufsize)){
         return NULL;
     }
 
@@ -297,12 +299,12 @@ doc_decomp_reset[] = \
 static PyObject *
 pylzma_decomp_reset(CDecompressionObject *self, PyObject *args, PyObject *kwargs)
 {
-    int max_length = -1;
+    PY_LONG_LONG max_length = -1;
     
     // possible keywords for this function
     static char *kwlist[] = {"maxlength", NULL};
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i", kwlist, &max_length))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|L", kwlist, &max_length))
         return NULL;
     
     LzmaDec_Free(&self->state, &allocator);

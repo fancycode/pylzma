@@ -46,13 +46,14 @@ const char doc_decompress_compat[] = \
 PyObject *pylzma_decompress_compat(PyObject *self, PyObject *args)
 {
     char *data;
-    int length, blocksize=BLOCK_SIZE;
+    PARSE_LENGTH_TYPE length;
+    PY_LONG_LONG blocksize=BLOCK_SIZE;
     PyObject *result = NULL;
     lzma_stream stream;
     int res;
     char *output;
     
-    if (!PyArg_ParseTuple(args, "s#|i", &data, &length, &blocksize))
+    if (!PyArg_ParseTuple(args, "s#|L", &data, &length, &blocksize))
         return NULL;
     
     memset(&stream, 0, sizeof(stream));

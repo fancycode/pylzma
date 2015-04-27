@@ -58,7 +58,7 @@ pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
     char *matchfinder = NULL;    // matchfinder algorithm
     int algorithm = 2;
     char *data;
-    int length;
+    PARSE_LENGTH_TYPE length;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iiiiiiiis", kwlist, &data, &length, &dictionary, &fastBytes,
                                                                   &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos, &multithreading, &matchfinder))

@@ -42,7 +42,10 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     unsigned char *data;
     Byte *tmp;
-    int length, bufsize=BLOCK_SIZE, avail, totallength=-1;
+    PARSE_LENGTH_TYPE length;
+    int bufsize=BLOCK_SIZE;
+    PY_LONG_LONG totallength=-1;
+    PARSE_LENGTH_TYPE avail;
     PyObject *result=NULL;
     CLzmaDec state;
     ELzmaStatus status;
@@ -52,7 +55,7 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
     // possible keywords for this function
     static char *kwlist[] = {"data", "bufsize", "maxlength", NULL};
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|ii", kwlist, &data, &length, &bufsize, &totallength))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iL", kwlist, &data, &length, &bufsize, &totallength))
         return NULL;
     
     if (totallength != -1) {

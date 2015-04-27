@@ -38,9 +38,12 @@ static PyObject *pylzma_decomp_decompress(CCompatDecompressionObject *self, PyOb
 {
     PyObject *result=NULL;
     char *data;
-    int length, old_length, start_total_out, res, max_length=BLOCK_SIZE;
+    PARSE_LENGTH_TYPE length, old_length;
+    PY_LONG_LONG start_total_out;
+    int res;
+    PY_LONG_LONG max_length=BLOCK_SIZE;
     
-    if (!PyArg_ParseTuple(args, "s#|i", &data, &length, &max_length))
+    if (!PyArg_ParseTuple(args, "s#|L", &data, &length, &max_length))
         return NULL;
 
     if (max_length < 0)

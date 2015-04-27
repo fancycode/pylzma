@@ -96,6 +96,14 @@ PyInterpreterState* _pylzma_interpreterState;
     0,
 #endif
 
+#if defined(PY_SSIZE_T_CLEAN) && (PY_VERSION_HEX >= 0x02040000)
+#define PARSE_LENGTH_TYPE   Py_ssize_t
+#define PARSE_LENGTH_FORMAT "%zd"
+#else
+#define PARSE_LENGTH_TYPE   int
+#define PARSE_LENGTH_FORMAT "%d"
+#endif
+
 extern ISzAlloc allocator;
 
 #endif

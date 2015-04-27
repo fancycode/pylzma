@@ -46,10 +46,12 @@ pylzma_comp_compress(CCompressionObject *self, PyObject *args)
 {
     PyObject *result = NULL;
     char *data;
-    int length, bufsize=BLOCK_SIZE, res;
+    PARSE_LENGTH_TYPE length;
+    PY_LONG_LONG bufsize=BLOCK_SIZE;
+    int res;
     size_t before;
     
-    if (!PyArg_ParseTuple(args, "s#|i", &data, &length, &bufsize))
+    if (!PyArg_ParseTuple(args, "s#|L", &data, &length, &bufsize))
         return NULL;
     
     if (!MemoryInOutStreamAppend(&self->inStream, (Byte *) data, length)) {

@@ -59,11 +59,11 @@ static PyObject *
 pylzma_calculate_key(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     char *password;
-    int pwlen;
+    PARSE_LENGTH_TYPE pwlen;
     int cycles;
     PyObject *pysalt=NULL;
     char *salt;
-    int saltlen;
+    Py_ssize_t saltlen;
     char *digest="sha256";
     char key[32];
     // possible keywords for this function
@@ -132,7 +132,7 @@ static PyObject *
 pylzma_bcj_x86_convert(PyObject *self, PyObject *args)
 {
     char *data;
-    int length;
+    PARSE_LENGTH_TYPE length;
     int encoding=0;
     PyObject *result;
     
@@ -165,7 +165,7 @@ static PyObject * \
 pylzma_bcj_##id##_convert(PyObject *self, PyObject *args) \
 { \
     char *data; \
-    int length; \
+    PARSE_LENGTH_TYPE length; \
     int encoding=0; \
     PyObject *result; \
      \
