@@ -46,6 +46,7 @@ aesdecrypt_init(CAESDecryptObject *self, PyObject *args, PyObject *kwargs)
     PARSE_LENGTH_TYPE keylength=0;
     char *iv=NULL;
     PARSE_LENGTH_TYPE ivlength=0;
+    int offset;
     
     // possible keywords for this function
     static char *kwlist[] = {"key", "iv", NULL};
@@ -55,7 +56,7 @@ aesdecrypt_init(CAESDecryptObject *self, PyObject *args, PyObject *kwargs)
     memset(&self->aesBuf, 0, sizeof(self->aesBuf));
     self->aes = (UInt32 *) self->aesBuf;
     // AES code expects aligned memory
-    int offset = ((uintptr_t) self->aes) & (ALIGNMENT_MASK);
+    offset = ((uintptr_t) self->aes) & (ALIGNMENT_MASK);
     if (offset != 0) {
         self->aes = (UInt32 *) &self->aesBuf[ALIGNMENT - offset];
         assert(((uintptr_t) self->aes & ALIGNMENT_MASK) == 0);
@@ -112,12 +113,13 @@ aesdecrypt_decrypt(CAESDecryptObject *self, PyObject *args)
     Py_BEGIN_ALLOW_THREADS
     // AES code expects aligned memory
     if ((uintptr_t) out & ALIGNMENT_MASK) {
+        int offset;
         tmpdata = out = (char *) malloc(length + ALIGNMENT);
         if (tmpdata == NULL) {
             goto exit;
         }
 
-        int offset = (uintptr_t) tmpdata & ALIGNMENT_MASK;
+        offset = (uintptr_t) tmpdata & ALIGNMENT_MASK;
         if (offset != 0) {
             out = tmpdata + (ALIGNMENT - offset);
         }
