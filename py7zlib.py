@@ -25,6 +25,7 @@
 """Read from and write to 7zip format archives.
 """
 
+from array import array
 from binascii import unhexlify
 from datetime import datetime
 import pylzma
@@ -86,7 +87,21 @@ except NameError:
     # Python 3.x
     long = int
 
+try:
+    xrange
+except NameError:
+    # Python 3.x
+    xrange = range
+
 IS_PYTHON3 = sys.version_info[0] == 3
+
+NEED_BYTESWAP = sys.byteorder != 'little'
+
+if array('L').itemsize == 4:
+    ARRAY_TYPE_UINT32 = 'L'
+else:
+    assert array('I').itemsize == 4
+    ARRAY_TYPE_UINT32 = 'I'
 
 READ_BLOCKSIZE                   = 16384
 
@@ -193,9 +208,9 @@ class Base(object):
     def _read64Bit(self, file):
         b = ord(file.read(1))
         mask = 0x80
-        for i in range(8):
+        for i in xrange(8):
             if b & mask == 0:
-                bytes = list(unpack('%dB' % i, file.read(i)))
+                bytes = array('B', file.read(i))
                 bytes.reverse()
                 value = (bytes and reduce(lambda x, y: x << 8 | y, bytes)) or 0
                 highpart = b & (mask - 1)
@@ -212,7 +227,7 @@ class Base(object):
         result = []
         b = 0
         mask = 0
-        for i in range(count):
+        for i in xrange(count):
             if mask == 0:
                 b = ord(file.read(1))
                 mask = 0x80
@@ -234,11 +249,11 @@ class PackInfo(Base):
         self.numstreams = self._read64Bit(file)
         id = file.read(1)
         if id == PROPERTY_SIZE:
-            self.packsizes = [self._read64Bit(file) for x in range(self.numstreams)]
+            self.packsizes = [self._read64Bit(file) for x in xrange(self.numstreams)]
             id = file.read(1)
             
             if id == PROPERTY_CRC:
-                self.crcs = [self._read64Bit(file) for x in range(self.numstreams)]
+                self.crcs = [self._read64Bit(file) for x in xrange(self.numstreams)]
                 id = file.read(1)
             
         if id != PROPERTY_END:
@@ -253,7 +268,7 @@ class Folder(Base):
         self.digestdefined = False
         totalin = 0
         self.totalout = 0
-        for i in range(numcoders):
+        for i in xrange(numcoders):
             while True:
                 b = ord(file.read(1))
                 methodsize = b & 0xf
@@ -278,41 +293,37 @@ class Folder(Base):
         
         numbindpairs = self.totalout - 1
         self.bindpairs = []
-        for i in range(numbindpairs):
+        for i in xrange(numbindpairs):
             self.bindpairs.append((self._read64Bit(file), self._read64Bit(file), ))
         
         numpackedstreams = totalin - numbindpairs
         self.packed_indexes = []
         if numpackedstreams == 1:
-            for i in range(totalin):
+            for i in xrange(totalin):
                 if self.findInBindPair(i) < 0:
                     self.packed_indexes.append(i)
         elif numpackedstreams > 1:
-            for i in range(numpackedstreams):
+            for i in xrange(numpackedstreams):
                 self.packed_indexes.append(self._read64Bit(file))
 
     def getUnpackSize(self):
         if not self.unpacksizes:
             return 0
             
-        r = list(range(len(self.unpacksizes)))
-        r.reverse()
-        for i in r:
+        for i in xrange(len(self.unpacksizes)-1, -1, -1):
             if self.findOutBindPair(i):
                 return self.unpacksizes[i]
         
         raise TypeError('not found')
 
     def findInBindPair(self, index):
-        for idx in range(len(self.bindpairs)):
-            a, b = self.bindpairs[idx]
+        for idx, (a, b) in enumerate(self.bindpairs):
             if a == index:
                 return idx
         return -1
 
     def findOutBindPair(self, index):
-        for idx in range(len(self.bindpairs)):
-            a, b = self.bindpairs[idx]
+        for idx, (a, b) in enumerate(self.bindpairs):
             if b == index:
                 return idx
         return -1
@@ -325,7 +336,9 @@ class Digests(Base):
     
     def __init__(self, file, count):
         self.defined = self._readBoolean(file, count, checkall=1)
-        self.crcs = [unpack('<L', file.read(4))[0] for x in range(count)]
+        self.crcs = array(ARRAY_TYPE_UINT32, file.read(4*count))
+        if NEED_BYTESWAP:
+            self.crcs.byteswap()
     
 UnpackDigests = Digests
 
@@ -340,7 +353,7 @@ class UnpackInfo(Base):
         self.folders = []
         external = file.read(1)
         if external == unhexlify('00'):
-            self.folders = [Folder(file) for x in range(self.numfolders)]
+            self.folders = [Folder(file) for x in xrange(self.numfolders)]
         elif external == unhexlify('01'):
             self.datastreamidx = self._read64Bit(file)
         else:
@@ -351,13 +364,12 @@ class UnpackInfo(Base):
             raise FormatError('coders unpack size id expected but %s found' % repr(id))
         
         for folder in self.folders:
-            folder.unpacksizes = [self._read64Bit(file) for x in range(folder.totalout)]
+            folder.unpacksizes = [self._read64Bit(file) for x in xrange(folder.totalout)]
             
         id = file.read(1)
         if id == PROPERTY_CRC:
             digests = UnpackDigests(file, self.numfolders)
-            for idx in range(self.numfolders):
-                folder = self.folders[idx]
+            for idx, folder in enumerate(self.folders):
                 folder.digestdefined = digests.defined[idx]
                 folder.crc = digests.crcs[idx]
                 
@@ -374,18 +386,16 @@ class SubstreamsInfo(Base):
         self.digestsdefined = []
         id = file.read(1)
         if id == PROPERTY_NUM_UNPACK_STREAM:
-            self.numunpackstreams = [self._read64Bit(file) for x in range(numfolders)]
+            self.numunpackstreams = [self._read64Bit(file) for x in xrange(numfolders)]
             id = file.read(1)
-        else:        
-            self.numunpackstreams = []
-            for idx in range(numfolders):
-                self.numunpackstreams.append(1)
+        else:
+            self.numunpackstreams = [1]*numfolders
         
         if id == PROPERTY_SIZE:
             self.unpacksizes = []
-            for i in range(len(self.numunpackstreams)):
+            for i in xrange(len(self.numunpackstreams)):
                 sum = 0
-                for j in range(1, self.numunpackstreams[i]):
+                for j in xrange(1, self.numunpackstreams[i]):
                     size = self._read64Bit(file)
                     self.unpacksizes.append(size)
                     sum += size
@@ -395,7 +405,7 @@ class SubstreamsInfo(Base):
 
         numdigests = 0
         numdigeststotal = 0
-        for i in range(numfolders):
+        for i in xrange(numfolders):
             numsubstreams = self.numunpackstreams[i]
             if numsubstreams != 1 or not folders[i].digestdefined:
                 numdigests += numsubstreams
@@ -404,14 +414,14 @@ class SubstreamsInfo(Base):
         if id == PROPERTY_CRC:
             digests = Digests(file, numdigests)
             didx = 0
-            for i in range(numfolders):
+            for i in xrange(numfolders):
                 folder = folders[i]
                 numsubstreams = self.numunpackstreams[i]
                 if numsubstreams == 1 and folder.digestdefined:
                     self.digestsdefined.append(True)
                     self.digests.append(folder.crc)
                 else:
-                    for j in range(numsubstreams):
+                    for j in xrange(numsubstreams):
                         self.digestsdefined.append(digests.defined[didx])
                         self.digests.append(digests.crcs[didx])
                         didx += 1
@@ -453,7 +463,7 @@ class FilesInfo(Base):
         
         # NOTE: the "external" flag is currently ignored, should be 0x00
         external = file.read(1)
-        for i in range(len(files)):
+        for i in xrange(len(files)):
             if defined[i]:
                 files[i][name] = ArchiveTimestamp(self._readReal64Bit(file)[0])
             else:
@@ -461,7 +471,7 @@ class FilesInfo(Base):
 
     def __init__(self, file):
         self.numfiles = self._read64Bit(file)
-        self.files = [{'emptystream': False} for x in range(self.numfiles)]
+        self.files = [{'emptystream': False} for x in xrange(self.numfiles)]
         numemptystreams = 0
         while True:
             typ = self._read64Bit(file)
@@ -508,9 +518,8 @@ class FilesInfo(Base):
                 self._readTimes(buffer, self.files, 'lastwritetime')
             elif typ == PROPERTY_ATTRIBUTES:
                 defined = self._readBoolean(buffer, self.numfiles, checkall=1)
-                for i in range(self.numfiles):
-                    f = self.files[i]
-                    if defined[i]:
+                for idx, f in enumerate(self.files):
+                    if defined[idx]:
                         f['attributes'] = unpack('<L', buffer.read(4))[0]
                     else:
                         f['attributes'] = None
@@ -760,7 +769,6 @@ class Archive7z(Base):
             streams = StreamsInfo(buffer)
             file.seek(self.afterheader + 0)
             data = bytes('', 'ascii')
-            idx = 0
             src_start = self.afterheader
             for folder in streams.unpackinfo.folders:
                 if folder.isEncrypted() and not password:
@@ -812,8 +820,7 @@ class Archive7z(Base):
         pos = 0
         folder_pos = src_pos
         maxsize = (self.solid and packinfo.packsizes[0]) or None
-        for idx in range(files.numfiles):
-            info = files.files[idx]
+        for info in files.files:
             if info['emptystream']:
                 continue
             
