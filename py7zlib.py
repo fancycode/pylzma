@@ -614,29 +614,33 @@ class ArchiveFile(Base):
             input = self._file.read(self.uncompressed)
         return input[self._start:self._start+self.size]
     
-    def _read_from_decompressor(self, coder, decompressor, input, checkremaining=False, with_cache=False):
-        data = ''
+    def _read_from_decompressor(self, coder, decompressor, input, checkremaining=False):
         idx = 0
         cnt = 0
+        self._file.seek(self._src_start)
         properties = coder.get('properties', None)
         if properties:
             decompressor.decompress(properties)
         total = self.compressed
         if not input and total is None:
-            remaining = self._start+self.size
+            remaining_preroll = self._start
+            tmp = ''
+            while remaining_preroll > 0:
+                data = self._file.read(READ_BLOCKSIZE)
+                if checkremaining:
+                    tmp = decompressor.decompress(data, remaining_preroll + self.size )
+                else:
+                    tmp = decompressor.decompress(data)
+                assert len(tmp) > 0
+                remaining_preroll -= len(tmp)
+            
             out = BytesIO()
-            cache = getattr(self._folder, '_decompress_cache', None)
-            if cache is not None:
-                data, pos, decompressor = cache
-                out.write(data)
-                remaining -= len(data)
-                self._file.seek(pos)
-            else:
-                self._file.seek(self._src_start)
-            checkremaining = checkremaining and not self._folder.solid
+            out.write( tmp[len(tmp) + remaining_preroll ::] )
+            
+            remaining = self.size + remaining_preroll                      
             while remaining > 0:
                 data = self._file.read(READ_BLOCKSIZE)
-                if checkremaining or (with_cache and len(data) < READ_BLOCKSIZE):
+                if checkremaining:
                     tmp = decompressor.decompress(data, remaining)
                 else:
                     tmp = decompressor.decompress(data)
@@ -645,20 +649,17 @@ class ArchiveFile(Base):
                 out.write(tmp)
                 remaining -= len(tmp)
             
-            data = out.getvalue()
-            if with_cache and self._folder.solid:
-                # don't decompress start of solid archive for next file
-                # TODO: limit size of cached data
-                self._folder._decompress_cache = (data, self._file.tell(), decompressor)
+            out.seek(0)
+            return out.read(self.size)
         else:
+            data = ''
             if not input:
-                self._file.seek(self._src_start)
                 input = self._file.read(total)
             if checkremaining:
                 data = decompressor.decompress(input, self._start+self.size)
             else:
                 data = decompressor.decompress(input)
-        return data[self._start:self._start+self.size]
+            return data[self._start:self._start+self.size]
     
     def _read_lzma(self, coder, input):
         dec = pylzma.decompressobj(maxlength=self._start+self.size)
