@@ -157,6 +157,12 @@ class Test7ZipFiles(unittest.TestCase):
             self.assertRaises(WrongPasswordError, cf.checkcrc)
             self.assertRaises(WrongPasswordError, cf.read)
 
+    def test_encrypted_short(self):
+        # test loading of encrypted file with short content with correct password
+        fp = self._open_file(os.path.join(ROOT, 'data', 'encrypted-short.7z'), 'rb')
+        archive = Archive7z(fp, password='secret')
+        self._test_decode_all(archive)
+
     def test_encrypted_names_no_password(self):
         # test loading of files with encrypted names without password
         fp = self._open_file(os.path.join(ROOT, 'data', 'encrypted-names.7z'), 'rb')

@@ -553,18 +553,18 @@ class Header(Base):
 class ArchiveFile(Base):
     """ wrapper around a file in the archive """
     
-    def __init__(self, info, start, src_start, size, folder, archive, maxsize=None):
+    def __init__(self, info, start, src_start, folder, archive, maxsize=None):
         self.digest = None
         self._archive = archive
         self._file = archive._file
         self._start = start
         self._src_start = src_start
         self._folder = folder
-        self.size = size
         # maxsize is only valid for solid archives
         self._maxsize = maxsize
         for k, v in info.items():
             setattr(self, k, v)
+        self.size = self.uncompressed = self._uncompressed[-1]
         if not hasattr(self, 'filename'):
             # compressed file is stored without a name, generate one
             try:
@@ -594,6 +594,7 @@ class ArchiveFile(Base):
             raise TypeError("file has no coder informations")
         
         data = None
+        level = 0
         for coder in self._folder.coders:
             method = coder['method']
             decoder = None
@@ -604,17 +605,20 @@ class ArchiveFile(Base):
             if decoder is None:
                 raise UnsupportedCompressionMethodError(repr(coder['method']))
             
-            data = getattr(self, decoder)(coder, data)
+            data = getattr(self, decoder)(coder, data, level)
+            level += 1
         
         return data
     
-    def _read_copy(self, coder, input):
+    def _read_copy(self, coder, input, level):
+        size = self._uncompressed[level]
         if not input:
             self._file.seek(self._src_start)
-            input = self._file.read(self.uncompressed)
-        return input[self._start:self._start+self.size]
+            input = self._file.read(size)
+        return input[self._start:self._start+size]
     
-    def _read_from_decompressor(self, coder, decompressor, input, checkremaining=False, with_cache=False):
+    def _read_from_decompressor(self, coder, decompressor, input, level, checkremaining=False, with_cache=False):
+        size = self._uncompressed[level]
         data = ''
         idx = 0
         cnt = 0
@@ -623,7 +627,7 @@ class ArchiveFile(Base):
             decompressor.decompress(properties)
         total = self.compressed
         if not input and total is None:
-            remaining = self._start+self.size
+            remaining = self._start+size
             out = BytesIO()
             cache = getattr(self._folder, '_decompress_cache', None)
             if cache is not None:
@@ -655,30 +659,31 @@ class ArchiveFile(Base):
                 self._file.seek(self._src_start)
                 input = self._file.read(total)
             if checkremaining:
-                data = decompressor.decompress(input, self._start+self.size)
+                data = decompressor.decompress(input, self._start+size)
             else:
                 data = decompressor.decompress(input)
-        return data[self._start:self._start+self.size]
+        return data[self._start:self._start+size]
     
-    def _read_lzma(self, coder, input):
-        dec = pylzma.decompressobj(maxlength=self._start+self.size)
+    def _read_lzma(self, coder, input, level):
+        size = self._uncompressed[level]
+        dec = pylzma.decompressobj(maxlength=self._start+size)
         try:
-            return self._read_from_decompressor(coder, dec, input, checkremaining=True, with_cache=True)
+            return self._read_from_decompressor(coder, dec, input, level, checkremaining=True, with_cache=True)
         except ValueError:
             if self._is_encrypted():
                 raise WrongPasswordError('invalid password')
             
             raise
         
-    def _read_zip(self, coder, input):
+    def _read_zip(self, coder, input, level):
         dec = zlib.decompressobj(-15)
-        return self._read_from_decompressor(coder, dec, input, checkremaining=True)
+        return self._read_from_decompressor(coder, dec, input, level, checkremaining=True)
         
-    def _read_bzip(self, coder, input):
+    def _read_bzip(self, coder, input, level):
         dec = bz2.BZ2Decompressor()
-        return self._read_from_decompressor(coder, dec, input)
+        return self._read_from_decompressor(coder, dec, input, level)
     
-    def _read_7z_aes256_sha256(self, coder, input):
+    def _read_7z_aes256_sha256(self, coder, input, level):
         if not self._archive.password:
             raise NoPasswordGivenError()
         
@@ -713,7 +718,7 @@ class ArchiveFile(Base):
         cipher = pylzma.AESDecrypt(key, iv=iv)
         if not input:
             self._file.seek(self._src_start)
-            uncompressed_size = self.uncompressed
+            uncompressed_size = self._uncompressed[level]
             if uncompressed_size & 0x0f:
                 # we need a multiple of 16 bytes
                 uncompressed_size += 16 - (uncompressed_size & 0x0f)
@@ -775,14 +780,16 @@ class Archive7z(Base):
                     raise NoPasswordGivenError()
 
                 src_start += streams.packinfo.packpos
-                size = folder.unpacksizes[-1]
+                uncompressed = folder.unpacksizes
+                if not isinstance(uncompressed, (list, tuple)):
+                    uncompressed = [uncompressed] * len(folder.coders)
                 info = {
                     'compressed': streams.packinfo.packsizes[0],
-                    'uncompressed': folder.unpacksizes[0],
+                    '_uncompressed': uncompressed,
                 }
-                tmp = ArchiveFile(info, 0, src_start, size, folder, self)
+                tmp = ArchiveFile(info, 0, src_start, folder, self)
                 folderdata = tmp.read()
-                src_start += size
+                src_start += uncompressed[-1]
 
                 if folder.digestdefined:
                     if not self.checkcrc(folder.crc, folderdata):
@@ -811,7 +818,7 @@ class Archive7z(Base):
         if hasattr(subinfo, 'unpacksizes'):
             unpacksizes = subinfo.unpacksizes
         else:
-            unpacksizes = [x.unpacksizes[0] for x in folders]
+            unpacksizes = [x.unpacksizes for x in folders]
         
         fidx = 0
         obidx = 0
@@ -829,6 +836,9 @@ class Archive7z(Base):
                 folder.solid = subinfo.numunpackstreams[fidx] > 1
 
             maxsize = (folder.solid and packinfo.packsizes[fidx]) or None
+            uncompressed = unpacksizes[obidx]
+            if not isinstance(uncompressed, (list, tuple)):
+                uncompressed = [uncompressed] * len(folder.coders)
             if pos > 0:
                 # file is part of solid archive
                 info['compressed'] = None
@@ -837,9 +847,9 @@ class Archive7z(Base):
                 info['compressed'] = packsizes[fidx]
             else:
                 # file is not compressed
-                info['compressed'] = unpacksizes[obidx]
-            info['uncompressed'] = unpacksizes[obidx]
-            file = ArchiveFile(info, pos, src_pos, unpacksizes[obidx], folder, self, maxsize=maxsize)
+                info['compressed'] = uncompressed
+            info['_uncompressed'] = uncompressed
+            file = ArchiveFile(info, pos, src_pos, folder, self, maxsize=maxsize)
             if subinfo.digestsdefined[obidx]:
                 file.digest = subinfo.digests[obidx]
             self.files.append(file)
