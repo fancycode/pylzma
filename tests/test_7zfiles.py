@@ -91,6 +91,14 @@ class Test7ZipFiles(unittest.TestCase):
         cf.reset()
         self.assertEqual(cf.read(), bytes('This file is located in a folder.', 'ascii'))
 
+    def _test_decode_all(self, archive):
+        filenames = archive.getnames()
+        for filename in filenames:
+            cf = archive.getmember(filename)
+            self.assertNotEqual(cf, None, filename)
+            self.assertTrue(cf.checkcrc(), 'crc failed for %s' % (filename))
+            self.assertEqual(len(cf.read()), cf.uncompressed)
+
     def test_non_solid(self):
         # test loading of a non-solid archive
         self._test_archive('non_solid.7z')
@@ -121,10 +129,7 @@ class Test7ZipFiles(unittest.TestCase):
         # sample file for bugzilla #4
         fp = self._open_file(os.path.join(ROOT, 'data', 'bugzilla_4.7z'), 'rb')
         archive = Archive7z(fp)
-        filenames = archive.getnames()
-        for filename in filenames:
-            cf = archive.getmember(filename)
-            self.assertEqual(len(cf.read()), cf.uncompressed)
+        self._test_decode_all(archive)
 
     def test_encrypted_no_password(self):
         # test loading of encrypted files without password (can read archived filenames)
@@ -139,10 +144,7 @@ class Test7ZipFiles(unittest.TestCase):
         # test loading of encrypted files with correct password
         fp = self._open_file(os.path.join(ROOT, 'data', 'encrypted.7z'), 'rb')
         archive = Archive7z(fp, password='secret')
-        filenames = archive.getnames()
-        for filename in filenames:
-            cf = archive.getmember(filename)
-            self.assertEqual(len(cf.read()), cf.uncompressed)
+        self._test_decode_all(archive)
 
     def test_encrypted_wong_password(self):
         # test loading of encrypted files with wrong password
@@ -151,6 +153,8 @@ class Test7ZipFiles(unittest.TestCase):
         filenames = archive.getnames()
         for filename in filenames:
             cf = archive.getmember(filename)
+            self.assertNotEqual(cf, None, filename)
+            self.assertRaises(WrongPasswordError, cf.checkcrc)
             self.assertRaises(WrongPasswordError, cf.read)
 
     def test_encrypted_names_no_password(self):
@@ -162,11 +166,7 @@ class Test7ZipFiles(unittest.TestCase):
         # test loading of files with encrypted names with correct password
         fp = self._open_file(os.path.join(ROOT, 'data', 'encrypted-names.7z'), 'rb')
         archive = Archive7z(fp, password='secret')
-        filenames = archive.getnames()
-        for filename in filenames:
-            cf = archive.getmember(filename)
-            self.assertEqual(len(cf.read()), cf.uncompressed)
-            self.assertTrue(cf.checkcrc(), 'crc failed for %s' % (filename))
+        self._test_decode_all(archive)
 
     def test_encrypted_names_wong_password(self):
         # test loading of files with encrypted names with wrong password
@@ -205,10 +205,7 @@ class Test7ZipFiles(unittest.TestCase):
         # sample file for bugzilla #16
         fp = self._open_file(os.path.join(ROOT, 'data', 'bugzilla_16.7z'), 'rb')
         archive = Archive7z(fp)
-        filenames = archive.getnames()
-        for filename in filenames:
-            cf = archive.getmember(filename)
-            self.assertEqual(len(cf.read()), cf.uncompressed)
+        self._test_decode_all(archive)
 
     def test_empty(self):
         # decompress empty archive
@@ -264,10 +261,7 @@ class Test7ZipFiles(unittest.TestCase):
             return
 
         archive = Archive7z(fp)
-        for name in archive.getnames():
-            member = archive.getmember(name)
-            self.assertNotEqual(member, None, name)
-            self.assertTrue(member.checkcrc(), 'crc failed for %s' % (name))
+        self._test_decode_all(archive)
 
 def suite():
     suite = unittest.TestSuite()
