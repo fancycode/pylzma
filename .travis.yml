@@ -21,9 +21,12 @@ addons:
 cache:
   directories:
     - $HOME/.ccache
+    - $HOME/.downloads
 
 install:
-  - wget --no-check-certificate -O tests/data/ux.stackexchange.com.7z https://archive.org/download/stackexchange/ux.stackexchange.com.7z
+  - mkdir -p $HOME/.downloads
+  - ( cd $HOME/.downloads && wget --no-check-certificate --timestamping https://archive.org/download/stackexchange/ux.stackexchange.com.7z )
+  - cp $HOME/.downloads/ux.stackexchange.com.7z tests/data/ux.stackexchange.com.7z
 
 script: 
   - python setup.py test
