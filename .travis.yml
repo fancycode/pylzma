@@ -10,6 +10,18 @@ python:
   - "3.5-dev"
   - "nightly"
 
+env:
+  - CC=/usr/lib/ccache/gcc CXX=/usr/lib/ccache/g++
+
+addons:
+  apt:
+    packages:
+    - ccache
+
+cache:
+  directories:
+    - $HOME/.ccache
+
 install:
   - wget --no-check-certificate -O tests/data/ux.stackexchange.com.7z https://archive.org/download/stackexchange/ux.stackexchange.com.7z
 
