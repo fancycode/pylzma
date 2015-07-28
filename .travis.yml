@@ -1,6 +1,7 @@
 # stats available at
 # https://travis-ci.org/fancycode/pylzma
 language: python
+sudo: false
 python:
   - "2.6"
   - "2.7"
