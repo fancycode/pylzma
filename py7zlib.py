@@ -131,6 +131,8 @@ PROPERTY_LAST_WRITE_TIME         = unhexlify('14')  # '\x14'
 PROPERTY_ATTRIBUTES              = unhexlify('15')  # '\x15'
 PROPERTY_COMMENT                 = unhexlify('16')  # '\x16'
 PROPERTY_ENCODED_HEADER          = unhexlify('17')  # '\x17'
+PROPERTY_START_POS               = unhexlify('18')  # '\x18'
+PROPERTY_DUMMY                   = unhexlify('19')  # '\x19'
 
 COMPRESSION_METHOD_COPY          = unhexlify('00')  # '\x00'
 COMPRESSION_METHOD_LZMA          = unhexlify('03')  # '\x03'
@@ -483,6 +485,11 @@ class FilesInfo(Base):
                 break
                 
             size = self._read64Bit(file)
+            if typ == PROPERTY_DUMMY:
+                # Added by newer versions of 7z to adjust padding.
+                file.seek(size, os.SEEK_CUR)
+                continue
+
             buffer = BytesIO(file.read(size))
             if typ == PROPERTY_EMPTY_STREAM:
                 isempty = self._readBoolean(buffer, self.numfiles)

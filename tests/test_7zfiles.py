@@ -269,6 +269,9 @@ class Test7ZipFiles(unittest.TestCase):
         archive = Archive7z(fp)
         self._test_decode_all(archive)
 
+    def test_github_37(self):
+        self._test_archive('github_37_dummy.7z')
+
 def suite():
     suite = unittest.TestSuite()
 
