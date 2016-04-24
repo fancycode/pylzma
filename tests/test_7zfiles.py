@@ -272,6 +272,16 @@ class Test7ZipFiles(unittest.TestCase):
     def test_github_37(self):
         self._test_archive('github_37_dummy.7z')
 
+    def test_github_33(self):
+        fp = self._open_file(os.path.join(ROOT, 'data', 'github_33.7z'), 'rb')
+        archive = Archive7z(fp, password='abc')
+        # Archive only creates an empty file (which gets filtered).
+        self.assertEqual(archive.getnames(), [])
+        self.assertEqual(archive.header.files.numfiles, 1)
+        self.assertEqual([x['filename'] for x in archive.header.files.files], [u'successs.txt'])
+        cf = archive.getmember('successs.txt')
+        self.assertEqual(cf, None)
+
 def suite():
     suite = unittest.TestSuite()
 

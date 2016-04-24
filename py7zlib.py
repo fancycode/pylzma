@@ -795,8 +795,9 @@ class Archive7z(Base):
                     '_uncompressed': uncompressed,
                 }
                 tmp = ArchiveFile(info, 0, src_start, folder, self)
-                folderdata = tmp.read()
-                src_start += uncompressed[-1]
+                uncompressed_size = uncompressed[-1]
+                folderdata = tmp.read()[:uncompressed_size]
+                src_start += uncompressed_size
 
                 if folder.digestdefined:
                     if not self.checkcrc(folder.crc, folderdata):
@@ -817,15 +818,19 @@ class Archive7z(Base):
         
         self.header = Header(buffer)
         files = self.header.files
-        folders = self.header.main_streams.unpackinfo.folders
-        packinfo = self.header.main_streams.packinfo
-        subinfo = self.header.main_streams.substreamsinfo
-        packsizes = packinfo.packsizes
-        self.solid = packinfo.numstreams == 1
-        if hasattr(subinfo, 'unpacksizes'):
-            unpacksizes = subinfo.unpacksizes
+        if hasattr(self.header, 'main_streams'):
+            folders = self.header.main_streams.unpackinfo.folders
+            packinfo = self.header.main_streams.packinfo
+            subinfo = self.header.main_streams.substreamsinfo
+            packsizes = packinfo.packsizes
+            self.solid = packinfo.numstreams == 1
+            if hasattr(subinfo, 'unpacksizes'):
+                unpacksizes = subinfo.unpacksizes
+            else:
+                unpacksizes = [x.unpacksizes for x in folders]
         else:
-            unpacksizes = [x.unpacksizes for x in folders]
+            # TODO(fancycode): is it necessary to provide empty values for folder, packinfo, etc?
+            self.solid = False
         
         fidx = 0
         obidx = 0
