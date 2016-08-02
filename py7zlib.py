@@ -22,8 +22,7 @@
 #
 # $Id$
 #
-"""Read from and write to 7zip format archives.
-"""
+"""Read 7zip format archives."""
 
 from array import array
 from binascii import unhexlify
