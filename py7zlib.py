@@ -1,4 +1,4 @@
-i#!/usr/bin/python -u
+#!/usr/bin/python -u
 #
 # Python Bindings for LZMA
 #
