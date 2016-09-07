@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+i#!/usr/bin/python -u
 #
 # Python Bindings for LZMA
 #
@@ -22,7 +22,8 @@
 #
 # $Id$
 #
-"""Read 7zip format archives."""
+"""Read from and write to 7zip format archives.
+"""
 
 from array import array
 from binascii import unhexlify
@@ -140,6 +141,8 @@ COMPRESSION_METHOD_MISC          = unhexlify('04')  # '\x04'
 COMPRESSION_METHOD_MISC_ZIP      = unhexlify('0401')  # '\x04\x01'
 COMPRESSION_METHOD_MISC_BZIP     = unhexlify('0402')  # '\x04\x02'
 COMPRESSION_METHOD_7Z_AES256_SHA256 = unhexlify('06f10701')  # '\x06\xf1\x07\x01'
+COMPRESSION_METHOD_PPMD          = unhexlify('0304')  # '\x03\x04\'
+COMPRESSION_METHOD_LZMA2         = b'!' # Un Implemnted
 
 # number of seconds between 1601/01/01 and 1970/01/01 (UTC)
 # used to adjust 7z FILETIME to Python timestamp
@@ -507,7 +510,7 @@ class FilesInfo(Base):
                     self.dataindex = self._read64Bit(buffer)
                     # XXX: evaluate external
                     raise NotImplementedError
-                    
+
                 for f in self.files:
                     name = ''
                     while True:
@@ -587,6 +590,8 @@ class ArchiveFile(Base):
             COMPRESSION_METHOD_MISC_ZIP: '_read_zip',
             COMPRESSION_METHOD_MISC_BZIP: '_read_bzip',
             COMPRESSION_METHOD_7Z_AES256_SHA256: '_read_7z_aes256_sha256',
+            COMPRESSION_METHOD_PPMD: '_unimplemented',
+            COMPRESSION_METHOD_LZMA2: '_unimplemented',
         }
 
     def _is_encrypted(self):
@@ -594,6 +599,27 @@ class ArchiveFile(Base):
 
     def reset(self):
         self.pos = 0
+
+    def check_password(self,pwd):
+        if not self._folder.coders:
+            raise TypeError("file has no coder informations")
+        self._archive.password = pwd
+        data = None
+        level = 0
+        for coder in self._folder.coders:
+            method = coder['method']
+            decoder = None
+            while method and decoder is None:
+                decoder = self._decoders.get(method, None)
+                method = method[:-1]
+                if decoder: break
+            if decoder is None or decoder == '_unimplemented':
+                decoder = '_read_lzma'
+            data = getattr(self, decoder)(coder, data, level)
+            level += 1
+        if not data:
+            raise  WrongPasswordError("Wrong password")
+        return True
     
     def read(self):
         if not self._folder.coders:
@@ -607,10 +633,9 @@ class ArchiveFile(Base):
             while method and decoder is None:
                 decoder = self._decoders.get(method, None)
                 method = method[:-1]
-            
-            if decoder is None:
+                if decoder: break
+            if decoder is None or decoder == '_unimplemented':
                 raise UnsupportedCompressionMethodError(repr(coder['method']))
-            
             data = getattr(self, decoder)(coder, data, level)
             level += 1
         
@@ -649,6 +674,7 @@ class ArchiveFile(Base):
                 if checkremaining or (with_cache and len(data) < READ_BLOCKSIZE):
                     tmp = decompressor.decompress(data, remaining)
                 else:
+
                     tmp = decompressor.decompress(data)
                 if not tmp and not data:
                     raise DecompressionError('end of stream while decompressing')
@@ -688,7 +714,7 @@ class ArchiveFile(Base):
     def _read_bzip(self, coder, input, level):
         dec = bz2.BZ2Decompressor()
         return self._read_from_decompressor(coder, dec, input, level)
-    
+
     def _read_7z_aes256_sha256(self, coder, input, level):
         if not self._archive.password:
             raise NoPasswordGivenError()
@@ -794,9 +820,8 @@ class Archive7z(Base):
                     '_uncompressed': uncompressed,
                 }
                 tmp = ArchiveFile(info, 0, src_start, folder, self)
-                uncompressed_size = uncompressed[-1]
-                folderdata = tmp.read()[:uncompressed_size]
-                src_start += uncompressed_size
+                folderdata = tmp.read()
+                src_start += uncompressed[-1]
 
                 if folder.digestdefined:
                     if not self.checkcrc(folder.crc, folderdata):
@@ -817,19 +842,15 @@ class Archive7z(Base):
         
         self.header = Header(buffer)
         files = self.header.files
-        if hasattr(self.header, 'main_streams'):
-            folders = self.header.main_streams.unpackinfo.folders
-            packinfo = self.header.main_streams.packinfo
-            subinfo = self.header.main_streams.substreamsinfo
-            packsizes = packinfo.packsizes
-            self.solid = packinfo.numstreams == 1
-            if hasattr(subinfo, 'unpacksizes'):
-                unpacksizes = subinfo.unpacksizes
-            else:
-                unpacksizes = [x.unpacksizes for x in folders]
+        folders = self.header.main_streams.unpackinfo.folders
+        packinfo = self.header.main_streams.packinfo
+        subinfo = self.header.main_streams.substreamsinfo
+        packsizes = packinfo.packsizes
+        self.solid = packinfo.numstreams == 1
+        if hasattr(subinfo, 'unpacksizes'):
+            unpacksizes = subinfo.unpacksizes
         else:
-            # TODO(fancycode): is it necessary to provide empty values for folder, packinfo, etc?
-            self.solid = False
+            unpacksizes = [x.unpacksizes for x in folders]
         
         fidx = 0
         obidx = 0
@@ -912,3 +933,4 @@ if __name__ == '__main__':
     f = Archive7z(open('test.7z', 'rb'))
     #f = Archive7z(open('pylzma.7z', 'rb'))
     f.list()
+
