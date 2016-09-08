@@ -140,6 +140,9 @@ COMPRESSION_METHOD_MISC          = unhexlify('04')  # '\x04'
 COMPRESSION_METHOD_MISC_ZIP      = unhexlify('0401')  # '\x04\x01'
 COMPRESSION_METHOD_MISC_BZIP     = unhexlify('0402')  # '\x04\x02'
 COMPRESSION_METHOD_7Z_AES256_SHA256 = unhexlify('06f10701')  # '\x06\xf1\x07\x01'
+COMPRESSION_METHOD_PPMD          = unhexlify('0304')  # '\x03\x04\'
+COMPRESSION_METHOD_LZMA2         = b'!' # Un Implemnted
+
 
 # number of seconds between 1601/01/01 and 1970/01/01 (UTC)
 # used to adjust 7z FILETIME to Python timestamp
@@ -190,22 +193,22 @@ class DecompressionError(ArchiveError):
 
 class ArchiveTimestamp(long):
     """Windows FILETIME timestamp."""
-    
+
     def __repr__(self):
         return '%s(%d)' % (type(self).__name__, self)
-    
+
     def as_datetime(self):
         """Convert FILETIME to Python datetime object."""
         return datetime.fromtimestamp(toTimestamp(self), UTC)
 
 class Base(object):
     """ base class with support for various basic read/write functions """
-    
+
     def _readReal64Bit(self, file):
         res = file.read(8)
         a, b = unpack('<LL', res)
         return b << 32 | a, res
-    
+
     def _read64Bit(self, file):
         b = ord(file.read(1))
         mask = 0x80
@@ -216,7 +219,7 @@ class Base(object):
                 value = (bytes and reduce(lambda x, y: x << 8 | y, bytes)) or 0
                 highpart = b & (mask - 1)
                 return value + (highpart << (i * 8))
-            
+
             mask >>= 1
 
     def _readBoolean(self, file, count, checkall=0):
@@ -224,7 +227,7 @@ class Base(object):
             alldefined = file.read(1)
             if alldefined != unhexlify('00'):
                 return [True] * count
-            
+
         result = []
         b = 0
         mask = 0
@@ -234,7 +237,7 @@ class Base(object):
                 mask = 0x80
             result.append(b & mask != 0)
             mask >>= 1
-        
+
         return result
 
     def checkcrc(self, crc, data):
@@ -244,7 +247,7 @@ class Base(object):
 
 class PackInfo(Base):
     """ informations about packed streams """
-    
+
     def __init__(self, file):
         self.packpos = self._read64Bit(file)
         self.numstreams = self._read64Bit(file)
@@ -252,17 +255,17 @@ class PackInfo(Base):
         if id == PROPERTY_SIZE:
             self.packsizes = [self._read64Bit(file) for x in xrange(self.numstreams)]
             id = file.read(1)
-            
+
             if id == PROPERTY_CRC:
                 self.crcs = [self._read64Bit(file) for x in xrange(self.numstreams)]
                 id = file.read(1)
-            
+
         if id != PROPERTY_END:
             raise FormatError('end id expected but %s found' % repr(id))
 
 class Folder(Base):
     """ a "Folder" represents a stream of compressed data """
-    
+
     def __init__(self, file):
         numcoders = self._read64Bit(file)
         self.coders = []
@@ -291,12 +294,12 @@ class Folder(Base):
                 self.coders.append(c)
                 if last_alternative:
                     break
-        
+
         numbindpairs = self.totalout - 1
         self.bindpairs = []
         for i in xrange(numbindpairs):
             self.bindpairs.append((self._read64Bit(file), self._read64Bit(file), ))
-        
+
         numpackedstreams = totalin - numbindpairs
         self.packed_indexes = []
         if numpackedstreams == 1:
@@ -310,11 +313,11 @@ class Folder(Base):
     def getUnpackSize(self):
         if not self.unpacksizes:
             return 0
-            
+
         for i in xrange(len(self.unpacksizes)-1, -1, -1):
             if self.findOutBindPair(i):
                 return self.unpacksizes[i]
-        
+
         raise TypeError('not found')
 
     def findInBindPair(self, index):
@@ -334,13 +337,13 @@ class Folder(Base):
 
 class Digests(Base):
     """ holds a list of checksums """
-    
+
     def __init__(self, file, count):
         self.defined = self._readBoolean(file, count, checkall=1)
         self.crcs = array(ARRAY_TYPE_UINT32, file.read(4*count))
         if NEED_BYTESWAP:
             self.crcs.byteswap()
-    
+
 UnpackDigests = Digests
 
 class UnpackInfo(Base):
@@ -359,29 +362,29 @@ class UnpackInfo(Base):
             self.datastreamidx = self._read64Bit(file)
         else:
             raise FormatError('0x00 or 0x01 expected but %s found' % repr(external))
-        
+
         id = file.read(1)
         if id != PROPERTY_CODERS_UNPACK_SIZE:
             raise FormatError('coders unpack size id expected but %s found' % repr(id))
-        
+
         for folder in self.folders:
             folder.unpacksizes = [self._read64Bit(file) for x in xrange(folder.totalout)]
-            
+
         id = file.read(1)
         if id == PROPERTY_CRC:
             digests = UnpackDigests(file, self.numfolders)
             for idx, folder in enumerate(self.folders):
                 folder.digestdefined = digests.defined[idx]
                 folder.crc = digests.crcs[idx]
-                
+
             id = file.read(1)
-        
+
         if id != PROPERTY_END:
             raise FormatError('end id expected but %s found' % repr(id))
-            
+
 class SubstreamsInfo(Base):
     """ defines the substreams of a folder """
-    
+
     def __init__(self, file, numfolders, folders):
         self.digests = []
         self.digestsdefined = []
@@ -391,7 +394,7 @@ class SubstreamsInfo(Base):
             id = file.read(1)
         else:
             self.numunpackstreams = [1]*numfolders
-        
+
         if id == PROPERTY_SIZE:
             self.unpacksizes = []
             for i in xrange(len(self.numunpackstreams)):
@@ -401,7 +404,7 @@ class SubstreamsInfo(Base):
                     self.unpacksizes.append(size)
                     sum += size
                 self.unpacksizes.append(folders[i].getUnpackSize() - sum)
-                
+
             id = file.read(1)
 
         numdigests = 0
@@ -411,7 +414,7 @@ class SubstreamsInfo(Base):
             if numsubstreams != 1 or not folders[i].digestdefined:
                 numdigests += numsubstreams
             numdigeststotal += numsubstreams
-        
+
         if id == PROPERTY_CRC:
             digests = Digests(file, numdigests)
             didx = 0
@@ -426,9 +429,9 @@ class SubstreamsInfo(Base):
                         self.digestsdefined.append(digests.defined[didx])
                         self.digests.append(digests.crcs[didx])
                         didx += 1
-                            
+
             id = file.read(1)
-            
+
         if id != PROPERTY_END:
             raise FormatError('end id expected but %r found' % id)
 
@@ -438,30 +441,30 @@ class SubstreamsInfo(Base):
 
 class StreamsInfo(Base):
     """ informations about compressed streams """
-    
+
     def __init__(self, file):
         id = file.read(1)
         if id == PROPERTY_PACK_INFO:
             self.packinfo = PackInfo(file)
             id = file.read(1)
-        
+
         if id == PROPERTY_UNPACK_INFO:
             self.unpackinfo = UnpackInfo(file)
             id = file.read(1)
-            
+
         if id == PROPERTY_SUBSTREAMS_INFO:
             self.substreamsinfo = SubstreamsInfo(file, self.unpackinfo.numfolders, self.unpackinfo.folders)
             id = file.read(1)
-        
+
         if id != PROPERTY_END:
             raise FormatError('end id expected but %s found' % repr(id))
 
 class FilesInfo(Base):
     """ holds file properties """
-    
+
     def _readTimes(self, file, files, name):
         defined = self._readBoolean(file, len(files), checkall=1)
-        
+
         # NOTE: the "external" flag is currently ignored, should be 0x00
         external = file.read(1)
         for i in xrange(len(files)):
@@ -478,11 +481,11 @@ class FilesInfo(Base):
             typ = self._read64Bit(file)
             if typ > 255:
                 raise FormatError('invalid type, must be below 256, is %d' % typ)
-                
+
             typ = pack('B', typ)
             if typ == PROPERTY_END:
                 break
-                
+
             size = self._read64Bit(file)
             if typ == PROPERTY_DUMMY:
                 # Added by newer versions of 7z to adjust padding.
@@ -507,7 +510,7 @@ class FilesInfo(Base):
                     self.dataindex = self._read64Bit(buffer)
                     # XXX: evaluate external
                     raise NotImplementedError
-                    
+
                 for f in self.files:
                     name = ''
                     while True:
@@ -531,34 +534,34 @@ class FilesInfo(Base):
                         f['attributes'] = None
             else:
                 raise FormatError('invalid type %r' % (typ))
-        
+
 class Header(Base):
     """ the archive header """
-    
+
     def __init__(self, file):
         id = file.read(1)
         if id == PROPERTY_ARCHIVE_PROPERTIES:
             self.properties = ArchiveProperties(file)
             id = file.read(1)
-        
+
         if id == PROPERTY_ADDITIONAL_STREAMS_INFO:
             self.additional_streams = StreamsInfo(file)
             id = file.read(1)
-        
+
         if id == PROPERTY_MAIN_STREAMS_INFO:
             self.main_streams = StreamsInfo(file)
             id = file.read(1)
-            
+
         if id == PROPERTY_FILES_INFO:
             self.files = FilesInfo(file)
             id = file.read(1)
-            
+
         if id != PROPERTY_END:
             raise FormatError('end id expected but %s found' % (repr(id)))
 
 class ArchiveFile(Base):
     """ wrapper around a file in the archive """
-    
+
     def __init__(self, info, start, src_start, folder, archive, maxsize=None):
         self.digest = None
         self._archive = archive
@@ -587,6 +590,8 @@ class ArchiveFile(Base):
             COMPRESSION_METHOD_MISC_ZIP: '_read_zip',
             COMPRESSION_METHOD_MISC_BZIP: '_read_bzip',
             COMPRESSION_METHOD_7Z_AES256_SHA256: '_read_7z_aes256_sha256',
+            COMPRESSION_METHOD_PPMD: '_unimplemented',
+            COMPRESSION_METHOD_LZMA2: '_unimplemented',
         }
 
     def _is_encrypted(self):
@@ -594,11 +599,10 @@ class ArchiveFile(Base):
 
     def reset(self):
         self.pos = 0
-    
-    def read(self):
+    def check_password(self,pwd):
         if not self._folder.coders:
             raise TypeError("file has no coder informations")
-        
+        self._archive.password = pwd
         data = None
         level = 0
         for coder in self._folder.coders:
@@ -607,22 +611,44 @@ class ArchiveFile(Base):
             while method and decoder is None:
                 decoder = self._decoders.get(method, None)
                 method = method[:-1]
-            
-            if decoder is None:
-                raise UnsupportedCompressionMethodError(repr(coder['method']))
-            
+                if decoder: break
+            if decoder is None or decoder == '_unimplemented':
+                decoder = '_read_lzma'
             data = getattr(self, decoder)(coder, data, level)
             level += 1
-        
+        if not data:
+            raise  WrongPasswordError("Wrong password")
+        return True
+
+    def read(self):
+        if not self._folder.coders:
+            raise TypeError("file has no coder informations")
+
+        data = None
+        level = 0
+        for coder in self._folder.coders:
+            method = coder['method']
+            decoder = None
+            while method and decoder is None:
+                decoder = self._decoders.get(method, None)
+                method = method[:-1]
+                if decoder: break
+
+            if decoder is None or decoder == '_unimplemented':
+                raise UnsupportedCompressionMethodError(repr(coder['method']))
+
+            data = getattr(self, decoder)(coder, data, level)
+            level += 1
+
         return data
-    
+
     def _read_copy(self, coder, input, level):
         size = self._uncompressed[level]
         if not input:
             self._file.seek(self._src_start)
             input = self._file.read(size)
         return input[self._start:self._start+size]
-    
+
     def _read_from_decompressor(self, coder, decompressor, input, level, checkremaining=False, with_cache=False):
         size = self._uncompressed[level]
         data = ''
@@ -654,7 +680,7 @@ class ArchiveFile(Base):
                     raise DecompressionError('end of stream while decompressing')
                 out.write(tmp)
                 remaining -= len(tmp)
-            
+
             data = out.getvalue()
             if with_cache and self._folder.solid:
                 # don't decompress start of solid archive for next file
@@ -669,7 +695,7 @@ class ArchiveFile(Base):
             else:
                 data = decompressor.decompress(input)
         return data[self._start:self._start+size]
-    
+
     def _read_lzma(self, coder, input, level):
         size = self._uncompressed[level]
         dec = pylzma.decompressobj(maxlength=self._start+size)
@@ -678,21 +704,21 @@ class ArchiveFile(Base):
         except ValueError:
             if self._is_encrypted():
                 raise WrongPasswordError('invalid password')
-            
+
             raise
-        
+
     def _read_zip(self, coder, input, level):
         dec = zlib.decompressobj(-15)
         return self._read_from_decompressor(coder, dec, input, level, checkremaining=True)
-        
+
     def _read_bzip(self, coder, input, level):
         dec = bz2.BZ2Decompressor()
         return self._read_from_decompressor(coder, dec, input, level)
-    
+
     def _read_7z_aes256_sha256(self, coder, input, level):
         if not self._archive.password:
             raise NoPasswordGivenError()
-        
+
         # TODO: this needs some sanity checks
         firstbyte = coder['properties'][0]
         if not IS_PYTHON3:
@@ -701,13 +727,13 @@ class ArchiveFile(Base):
         if firstbyte & 0xc0 != 0:
             saltsize = (firstbyte >> 7) & 1
             ivsize = (firstbyte >> 6) & 1
-            
+
             secondbyte = coder['properties'][1]
             if not IS_PYTHON3:
                 secondbyte = ord(secondbyte)
             saltsize += (secondbyte >> 4)
             ivsize += (secondbyte & 0x0f)
-            
+
             assert len(coder['properties']) == 2+saltsize+ivsize
             salt = coder['properties'][2:2+saltsize]
             iv = coder['properties'][2+saltsize:2+saltsize+ivsize]
@@ -718,7 +744,7 @@ class ArchiveFile(Base):
                 iv += bytes('\x00'*(16-ivsize), 'ascii')
         else:
             salt = iv = bytes('', 'ascii')
-        
+
         password = self._archive.password.encode('utf-16-le')
         key = pylzma.calculate_key(password, numcyclespower, salt=salt)
         cipher = pylzma.AESDecrypt(key, iv=iv)
@@ -731,19 +757,19 @@ class ArchiveFile(Base):
             input = self._file.read(uncompressed_size)
         result = cipher.decrypt(input)
         return result
-    
+
     def checkcrc(self):
         if self.digest is None:
             return True
-            
+
         self.reset()
         data = self.read()
         return super(ArchiveFile, self).checkcrc(self.digest, data)
-        
+
 
 class Archive7z(Base):
     """ the archive itself """
-    
+
     def __init__(self, file, password=None):
         self._file = file
         self.password = password
@@ -763,20 +789,20 @@ class Archive7z(Base):
         if crc != self.startheadercrc:
             raise FormatError('invalid header data')
         self.afterheader = file.tell()
-        
+
         file.seek(self.nextheaderofs, 1)
         buffer = BytesIO(file.read(self.nextheadersize))
         if not self.checkcrc(self.nextheadercrc, buffer.getvalue()):
             raise FormatError('invalid header data')
-        
+
         while True:
             id = buffer.read(1)
             if not id or id == PROPERTY_HEADER:
                 break
-                
+
             if id != PROPERTY_ENCODED_HEADER:
                 raise TypeError('Unknown field: %r' % (id))
-            
+
             streams = StreamsInfo(buffer)
             file.seek(self.afterheader + 0)
             data = bytes('', 'ascii')
@@ -805,7 +831,7 @@ class Archive7z(Base):
                 data += folderdata
 
             buffer = BytesIO(data)
-        
+
         self.files = []
         self.files_map = {}
         if not id:
@@ -814,7 +840,7 @@ class Archive7z(Base):
             self.numfiles = 0
             self.filenames = []
             return
-        
+
         self.header = Header(buffer)
         files = self.header.files
         if hasattr(self.header, 'main_streams'):
@@ -830,7 +856,7 @@ class Archive7z(Base):
         else:
             # TODO(fancycode): is it necessary to provide empty values for folder, packinfo, etc?
             self.solid = False
-        
+
         fidx = 0
         obidx = 0
         streamidx = 0
@@ -841,7 +867,7 @@ class Archive7z(Base):
         for info in files.files:
             if info['emptystream']:
                 continue
-            
+
             folder = folders[fidx]
             if streamidx == 0:
                 folder.solid = subinfo.numunpackstreams[fidx] > 1
@@ -876,13 +902,13 @@ class Archive7z(Base):
                 src_pos = folder_pos
                 fidx += 1
                 streamidx = 0
-        
+
         self.numfiles = len(self.files)
         self.filenames = list(map(lambda x: x.filename, self.files))
         self.files_map.update([(x.filename, x) for x in self.files])
-        
+
     # interface like TarFile
-        
+
     def getmember(self, name):
         if isinstance(name, (int, long)):
             try:
@@ -891,10 +917,10 @@ class Archive7z(Base):
                 return None
 
         return self.files_map.get(name, None)
-        
+
     def getmembers(self):
         return self.files
-        
+
     def getnames(self):
         return self.filenames
 
@@ -903,12 +929,13 @@ class Archive7z(Base):
         if not verbose:
             file.write('\n'.join(self.filenames) + '\n')
             return
-            
+
         for f in self.files:
             extra = (f.compressed and '%10d ' % (f.compressed)) or ' '
             file.write('%10d%s%.8x %s\n' % (f.size, extra, f.digest, f.filename))
-            
+
 if __name__ == '__main__':
     f = Archive7z(open('test.7z', 'rb'))
     #f = Archive7z(open('pylzma.7z', 'rb'))
     f.list()
+
