@@ -41,6 +41,7 @@ pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
     CLzmaEncProps props;
     CLzmaEncHandle encoder=NULL;
     CMemoryOutStream outStream;
+    outStream.data = NULL;
     CMemoryInStream inStream;
     Byte header[LZMA_PROPS_SIZE];
     size_t headerSize = LZMA_PROPS_SIZE;
