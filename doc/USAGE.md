@@ -32,7 +32,8 @@ For compression, additional parameters can be specified
 
 ## Other available parameters are:
 
-###dictionary
+### dictionary
+
   Dictionary size (Range 0-28, Default: 23 (8MB))
 
   The maximum value for dictionary size is 256 MB = 2^28 bytes.
@@ -40,18 +41,21 @@ For compression, additional parameters can be specified
   For decompressing file compressed by LZMA method with dictionary 
   size D = 2^N you need about D bytes of memory (RAM).
   
-###fastBytes
+### fastBytes
+
   Range 5-255, default 128
 
   Usually big number gives a little bit better compression ratio and slower
   compression process.
 
-###literalContextBits
+### literalContextBits
+
   Range 0-8, default 3
 
   Sometimes literalContextBits=4 gives gain for big files.
 
-###literalPosBits
+### literalPosBits
+
   Range 0-4, default 0
 
   This switch is intended for periodical data when period is equal 2^N.
@@ -59,24 +63,29 @@ For compression, additional parameters can be specified
   literalPosBits=2. Often it's better to set literalContextBits=0, if you
   change the literalPosBits switch.
 
-###posBits
+### posBits
+
   Range 0-4, default 2
 
   This switch is intended for periodical data when period is equal 2^N.
 
-###algorithm
+### algorithm
+
   Compression mode 0 = fast, 1 = normal, 2 = max (Default: 2)
 
   The lower the number specified for algorithm, the faster compression will
   perform.
 
-###multithreading
+### multithreading
+
   Use multithreading if available? (Default yes)
 
   Currently, multithreading is only available on Windows platforms.
 
-###eos
+### eos
+
   Should the `End Of Stream` marker be written? (Default yes)
+  
   You can save some bytes if the marker is omitted, but the total uncompressed
   size must be stored by the application and used when decompressing:
   
