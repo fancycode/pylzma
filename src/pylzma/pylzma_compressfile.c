@@ -29,7 +29,7 @@
 #endif
 
 #include "../sdk/C/LzmaEnc.h"
-#include "../sdk/C/Types.h"
+#include "../sdk/C/7zTypes.h"
 
 #include "pylzma.h"
 #include "pylzma_streams.h"

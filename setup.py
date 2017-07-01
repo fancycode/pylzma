@@ -71,16 +71,6 @@ libraries = []
 if IS_WINDOWS:
     libraries += ['user32', 'oleaut32']
 
-include_dirs = [
-    'src/sdk',
-]
-
-if sys.platform == 'darwin':
-    # additional include directories are required when compiling on Darwin platforms
-    include_dirs += [
-        "/var/include",
-    ]
-
 library_dirs = []
 
 # platforms that multithreaded compression is supported on
@@ -152,7 +142,7 @@ if version:
 
 c_files += [os.path.normpath(os.path.join('.', x)) for x in lzma_files]
 extens = [
-    Extension('pylzma', c_files, include_dirs=include_dirs, libraries=libraries,
+    Extension('pylzma', c_files, libraries=libraries,
               library_dirs=library_dirs, define_macros=macros, extra_compile_args=compile_args,
               extra_link_args=link_args),
 ]
