@@ -75,4 +75,11 @@ SRes LzmaEncode(Byte *dest, SizeT *destLen, const Byte *src, SizeT srcLen,
 
 EXTERN_C_END
 
+/* ---------- Streaming Interface ---------- */
+
+SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqOutStream *outStream, ISeqInStream *inStream, ISzAlloc *alloc, ISzAlloc *allocBig);
+SRes LzmaEnc_CodeOneBlock(CLzmaEncHandle pp, Bool useLimits, UInt32 maxPackSize, UInt32 maxUnpackSize);
+Bool LzmaEnc_IsFinished(CLzmaEncHandle pp);
+void LzmaEnc_Finish(CLzmaEncHandle pp);
+
 #endif

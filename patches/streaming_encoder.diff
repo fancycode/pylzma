@@ -1,7 +1,8 @@
-diff -ur sdk.orig/C/LzmaEnc.c sdk/LzmaEnc.c
---- sdk.orig/C/LzmaEnc.c	2010-04-24 03:08:36.953277983 +0200
-+++ sdk/LzmaEnc.c	2010-04-24 02:23:14.600428356 +0200
-@@ -1751,8 +1751,9 @@
+diff --git a/src/sdk/C/LzmaEnc.c b/src/sdk/C/LzmaEnc.c
+index 70df456..1211b13 100644
+--- a/src/sdk/C/LzmaEnc.c
++++ b/src/sdk/C/LzmaEnc.c
+@@ -1796,8 +1796,9 @@ void LzmaEnc_Destroy(CLzmaEncHandle p, ISzAlloc *alloc, ISzAlloc *allocBig)
    alloc->Free(alloc, p);
  }
  
@@ -10,18 +11,18 @@ diff -ur sdk.orig/C/LzmaEnc.c sdk/LzmaEnc.c
  {
 +  CLzmaEnc *p = (CLzmaEnc *) pp;
    UInt32 nowPos32, startPos32;
-   if (p->inStream != 0)
+   if (p->needInit)
    {
-@@ -2056,7 +2057,7 @@
+@@ -2101,7 +2102,7 @@ static SRes LzmaEnc_AllocAndInit(CLzmaEnc *p, UInt32 keepWindowSize, ISzAlloc *a
    return SZ_OK;
  }
  
--static SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqInStream *inStream, ISeqOutStream *outStream,
-+SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqInStream *inStream, ISeqOutStream *outStream,
+-static SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqOutStream *outStream, ISeqInStream *inStream,
++SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqOutStream *outStream, ISeqInStream *inStream,
      ISzAlloc *alloc, ISzAlloc *allocBig)
  {
    CLzmaEnc *p = (CLzmaEnc *)pp;
-@@ -2279,3 +2280,9 @@
+@@ -2349,3 +2350,9 @@ SRes LzmaEncode(Byte *dest, SizeT *destLen, const Byte *src, SizeT srcLen,
    LzmaEnc_Destroy(p, alloc, allocBig);
    return res;
  }
@@ -31,16 +32,17 @@ diff -ur sdk.orig/C/LzmaEnc.c sdk/LzmaEnc.c
 +  CLzmaEnc *p = (CLzmaEnc *)pp;
 +  return p->finished;
 +}
-diff -ur sdk.orig/C/LzmaEnc.h sdk/LzmaEnc.h
---- sdk.orig/C/LzmaEnc.h	2010-04-24 03:08:36.953277983 +0200
-+++ sdk/LzmaEnc.h	2010-04-24 02:35:27.281386039 +0200
-@@ -69,4 +69,11 @@
-     const CLzmaEncProps *props, Byte *propsEncoded, SizeT *propsSize, int writeEndMark,
-     ICompressProgress *progress, ISzAlloc *alloc, ISzAlloc *allocBig);
+diff --git a/src/sdk/C/LzmaEnc.h b/src/sdk/C/LzmaEnc.h
+index cffe220..06d9c4d 100644
+--- a/src/sdk/C/LzmaEnc.h
++++ b/src/sdk/C/LzmaEnc.h
+@@ -75,4 +75,11 @@ SRes LzmaEncode(Byte *dest, SizeT *destLen, const Byte *src, SizeT srcLen,
+ 
+ EXTERN_C_END
  
 +/* ---------- Streaming Interface ---------- */
 +
-+SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqInStream *inStream, ISeqOutStream *outStream, ISzAlloc *alloc, ISzAlloc *allocBig);
++SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqOutStream *outStream, ISeqInStream *inStream, ISzAlloc *alloc, ISzAlloc *allocBig);
 +SRes LzmaEnc_CodeOneBlock(CLzmaEncHandle pp, Bool useLimits, UInt32 maxPackSize, UInt32 maxUnpackSize);
 +Bool LzmaEnc_IsFinished(CLzmaEncHandle pp);
 +void LzmaEnc_Finish(CLzmaEncHandle pp);

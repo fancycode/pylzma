@@ -1,8 +1,8 @@
 # Python bindings for LZMA
 
 * **PyLZMA** Copyright (C) 2004-2015 Joachim Bauch
-* **7-Zip** Copyright (C) 1999-2010 Igor Pavlov
-* **LZMA SDK** Copyright (C) 1999-2010 Igor Pavlov
+* **7-Zip** Copyright (C) 1999-2016 Igor Pavlov
+* **LZMA SDK** Copyright (C) 1999-2016 Igor Pavlov
 
 [![Build Status](https://travis-ci.org/fancycode/pylzma.svg?branch=master)](https://travis-ci.org/fancycode/pylzma)
 

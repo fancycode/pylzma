@@ -28,8 +28,8 @@
 #include <cStringIO.h>
 #endif
 
-#include "../sdk/LzmaEnc.h"
-#include "../sdk/Types.h"
+#include "../sdk/C/LzmaEnc.h"
+#include "../sdk/C/Types.h"
 
 #include "pylzma.h"
 #include "pylzma_streams.h"
@@ -217,7 +217,7 @@ pylzma_compfile_init(CCompressionFileObject *self, PyObject *args, PyObject *kwa
         goto exit;
     }
     
-    LzmaEnc_Prepare(self->encoder, &self->inStream.s, &self->outStream.s, &allocator, &allocator);
+    LzmaEnc_Prepare(self->encoder, &self->outStream.s, &self->inStream.s, &allocator, &allocator);
     result = 0;
     
 exit:

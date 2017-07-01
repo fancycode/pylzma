@@ -1796,8 +1796,9 @@ void LzmaEnc_Destroy(CLzmaEncHandle p, ISzAlloc *alloc, ISzAlloc *allocBig)
   alloc->Free(alloc, p);
 }
 
-static SRes LzmaEnc_CodeOneBlock(CLzmaEnc *p, Bool useLimits, UInt32 maxPackSize, UInt32 maxUnpackSize)
+SRes LzmaEnc_CodeOneBlock(CLzmaEncHandle pp, Bool useLimits, UInt32 maxPackSize, UInt32 maxUnpackSize)
 {
+  CLzmaEnc *p = (CLzmaEnc *) pp;
   UInt32 nowPos32, startPos32;
   if (p->needInit)
   {
@@ -2101,7 +2102,7 @@ static SRes LzmaEnc_AllocAndInit(CLzmaEnc *p, UInt32 keepWindowSize, ISzAlloc *a
   return SZ_OK;
 }
 
-static SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqOutStream *outStream, ISeqInStream *inStream,
+SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqOutStream *outStream, ISeqInStream *inStream,
     ISzAlloc *alloc, ISzAlloc *allocBig)
 {
   CLzmaEnc *p = (CLzmaEnc *)pp;
@@ -2348,4 +2349,10 @@ SRes LzmaEncode(Byte *dest, SizeT *destLen, const Byte *src, SizeT srcLen,
 
   LzmaEnc_Destroy(p, alloc, allocBig);
   return res;
+}
+
+Bool LzmaEnc_IsFinished(CLzmaEncHandle pp)
+{
+  CLzmaEnc *p = (CLzmaEnc *)pp;
+  return p->finished;
 }

@@ -25,7 +25,7 @@
 
 #include <Python.h>
 
-#include "../sdk/LzmaEnc.h"
+#include "../sdk/C/LzmaEnc.h"
 
 #include "pylzma.h"
 #include "pylzma_streams.h"
@@ -208,7 +208,7 @@ pylzma_comp_init(CCompressionObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     
-    LzmaEnc_Prepare(self->encoder, &self->inStream.s, &self->outStream.s, &allocator, &allocator);
+    LzmaEnc_Prepare(self->encoder, &self->outStream.s, &self->inStream.s, &allocator, &allocator);
     result = 0;
     
 exit:

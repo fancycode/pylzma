@@ -25,10 +25,10 @@
 
 #include <Python.h>
 
-#include "../sdk/7zVersion.h"
-#include "../7zip/C/Sha256.h"
-#include "../7zip/C/Aes.h"
-#include "../7zip/C/Bra.h"
+#include "../sdk/C/7zVersion.h"
+#include "../sdk/C/Sha256.h"
+#include "../sdk/C/Aes.h"
+#include "../sdk/C/Bra.h"
 
 #include "pylzma.h"
 #include "pylzma_compress.h"
