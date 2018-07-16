@@ -25,7 +25,7 @@
 
 #include <Python.h>
 
-#include "../sdk/LzmaEnc.h"
+#include "../sdk/C/LzmaEnc.h"
 
 #include "pylzma.h"
 #include "pylzma_streams.h"

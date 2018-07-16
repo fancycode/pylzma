@@ -28,7 +28,7 @@
 
 #include <Python.h>
 
-#include "../sdk/LzmaDec.h"
+#include "../sdk/C/LzmaDec.h"
 
 typedef struct {
     PyObject_HEAD
