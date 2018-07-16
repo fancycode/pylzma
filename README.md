@@ -4,7 +4,9 @@
 * **7-Zip** Copyright (C) 1999-2010 Igor Pavlov
 * **LZMA SDK** Copyright (C) 1999-2010 Igor Pavlov
 
-[![Build Status](https://travis-ci.org/fancycode/pylzma.svg?branch=master)](https://travis-ci.org/fancycode/pylzma)
+[![Linux Build Status](https://travis-ci.org/fancycode/pylzma.svg?branch=master)](https://travis-ci.org/fancycode/pylzma)
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/5a7k7v9k2a0eiuom/branch/master?svg=true
+)](https://ci.appveyor.com/project/fancycode/pylzma)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
