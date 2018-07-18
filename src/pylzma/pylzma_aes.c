@@ -26,7 +26,7 @@
 #include <Python.h>
 
 #include "../sdk/C/Aes.h"
-#include "../sdk/C/Types.h"
+#include "../sdk/C/7zTypes.h"
 
 #include "pylzma.h"
 

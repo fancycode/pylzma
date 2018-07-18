@@ -29,7 +29,7 @@
 #endif
 
 #include "../sdk/C/LzmaEnc.h"
-#include "../sdk/C/Types.h"
+#include "../sdk/C/7zTypes.h"
 
 #include "pylzma.h"
 #include "pylzma_streams.h"
@@ -68,7 +68,7 @@ pylzma_compfile_read(CCompressionFileObject *self, PyObject *args)
     while (!bufsize || self->outStream.size < (size_t) bufsize)
     {
         Py_BEGIN_ALLOW_THREADS
-        res = LzmaEnc_CodeOneBlock(self->encoder, False, 0, 0);
+        res = LzmaEnc_CodeOneBlock(self->encoder, 0, 0);
         Py_END_ALLOW_THREADS
         if (res != SZ_OK || LzmaEnc_IsFinished(self->encoder)) {
             break;
@@ -212,12 +212,12 @@ pylzma_compfile_init(CCompressionFileObject *self, PyObject *args, PyObject *kwa
     CreateMemoryOutStream(&self->outStream);
 
     LzmaEnc_WriteProperties(self->encoder, header, &headerSize);
-    if (self->outStream.s.Write(&self->outStream, header, headerSize) != headerSize) {
+    if (self->outStream.s.Write((const ISeqOutStream*) &self->outStream, header, headerSize) != headerSize) {
         PyErr_SetString(PyExc_TypeError, "could not generate stream header");
         goto exit;
     }
     
-    LzmaEnc_Prepare(self->encoder, &self->inStream.s, &self->outStream.s, &allocator, &allocator);
+    LzmaEnc_Prepare(self->encoder, &self->outStream.s, &self->inStream.s, &allocator, &allocator);
     result = 0;
     
 exit:

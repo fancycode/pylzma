@@ -110,7 +110,12 @@ please contact mail@joachim-bauch.de for more informations.""" % (sys.platform),
         if self.with_mt:
             log.info('adding support for multithreaded compression')
             ext.define_macros.append(('COMPRESS_MF_MT', 1))
-            ext.sources += ('src/sdk/C/LzFindMt.c', 'src/sdk/C/Threads.c', )
+            ext.sources += (
+                'src/sdk/C/LzFindMt.c',
+                'src/sdk/C/Threads.c',
+            )
+        else:
+            ext.define_macros.append(('_7ZIP_ST', 1))
 
         if isinstance(self.compiler, MSVCCompiler):
             # set flags only available when using MSVC
@@ -128,21 +133,40 @@ descr = "Python bindings for the LZMA library by Igor Pavlov."
 long_descr = """PyLZMA provides a platform independent way to read and write data
 that has been compressed or can be decompressed by the LZMA library by Igor Pavlov."""
 modules = ['py7zlib']
-c_files = ['src/pylzma/pylzma.c', 'src/pylzma/pylzma_decompressobj.c', 'src/pylzma/pylzma_compressfile.c',
-           'src/pylzma/pylzma_decompress.c', 'src/pylzma/pylzma_compress.c', 'src/pylzma/pylzma_streams.c', \
-           'src/pylzma/pylzma_aes.c']
+c_files = [
+    'src/pylzma/pylzma.c',
+    'src/pylzma/pylzma_aes.c',
+    'src/pylzma/pylzma_compress.c',
+    'src/pylzma/pylzma_compressfile.c',
+    'src/pylzma/pylzma_decompress.c',
+    'src/pylzma/pylzma_decompressobj.c',
+    'src/pylzma/pylzma_streams.c',
+]
 compile_args = []
 link_args = []
 macros = [
     ('PY_SSIZE_T_CLEAN', 1),
 ]
-lzma_files = ('src/sdk/C/LzFind.c', 'src/sdk/C/LzmaDec.c', 'src/sdk/C/LzmaEnc.c', \
-    'src/sdk/C/CpuArch.c', 'src/sdk/C/Aes.c', 'src/sdk/C/AesOpt.c', \
-    'src/sdk/C/Sha256.c', 'src/sdk/C/Bra.c', 'src/sdk/C/Bra86.c', \
-    'src/sdk/C/BraIA64.c')
+lzma_files = (
+    'src/sdk/C/Aes.c',
+    'src/sdk/C/AesOpt.c',
+    'src/sdk/C/Bra.c',
+    'src/sdk/C/Bra86.c',
+    'src/sdk/C/BraIA64.c',
+    'src/sdk/C/CpuArch.c',
+    'src/sdk/C/LzFind.c',
+    'src/sdk/C/LzmaDec.c',
+    'src/sdk/C/LzmaEnc.c',
+    'src/sdk/C/Sha256.c',
+)
 if ENABLE_COMPATIBILITY:
-    c_files += ('src/pylzma/pylzma_decompress_compat.c', 'src/pylzma/pylzma_decompressobj_compat.c', )
-    lzma_files += ('src/compat/LzmaCompatDecode.c', )
+    c_files += (
+        'src/pylzma/pylzma_decompress_compat.c',
+        'src/pylzma/pylzma_decompressobj_compat.c',
+    )
+    lzma_files += (
+        'src/compat/LzmaCompatDecode.c',
+    )
     macros.append(('WITH_COMPAT', 1))
 
 if version:

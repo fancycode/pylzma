@@ -105,7 +105,7 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
         res = LzmaDec_DecodeToBuf(&state, tmp, &destLen, data, &srcLen, LZMA_FINISH_ANY, &status);
         data += srcLen;
         avail -= srcLen;
-        if (res == SZ_OK && destLen > 0 && outStream.s.Write(&outStream, tmp, destLen) != destLen) {
+        if (res == SZ_OK && destLen > 0 && outStream.s.Write((const ISeqOutStream*) &outStream, tmp, destLen) != destLen) {
             res = SZ_ERROR_WRITE;
         }
         if (res != SZ_OK || status == LZMA_STATUS_FINISHED_WITH_MARK || status == LZMA_STATUS_NEEDS_MORE_INPUT) {

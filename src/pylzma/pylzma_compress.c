@@ -109,7 +109,7 @@ pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
 
     Py_BEGIN_ALLOW_THREADS
     LzmaEnc_WriteProperties(encoder, header, &headerSize);
-    if (outStream.s.Write(&outStream, header, headerSize) != headerSize) {
+    if (outStream.s.Write((const ISeqOutStream*) &outStream, header, headerSize) != headerSize) {
         res = SZ_ERROR_WRITE;
     } else {
         res = LzmaEnc_Encode(encoder, &outStream.s, &inStream.s, NULL, &allocator, &allocator);

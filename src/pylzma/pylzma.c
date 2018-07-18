@@ -214,8 +214,8 @@ methods[] = {
     {NULL, NULL},
 };
 
-static void *Alloc(void *p, size_t size) { p = p; return malloc(size); }
-static void Free(void *p, void *address) { p = p; free(address); }
+static void *Alloc(ISzAllocPtr p, size_t size) { (void)p; return malloc(size); }
+static void Free(ISzAllocPtr p, void *address) { (void)p; free(address); }
 ISzAlloc allocator = { Alloc, Free };
 
 #if PY_MAJOR_VERSION >= 3
