@@ -28,7 +28,7 @@
 
 #include <Python.h>
 
-#include "../sdk/Types.h"
+#include "../sdk/C/Types.h"
 
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))

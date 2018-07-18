@@ -72,7 +72,7 @@ if IS_WINDOWS:
     libraries += ['user32', 'oleaut32']
 
 include_dirs = [
-    'src/sdk',
+    'src/sdk/C',
 ]
 
 if sys.platform == 'darwin':
@@ -110,7 +110,7 @@ please contact mail@joachim-bauch.de for more informations.""" % (sys.platform),
         if self.with_mt:
             log.info('adding support for multithreaded compression')
             ext.define_macros.append(('COMPRESS_MF_MT', 1))
-            ext.sources += ('src/sdk/LzFindMt.c', 'src/sdk/Threads.c', )
+            ext.sources += ('src/sdk/C/LzFindMt.c', 'src/sdk/C/Threads.c', )
 
         if isinstance(self.compiler, MSVCCompiler):
             # set flags only available when using MSVC
@@ -136,10 +136,10 @@ link_args = []
 macros = [
     ('PY_SSIZE_T_CLEAN', 1),
 ]
-lzma_files = ('src/sdk/LzFind.c', 'src/sdk/LzmaDec.c', 'src/sdk/LzmaEnc.c', \
-    'src/7zip/C/CpuArch.c', 'src/7zip/C/Aes.c', 'src/7zip/C/AesOpt.c', \
-    'src/7zip/C/Sha256.c', 'src/7zip/C/Bra.c', 'src/7zip/C/Bra86.c', \
-    'src/7zip/C/BraIA64.c')
+lzma_files = ('src/sdk/C/LzFind.c', 'src/sdk/C/LzmaDec.c', 'src/sdk/C/LzmaEnc.c', \
+    'src/sdk/C/CpuArch.c', 'src/sdk/C/Aes.c', 'src/sdk/C/AesOpt.c', \
+    'src/sdk/C/Sha256.c', 'src/sdk/C/Bra.c', 'src/sdk/C/Bra86.c', \
+    'src/sdk/C/BraIA64.c')
 if ENABLE_COMPATIBILITY:
     c_files += ('src/pylzma/pylzma_decompress_compat.c', 'src/pylzma/pylzma_decompressobj_compat.c', )
     lzma_files += ('src/compat/LzmaCompatDecode.c', )

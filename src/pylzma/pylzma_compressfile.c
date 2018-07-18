@@ -28,8 +28,8 @@
 #include <cStringIO.h>
 #endif
 
-#include "../sdk/LzmaEnc.h"
-#include "../sdk/Types.h"
+#include "../sdk/C/LzmaEnc.h"
+#include "../sdk/C/Types.h"
 
 #include "pylzma.h"
 #include "pylzma_streams.h"
