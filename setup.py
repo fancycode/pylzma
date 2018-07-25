@@ -112,6 +112,8 @@ please contact mail@joachim-bauch.de for more informations.""" % (sys.platform),
             ext.define_macros.append(('COMPRESS_MF_MT', 1))
             ext.sources += (
                 'src/sdk/C/LzFindMt.c',
+                'src/sdk/C/MtCoder.c',
+                'src/sdk/C/MtDec.c',
                 'src/sdk/C/Threads.c',
             )
         else:
@@ -157,6 +159,8 @@ lzma_files = (
     'src/sdk/C/LzFind.c',
     'src/sdk/C/LzmaDec.c',
     'src/sdk/C/LzmaEnc.c',
+    'src/sdk/C/Lzma2Dec.c',
+    'src/sdk/C/Lzma2Enc.c',
     'src/sdk/C/Sha256.c',
 )
 if ENABLE_COMPATIBILITY:
