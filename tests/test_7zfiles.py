@@ -39,6 +39,12 @@ except NameError:
         l.sort()
         return l
 
+try:
+    xrange
+except NameError:
+    # Python 3.x
+    xrange = range
+
 if sys.version_info[:2] < (3, 0):
     def bytes(s, encoding):
         return s
@@ -281,6 +287,17 @@ class Test7ZipFiles(unittest.TestCase):
         self.assertEqual([x['filename'] for x in archive.header.files.files], [u'successs.txt'])
         cf = archive.getmember('successs.txt')
         self.assertEqual(cf, None)
+
+    def test_github_43(self):
+        # test loading of lzma2 compressed files
+        self._test_archive('github_43.7z')
+
+    def test_github_43_provided(self):
+        # test loading file submitted by @mikenye
+        fp = self._open_file(os.path.join(ROOT, 'data', 'test-issue-43.7z'), 'rb')
+        archive = Archive7z(fp)
+        self.assertEqual(sorted(archive.getnames()), ['blah.txt'] + ['blah%d.txt' % x for x in xrange(2, 10)])
+        self._test_decode_all(archive)
 
 def suite():
     suite = unittest.TestSuite()
