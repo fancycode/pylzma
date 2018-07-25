@@ -140,6 +140,7 @@ COMPRESSION_METHOD_MISC          = unhexlify('04')  # '\x04'
 COMPRESSION_METHOD_MISC_ZIP      = unhexlify('0401')  # '\x04\x01'
 COMPRESSION_METHOD_MISC_BZIP     = unhexlify('0402')  # '\x04\x02'
 COMPRESSION_METHOD_7Z_AES256_SHA256 = unhexlify('06f10701')  # '\x06\xf1\x07\x01'
+COMPRESSION_METHOD_LZMA2         = unhexlify('21')  # '\x21'
 
 # number of seconds between 1601/01/01 and 1970/01/01 (UTC)
 # used to adjust 7z FILETIME to Python timestamp
@@ -263,6 +264,8 @@ class PackInfo(Base):
 class Folder(Base):
     """ a "Folder" represents a stream of compressed data """
     
+    solid = False
+
     def __init__(self, file):
         numcoders = self._read64Bit(file)
         self.coders = []
@@ -584,6 +587,7 @@ class ArchiveFile(Base):
         self._decoders = {
             COMPRESSION_METHOD_COPY: '_read_copy',
             COMPRESSION_METHOD_LZMA: '_read_lzma',
+            COMPRESSION_METHOD_LZMA2: '_read_lzma2',
             COMPRESSION_METHOD_MISC_ZIP: '_read_zip',
             COMPRESSION_METHOD_MISC_BZIP: '_read_bzip',
             COMPRESSION_METHOD_7Z_AES256_SHA256: '_read_7z_aes256_sha256',
@@ -600,8 +604,8 @@ class ArchiveFile(Base):
             raise TypeError("file has no coder informations")
         
         data = None
-        level = 0
-        for coder in self._folder.coders:
+        num_coders = len(self._folder.coders)
+        for level, coder in enumerate(self._folder.coders):
             method = coder['method']
             decoder = None
             while method and decoder is None:
@@ -610,20 +614,19 @@ class ArchiveFile(Base):
             
             if decoder is None:
                 raise UnsupportedCompressionMethodError(repr(coder['method']))
-            
-            data = getattr(self, decoder)(coder, data, level)
-            level += 1
-        
+
+            data = getattr(self, decoder)(coder, data, level, num_coders)
+
         return data
     
-    def _read_copy(self, coder, input, level):
+    def _read_copy(self, coder, input, level, num_coders):
         size = self._uncompressed[level]
         if not input:
             self._file.seek(self._src_start)
             input = self._file.read(size)
         return input[self._start:self._start+size]
     
-    def _read_from_decompressor(self, coder, decompressor, input, level, checkremaining=False, with_cache=False):
+    def _read_from_decompressor(self, coder, decompressor, input, level, num_coders, can_partial_decompress=True, with_cache=False):
         size = self._uncompressed[level]
         data = ''
         idx = 0
@@ -632,7 +635,8 @@ class ArchiveFile(Base):
         if properties:
             decompressor.decompress(properties)
         total = self.compressed
-        if not input and total is None:
+        is_last_coder = (level + 1) == num_coders
+        if not input and is_last_coder:
             remaining = self._start+size
             out = BytesIO()
             cache = getattr(self._folder, '_decompress_cache', None)
@@ -643,7 +647,7 @@ class ArchiveFile(Base):
                 self._file.seek(pos)
             else:
                 self._file.seek(self._src_start)
-            checkremaining = checkremaining and not self._folder.solid
+            checkremaining = is_last_coder and not self._folder.solid and can_partial_decompress
             while remaining > 0:
                 data = self._file.read(READ_BLOCKSIZE)
                 if checkremaining or (with_cache and len(data) < READ_BLOCKSIZE):
@@ -664,32 +668,54 @@ class ArchiveFile(Base):
             if not input:
                 self._file.seek(self._src_start)
                 input = self._file.read(total)
-            if checkremaining:
+            if is_last_coder and can_partial_decompress:
                 data = decompressor.decompress(input, self._start+size)
             else:
                 data = decompressor.decompress(input)
+                if can_partial_decompress and not is_last_coder:
+                    return data
+
         return data[self._start:self._start+size]
     
-    def _read_lzma(self, coder, input, level):
+    def _read_lzma(self, coder, input, level, num_coders):
         size = self._uncompressed[level]
-        dec = pylzma.decompressobj(maxlength=self._start+size)
+        is_last_coder = (level + 1) == num_coders
+        if is_last_coder and not self._folder.solid:
+            dec = pylzma.decompressobj(maxlength=self._start+size)
+        else:
+            dec = pylzma.decompressobj()
         try:
-            return self._read_from_decompressor(coder, dec, input, level, checkremaining=True, with_cache=True)
+            return self._read_from_decompressor(coder, dec, input, level, num_coders, with_cache=True)
         except ValueError:
             if self._is_encrypted():
                 raise WrongPasswordError('invalid password')
             
             raise
-        
-    def _read_zip(self, coder, input, level):
+
+    def _read_lzma2(self, coder, input, level, num_coders):
+        size = self._uncompressed[level]
+        is_last_coder = (level + 1) == num_coders
+        if is_last_coder and not self._folder.solid:
+            dec = pylzma.decompressobj(maxlength=self._start+size, lzma2=True)
+        else:
+            dec = pylzma.decompressobj(lzma2=True)
+        try:
+            return self._read_from_decompressor(coder, dec, input, level, num_coders, with_cache=True)
+        except ValueError:
+            if self._is_encrypted():
+                raise WrongPasswordError('invalid password')
+
+            raise
+
+    def _read_zip(self, coder, input, level, num_coders):
         dec = zlib.decompressobj(-15)
-        return self._read_from_decompressor(coder, dec, input, level, checkremaining=True)
+        return self._read_from_decompressor(coder, dec, input, level, num_coders)
         
-    def _read_bzip(self, coder, input, level):
+    def _read_bzip(self, coder, input, level, num_coders):
         dec = bz2.BZ2Decompressor()
-        return self._read_from_decompressor(coder, dec, input, level)
+        return self._read_from_decompressor(coder, dec, input, level, num_coders, can_partial_decompress=False)
     
-    def _read_7z_aes256_sha256(self, coder, input, level):
+    def _read_7z_aes256_sha256(self, coder, input, level, num_coders):
         if not self._archive.password:
             raise NoPasswordGivenError()
         
@@ -852,7 +878,8 @@ class Archive7z(Base):
                 uncompressed = [uncompressed] * len(folder.coders)
             if pos > 0:
                 # file is part of solid archive
-                info['compressed'] = None
+                assert fidx < len(packsizes), 'Folder outside index for solid archive'
+                info['compressed'] = packsizes[fidx]
             elif fidx < len(packsizes):
                 # file is compressed
                 info['compressed'] = packsizes[fidx]
