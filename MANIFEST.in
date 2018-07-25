@@ -1,6 +1,7 @@
 include ez_setup.py *.md LICENSE
 recursive-include doc *.*
 recursive-include src *.c *.h *.txt
+recursive-include tests *.7z
 recursive-include tests *.py
 prune src/sdk.orig
 include RELEASE-VERSION
