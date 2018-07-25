@@ -142,6 +142,12 @@ COMPRESSION_METHOD_MISC_BZIP     = unhexlify('0402')  # '\x04\x02'
 COMPRESSION_METHOD_7Z_AES256_SHA256 = unhexlify('06f10701')  # '\x06\xf1\x07\x01'
 COMPRESSION_METHOD_LZMA2         = unhexlify('21')  # '\x21'
 
+FILE_ATTRIBUTE_DIRECTORY = 0x10
+FILE_ATTRIBUTE_READONLY = 0x01
+FILE_ATTRIBUTE_HIDDEN = 0x02
+FILE_ATTRIBUTE_SYSTEM = 0x04
+FILE_ATTRIBUTE_ARCHIVE = 0x20
+
 # number of seconds between 1601/01/01 and 1970/01/01 (UTC)
 # used to adjust 7z FILETIME to Python timestamp
 TIMESTAMP_ADJUST                 = -11644473600
@@ -527,6 +533,12 @@ class FilesInfo(Base):
                 self._readTimes(buffer, self.files, 'lastwritetime')
             elif typ == PROPERTY_ATTRIBUTES:
                 defined = self._readBoolean(buffer, self.numfiles, checkall=1)
+                external = buffer.read(1)
+                if external != unhexlify('00'):
+                    self.dataindex = self._read64Bit(buffer)
+                    # XXX: evaluate external
+                    raise NotImplementedError
+
                 for idx, f in enumerate(self.files):
                     if defined[idx]:
                         f['attributes'] = unpack('<L', buffer.read(4))[0]
@@ -600,7 +612,9 @@ class ArchiveFile(Base):
         self.pos = 0
     
     def read(self):
-        if not self._folder.coders:
+        if not self.size:
+            return ''
+        elif not self._folder.coders:
             raise TypeError("file has no coder informations")
         
         data = None
@@ -865,39 +879,48 @@ class Archive7z(Base):
         folder_pos = src_pos
         maxsize = (self.solid and packinfo.packsizes[0]) or None
         for info in files.files:
-            if info['emptystream']:
+            # Skip all directory entries.
+            attributes = info.get('attributes', None)
+            if attributes and attributes & FILE_ATTRIBUTE_DIRECTORY != 0:
                 continue
             
-            folder = folders[fidx]
-            if streamidx == 0:
-                folder.solid = subinfo.numunpackstreams[fidx] > 1
+            if not info['emptystream']:
+                folder = folders[fidx]
+                if streamidx == 0:
+                    folder.solid = subinfo.numunpackstreams[fidx] > 1
 
-            maxsize = (folder.solid and packinfo.packsizes[fidx]) or None
-            uncompressed = unpacksizes[obidx]
-            if not isinstance(uncompressed, (list, tuple)):
-                uncompressed = [uncompressed] * len(folder.coders)
-            if pos > 0:
-                # file is part of solid archive
-                assert fidx < len(packsizes), 'Folder outside index for solid archive'
-                info['compressed'] = packsizes[fidx]
-            elif fidx < len(packsizes):
-                # file is compressed
-                info['compressed'] = packsizes[fidx]
+                maxsize = (folder.solid and packinfo.packsizes[fidx]) or None
+                uncompressed = unpacksizes[obidx]
+                if not isinstance(uncompressed, (list, tuple)):
+                    uncompressed = [uncompressed] * len(folder.coders)
+                if pos > 0:
+                    # file is part of solid archive
+                    assert fidx < len(packsizes), 'Folder outside index for solid archive'
+                    info['compressed'] = packsizes[fidx]
+                elif fidx < len(packsizes):
+                    # file is compressed
+                    info['compressed'] = packsizes[fidx]
+                else:
+                    # file is not compressed
+                    info['compressed'] = uncompressed
+                info['_uncompressed'] = uncompressed
             else:
-                # file is not compressed
-                info['compressed'] = uncompressed
-            info['_uncompressed'] = uncompressed
+                info['compressed'] = 0
+                info['_uncompressed'] = [0]
+                folder = None
+                maxsize = 0
+
             file = ArchiveFile(info, pos, src_pos, folder, self, maxsize=maxsize)
-            if subinfo.digestsdefined[obidx]:
+            if folder is not None and subinfo.digestsdefined[obidx]:
                 file.digest = subinfo.digests[obidx]
             self.files.append(file)
-            if folder.solid:
+            if folder is not None and folder.solid:
                 pos += unpacksizes[obidx]
             else:
                 src_pos += info['compressed']
             obidx += 1
             streamidx += 1
-            if streamidx >= subinfo.numunpackstreams[fidx]:
+            if folder is not None and streamidx >= subinfo.numunpackstreams[fidx]:
                 pos = 0
                 folder_pos += packinfo.packsizes[fidx]
                 src_pos = folder_pos

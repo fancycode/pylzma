@@ -281,12 +281,16 @@ class Test7ZipFiles(unittest.TestCase):
     def test_github_33(self):
         fp = self._open_file(os.path.join(ROOT, 'data', 'github_33.7z'), 'rb')
         archive = Archive7z(fp, password='abc')
-        # Archive only creates an empty file (which gets filtered).
-        self.assertEqual(archive.getnames(), [])
+        # Archive only contains an empty file.
+        self.assertEqual(archive.getnames(), ['successs.txt'])
         self.assertEqual(archive.header.files.numfiles, 1)
         self.assertEqual([x['filename'] for x in archive.header.files.files], [u'successs.txt'])
         cf = archive.getmember('successs.txt')
-        self.assertEqual(cf, None)
+        self.assertNotEqual(cf, None)
+        data = cf.read()
+        self.assertEqual(len(data), cf.uncompressed)
+        self.assertEqual(len(data), 0)
+        self._test_decode_all(archive)
 
     def test_github_43(self):
         # test loading of lzma2 compressed files
