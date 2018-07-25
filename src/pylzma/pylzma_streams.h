@@ -28,7 +28,7 @@
 
 #include <Python.h>
 
-#include "../sdk/Types.h"
+#include "../sdk/C/7zTypes.h"
 
 typedef struct
 {

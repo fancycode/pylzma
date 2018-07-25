@@ -39,7 +39,7 @@
 #endif
 
 static SRes
-MemoryInStream_Read(void *p, void *buf, size_t *size)
+MemoryInStream_Read(const ISeqInStream *p, void *buf, size_t *size)
 {
     CMemoryInStream *self = (CMemoryInStream *) p;
     size_t toread = *size;
@@ -62,7 +62,7 @@ CreateMemoryInStream(CMemoryInStream *stream, Byte *data, size_t size)
 }
 
 static SRes
-MemoryInOutStream_Read(void *p, void *buf, size_t *size)
+MemoryInOutStream_Read(const ISeqInStream *p, void *buf, size_t *size)
 {
     CMemoryInOutStream *self = (CMemoryInOutStream *) p;
     size_t toread = *size;
@@ -109,7 +109,7 @@ MemoryInOutStreamAppend(CMemoryInOutStream *stream, Byte *data, size_t size)
 }
 
 static SRes
-PythonInStream_Read(void *p, void *buf, size_t *size)
+PythonInStream_Read(const ISeqInStream *p, void *buf, size_t *size)
 {
     CPythonInStream *self = (CPythonInStream *) p;
     size_t toread = *size;
@@ -141,7 +141,7 @@ CreatePythonInStream(CPythonInStream *stream, PyObject *file)
 }
 
 static size_t
-MemoryOutStream_Write(void *p, const void *buf, size_t size)
+MemoryOutStream_Write(const ISeqOutStream *p, const void *buf, size_t size)
 {
     CMemoryOutStream *self = (CMemoryOutStream *) p;
     while (self->avail - self->size < size) {

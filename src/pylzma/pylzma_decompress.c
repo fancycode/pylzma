@@ -25,7 +25,8 @@
 
 #include <Python.h>
 
-#include "../sdk/LzmaDec.h"
+#include "../sdk/C/LzmaDec.h"
+#include "../sdk/C/Lzma2Dec.h"
 
 #include "pylzma.h"
 #include "pylzma_streams.h"
@@ -45,19 +46,26 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
     PARSE_LENGTH_TYPE length;
     int bufsize=BLOCK_SIZE;
     PY_LONG_LONG totallength=-1;
+    int lzma2 = 0;
     PARSE_LENGTH_TYPE avail;
     PyObject *result=NULL;
-    CLzmaDec state;
+    union {
+        CLzmaDec lzma;
+        CLzma2Dec lzma2;
+    } state;
     ELzmaStatus status;
     size_t srcLen, destLen;
     int res;
     CMemoryOutStream outStream;
+    int propertiesLength;
     // possible keywords for this function
-    static char *kwlist[] = {"data", "bufsize", "maxlength", NULL};
+    static char *kwlist[] = {"data", "bufsize", "maxlength", "lzma2", NULL};
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iL", kwlist, &data, &length, &bufsize, &totallength))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iLi", kwlist, &data, &length, &bufsize, &totallength, &lzma2))
         return NULL;
-    
+
+    propertiesLength = lzma2 ? 1 : LZMA_PROPS_SIZE;
+
     if (totallength != -1) {
         // We know the decompressed size, run simple case
         result = PyBytes_FromStringAndSize(NULL, totallength);
@@ -66,10 +74,14 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
         }
         
         tmp = (Byte *) PyBytes_AS_STRING(result);
-        srcLen = length - LZMA_PROPS_SIZE;
+        srcLen = length - propertiesLength;
         destLen = totallength;
         Py_BEGIN_ALLOW_THREADS
-        res = LzmaDecode(tmp, &destLen, (Byte *) (data + LZMA_PROPS_SIZE), &srcLen, data, LZMA_PROPS_SIZE, LZMA_FINISH_ANY, &status, &allocator);
+        if (lzma2) {
+            res = Lzma2Decode(tmp, &destLen, (Byte *) (data + propertiesLength), &srcLen, data[0], LZMA_FINISH_ANY, &status, &allocator);
+        } else {
+            res = LzmaDecode(tmp, &destLen, (Byte *) (data + propertiesLength), &srcLen, data, propertiesLength, LZMA_FINISH_ANY, &status, &allocator);
+        }
         Py_END_ALLOW_THREADS
         if (res != SZ_OK) {
             Py_DECREF(result);
@@ -86,26 +98,43 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
     if (tmp == NULL) {
         return PyErr_NoMemory();
     }
-    
-    LzmaDec_Construct(&state);
-    res = LzmaDec_Allocate(&state, data, LZMA_PROPS_SIZE, &allocator);
-    if (res != SZ_OK) {
-        PyErr_SetString(PyExc_TypeError, "Incorrect stream properties");
-        goto exit;
+
+    if (lzma2) {
+        Lzma2Dec_Construct(&state.lzma2);
+        res = Lzma2Dec_Allocate(&state.lzma2, data[0], &allocator);
+        if (res != SZ_OK) {
+            PyErr_SetString(PyExc_TypeError, "Incorrect stream properties");
+            goto exit;
+        }
+    } else {
+        LzmaDec_Construct(&state.lzma);
+        res = LzmaDec_Allocate(&state.lzma, data, propertiesLength, &allocator);
+        if (res != SZ_OK) {
+            PyErr_SetString(PyExc_TypeError, "Incorrect stream properties");
+            goto exit;
+        }
     }
-    
-    data += LZMA_PROPS_SIZE;
-    avail = length - LZMA_PROPS_SIZE;
+
+    data += propertiesLength;
+    avail = length - propertiesLength;
     Py_BEGIN_ALLOW_THREADS
-    LzmaDec_Init(&state);
+    if (lzma2) {
+        Lzma2Dec_Init(&state.lzma2);
+    } else {
+        LzmaDec_Init(&state.lzma);
+    }
     for (;;) {
         srcLen = avail;
         destLen = bufsize;
         
-        res = LzmaDec_DecodeToBuf(&state, tmp, &destLen, data, &srcLen, LZMA_FINISH_ANY, &status);
+        if (lzma2) {
+            res = Lzma2Dec_DecodeToBuf(&state.lzma2, tmp, &destLen, data, &srcLen, LZMA_FINISH_ANY, &status);
+        } else {
+            res = LzmaDec_DecodeToBuf(&state.lzma, tmp, &destLen, data, &srcLen, LZMA_FINISH_ANY, &status);
+        }
         data += srcLen;
         avail -= srcLen;
-        if (res == SZ_OK && destLen > 0 && outStream.s.Write(&outStream, tmp, destLen) != destLen) {
+        if (res == SZ_OK && destLen > 0 && outStream.s.Write((const ISeqOutStream*) &outStream, tmp, destLen) != destLen) {
             res = SZ_ERROR_WRITE;
         }
         if (res != SZ_OK || status == LZMA_STATUS_FINISHED_WITH_MARK || status == LZMA_STATUS_NEEDS_MORE_INPUT) {
@@ -127,7 +156,11 @@ exit:
     if (outStream.data != NULL) {
         free(outStream.data);
     }
-    LzmaDec_Free(&state, &allocator);
+    if (lzma2) {
+        Lzma2Dec_Free(&state.lzma2, &allocator);
+    } else {
+        LzmaDec_Free(&state.lzma, &allocator);
+    }
     free(tmp);
     
     return result;

@@ -28,11 +28,16 @@
 
 #include <Python.h>
 
-#include "../sdk/LzmaDec.h"
+#include "../sdk/C/LzmaDec.h"
+#include "../sdk/C/Lzma2Dec.h"
 
 typedef struct {
     PyObject_HEAD
-    CLzmaDec state;
+    int lzma2;
+    union {
+      CLzmaDec lzma;
+      CLzma2Dec lzma2;
+    } state;
     ELzmaStatus status;
     SizeT max_length;
     SizeT total_out;

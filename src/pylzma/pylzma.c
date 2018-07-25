@@ -25,10 +25,10 @@
 
 #include <Python.h>
 
-#include "../sdk/7zVersion.h"
-#include "../7zip/C/Sha256.h"
-#include "../7zip/C/Aes.h"
-#include "../7zip/C/Bra.h"
+#include "../sdk/C/7zVersion.h"
+#include "../sdk/C/Sha256.h"
+#include "../sdk/C/Aes.h"
+#include "../sdk/C/Bra.h"
 
 #include "pylzma.h"
 #include "pylzma_compress.h"
@@ -214,8 +214,8 @@ methods[] = {
     {NULL, NULL},
 };
 
-static void *Alloc(void *p, size_t size) { p = p; return malloc(size); }
-static void Free(void *p, void *address) { p = p; free(address); }
+static void *Alloc(ISzAllocPtr p, size_t size) { (void)p; return malloc(size); }
+static void Free(ISzAllocPtr p, void *address) { (void)p; free(address); }
 ISzAlloc allocator = { Alloc, Free };
 
 #if PY_MAJOR_VERSION >= 3
