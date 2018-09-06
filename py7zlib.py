@@ -764,11 +764,7 @@ class ArchiveFile(Base):
         cipher = pylzma.AESDecrypt(key, iv=iv)
         if not input:
             self._file.seek(self._src_start)
-            uncompressed_size = self._uncompressed[level]
-            if uncompressed_size & 0x0f:
-                # we need a multiple of 16 bytes
-                uncompressed_size += 16 - (uncompressed_size & 0x0f)
-            input = self._file.read(uncompressed_size)
+            input = self._file.read(self.compressed)
         result = cipher.decrypt(input)
         return result
     

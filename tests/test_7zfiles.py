@@ -303,6 +303,13 @@ class Test7ZipFiles(unittest.TestCase):
         self.assertEqual(sorted(archive.getnames()), ['blah.txt'] + ['blah%d.txt' % x for x in xrange(2, 10)])
         self._test_decode_all(archive)
 
+    def test_github_53(self):
+        # test loading file submitted by @VinylChloride
+        fp = self._open_file(os.path.join(ROOT, 'data', 'github_53.7z'), 'rb')
+        archive = Archive7z(fp, password='1234')
+        self.assertEqual(sorted(archive.getnames()), ['test/test/archive7zip.py', 'test/test/mainPrg.py'])
+        self._test_decode_all(archive)
+
 def suite():
     suite = unittest.TestSuite()
 
