@@ -1,5 +1,15 @@
 # pylzma
 
+## 0.5.0
+
+- Update to LZMA SDK 18.05.
+- Support LZMA2 decompression.
+- Fix decompressing empty members from 7z files.
+- Fix parsing attributes from 7z members.
+- Include test data in tarball.
+- Fix AES decryption for solid 7z archives with LZMA2 compression.
+
+
 ## 0.4.9
 
 - Fix for 7z files that contain padding data after uncompress / decrypt.
