@@ -934,8 +934,9 @@ class Archive7z(Base):
             if folder is not None and subinfo.digestsdefined[obidx]:
                 file.digest = subinfo.digests[obidx]
             self.files.append(file)
-            if folder is not None and folder.solid:
-                pos += unpacksizes[obidx]
+            if folder is not None:
+                if folder.solid:
+                    pos += unpacksizes[obidx]
                 obidx += 1
             else:
                 src_pos += info['compressed']
