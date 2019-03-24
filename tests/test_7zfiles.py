@@ -201,6 +201,30 @@ class Test7ZipFiles(unittest.TestCase):
         # test loading of copy compressed files
         self._test_archive('copy.7z')
 
+    def test_lzma_bcj(self):
+        # test loading of lzma compressed, filtered through bcj
+        self._test_archive('lzma_bcj.7z')
+
+    def test_lzma_bcj_arm(self):
+        # test loading of lzma compressed, filtered through bcj / ARM
+        self._test_archive('lzma_bcj_arm.7z')
+
+    def test_lzma_bcj_armt(self):
+        # test loading of lzma compressed, filtered through bcj / ARMT
+        self._test_archive('lzma_bcj_armt.7z')
+
+    def test_lzma_bcj_ia64(self):
+        # test loading of lzma compressed, filtered through bcj / IA64
+        self._test_archive('lzma_bcj_ia64.7z')
+
+    def test_lzma_bcj_ppc(self):
+        # test loading of lzma compressed, filtered through bcj / PPC
+        self._test_archive('lzma_bcj_ppc.7z')
+
+    def test_lzma_bcj_sparc(self):
+        # test loading of lzma compressed, filtered through bcj / SPARC
+        self._test_archive('lzma_bcj_sparc.7z')
+
     def test_regress_1(self):
         # prevent regression bug #1 reported by mail
         fp = self._open_file(os.path.join(ROOT, 'data', 'regress_1.7z'), 'rb')

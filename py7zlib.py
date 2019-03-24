@@ -141,6 +141,12 @@ COMPRESSION_METHOD_MISC_ZIP      = unhexlify('0401')  # '\x04\x01'
 COMPRESSION_METHOD_MISC_BZIP     = unhexlify('0402')  # '\x04\x02'
 COMPRESSION_METHOD_7Z_AES256_SHA256 = unhexlify('06f10701')  # '\x06\xf1\x07\x01'
 COMPRESSION_METHOD_LZMA2         = unhexlify('21')  # '\x21'
+COMPRESSION_METHOD_BCJ           = unhexlify('03030103')  # '\x03\x03\x01\x03'
+COMPRESSION_METHOD_BCJ_PPC       = unhexlify('03030205')  # '\x03\x03\x02\x05'
+COMPRESSION_METHOD_BCJ_IA64      = unhexlify('03030401')  # '\x03\x03\x03\x01'
+COMPRESSION_METHOD_BCJ_ARM       = unhexlify('03030501')  # '\x03\x03\x05\x01'
+COMPRESSION_METHOD_BCJ_ARMT      = unhexlify('03030701')  # '\x03\x03\x07\x01'
+COMPRESSION_METHOD_BCJ_SPARC     = unhexlify('03030805')  # '\x03\x03\x08\x05'
 COMPRESSION_METHOD_BCJ2          = unhexlify('0303011B')  # '\x03\x03\x01\x1B'
 
 FILE_ATTRIBUTE_DIRECTORY = 0x10
@@ -604,6 +610,12 @@ class ArchiveFile(Base):
             COMPRESSION_METHOD_MISC_ZIP: '_read_zip',
             COMPRESSION_METHOD_MISC_BZIP: '_read_bzip',
             COMPRESSION_METHOD_7Z_AES256_SHA256: '_read_7z_aes256_sha256',
+            COMPRESSION_METHOD_BCJ: '_read_bcj',
+            COMPRESSION_METHOD_BCJ_PPC: '_read_bcj_ppc',
+            COMPRESSION_METHOD_BCJ_IA64: '_read_bcj_ia64',
+            COMPRESSION_METHOD_BCJ_ARM: '_read_bcj_arm',
+            COMPRESSION_METHOD_BCJ_ARMT: '_read_bcj_armt',
+            COMPRESSION_METHOD_BCJ_SPARC: '_read_bcj_sparc',
             COMPRESSION_METHOD_BCJ2: '_read_bcj2',
         }
 
@@ -783,6 +795,54 @@ class ArchiveFile(Base):
         jump_data = self._file.read(self._packsizes[2])
         rc_data = self._file.read(self._packsizes[3])
         return pylzma.bcj2_decode(main_data, call_data, jump_data, rc_data, self.uncompressed)
+
+    def _read_bcj(self, coder, input, level, num_coders):
+        size = self._uncompressed[level]
+        if not input:
+            self._file.seek(self._src_start)
+            input = self._file.read(size)
+        data = pylzma.bcj_x86_convert(input)
+        return data[self._start:self._start+size]
+
+    def _read_bcj_ppc(self, coder, input, level, num_coders):
+        size = self._uncompressed[level]
+        if not input:
+            self._file.seek(self._src_start)
+            input = self._file.read(size)
+        data = pylzma.bcj_ppc_convert(input)
+        return data[self._start:self._start+size]
+
+    def _read_bcj_ia64(self, coder, input, level, num_coders):
+        size = self._uncompressed[level]
+        if not input:
+            self._file.seek(self._src_start)
+            input = self._file.read(size)
+        data = pylzma.bcj_ia64_convert(input)
+        return data[self._start:self._start+size]
+
+    def _read_bcj_arm(self, coder, input, level, num_coders):
+        size = self._uncompressed[level]
+        if not input:
+            self._file.seek(self._src_start)
+            input = self._file.read(size)
+        data = pylzma.bcj_arm_convert(input)
+        return data[self._start:self._start+size]
+
+    def _read_bcj_armt(self, coder, input, level, num_coders):
+        size = self._uncompressed[level]
+        if not input:
+            self._file.seek(self._src_start)
+            input = self._file.read(size)
+        data = pylzma.bcj_armt_convert(input)
+        return data[self._start:self._start+size]
+
+    def _read_bcj_sparc(self, coder, input, level, num_coders):
+        size = self._uncompressed[level]
+        if not input:
+            self._file.seek(self._src_start)
+            input = self._file.read(size)
+        data = pylzma.bcj_sparc_convert(input)
+        return data[self._start:self._start+size]
 
     def checkcrc(self):
         if self.digest is None:
