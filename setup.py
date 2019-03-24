@@ -157,6 +157,7 @@ lzma_files = (
     'src/sdk/C/Bra86.c',
     'src/sdk/C/BraIA64.c',
     'src/sdk/C/CpuArch.c',
+    'src/sdk/C/Delta.c',
     'src/sdk/C/LzFind.c',
     'src/sdk/C/LzmaDec.c',
     'src/sdk/C/LzmaEnc.c',

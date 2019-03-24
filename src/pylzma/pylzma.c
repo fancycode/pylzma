@@ -30,6 +30,7 @@
 #include "../sdk/C/Aes.h"
 #include "../sdk/C/Bra.h"
 #include "../sdk/C/Bcj2.h"
+#include "../sdk/C/Delta.h"
 
 #include "pylzma.h"
 #include "pylzma_compress.h"
@@ -269,6 +270,46 @@ error:
     return NULL;
 }
 
+const char
+doc_delta_decode[] =
+    "delta_decode(data, delta) -- Decode Delta streams.";
+
+static PyObject *
+pylzma_delta_decode(PyObject *self, PyObject *args)
+{
+    char *data;
+    PARSE_LENGTH_TYPE length;
+    unsigned int delta;
+    Byte state[DELTA_STATE_SIZE];
+    Byte *tmp;
+    PyObject *result;
+
+    if (!PyArg_ParseTuple(args, "s#I", &data, &length, &delta)) {
+        return NULL;
+    }
+
+    if (!delta) {
+        PyErr_SetString(PyExc_TypeError, "delta must be non-zero");
+        return NULL;
+    }
+
+    if (!length) {
+        return PyBytes_FromString("");
+    }
+
+    result = PyBytes_FromStringAndSize(data, length);
+    if (!result) {
+        return NULL;
+    }
+
+    Delta_Init(state);
+    tmp = (Byte *) PyBytes_AS_STRING(result);
+    Py_BEGIN_ALLOW_THREADS
+    Delta_Decode(state, delta, tmp, length);
+    Py_END_ALLOW_THREADS
+    return result;
+}
+
 PyMethodDef
 methods[] = {
     // exported functions
@@ -288,6 +329,8 @@ methods[] = {
     {"bcj_sparc_convert",   (PyCFunction)pylzma_bcj_sparc_convert,  METH_VARARGS,   (char *)&doc_bcj_sparc_convert},
     {"bcj_ia64_convert",    (PyCFunction)pylzma_bcj_ia64_convert,   METH_VARARGS,   (char *)&doc_bcj_ia64_convert},
     {"bcj2_decode", (PyCFunction)pylzma_bcj2_decode,   METH_VARARGS,   (char *)&doc_bcj2_decode},
+    // Delta
+    {"delta_decode", (PyCFunction)pylzma_delta_decode,   METH_VARARGS,   (char *)&doc_delta_decode},
     {NULL, NULL},
 };
 
