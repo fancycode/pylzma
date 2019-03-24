@@ -134,6 +134,7 @@ PROPERTY_START_POS               = unhexlify('18')  # '\x18'
 PROPERTY_DUMMY                   = unhexlify('19')  # '\x19'
 
 COMPRESSION_METHOD_COPY          = unhexlify('00')  # '\x00'
+COMPRESSION_METHOD_DELTA         = unhexlify('03')  # '\x03'
 COMPRESSION_METHOD_LZMA          = unhexlify('030101')  # '\x03\x01\x01'
 COMPRESSION_METHOD_CRYPTO        = unhexlify('06')  # '\x06'
 COMPRESSION_METHOD_MISC          = unhexlify('04')  # '\x04'
@@ -605,6 +606,7 @@ class ArchiveFile(Base):
         self.reset()
         self._decoders = {
             COMPRESSION_METHOD_COPY: '_read_copy',
+            COMPRESSION_METHOD_DELTA: '_read_delta',
             COMPRESSION_METHOD_LZMA: '_read_lzma',
             COMPRESSION_METHOD_LZMA2: '_read_lzma2',
             COMPRESSION_METHOD_MISC_ZIP: '_read_zip',
@@ -653,7 +655,17 @@ class ArchiveFile(Base):
             self._file.seek(self._src_start)
             input = self._file.read(size)
         return input[self._start:self._start+size]
-    
+
+    def _read_delta(self, coder, input, level, num_coders):
+        size = self._uncompressed[level]
+        if not input:
+            self._file.seek(self._src_start)
+            input = self._file.read(size)
+        assert len(coder['properties']) == 1
+        delta = ord(coder['properties']) + 1
+        data = pylzma.delta_decode(input, delta)
+        return data[self._start:self._start+size]
+
     def _read_from_decompressor(self, coder, decompressor, input, level, num_coders, can_partial_decompress=True, with_cache=False):
         size = self._uncompressed[level]
         data = ''
