@@ -698,6 +698,11 @@ class ArchiveFile(Base):
                 input = self._file.read(total)
             if is_last_coder and can_partial_decompress:
                 data = decompressor.decompress(input, self._start+size)
+            elif can_partial_decompress:
+                total_decompressed = sum(self._uncompressed[level:])
+                data = decompressor.decompress(input, self._start+total_decompressed)
+                if not is_last_coder:
+                    return data
             else:
                 data = decompressor.decompress(input)
                 if can_partial_decompress and not is_last_coder:
