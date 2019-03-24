@@ -921,6 +921,7 @@ class Archive7z(Base):
                 for coder in folder.coders:
                     numinstreams = max(numinstreams, coder.get('numinstreams', 1))
                 info['_packsizes'] = packinfo.packsizes[instreamindex:instreamindex+numinstreams]
+                streamidx += 1
             else:
                 info['compressed'] = 0
                 info['_uncompressed'] = [0]
@@ -935,10 +936,9 @@ class Archive7z(Base):
             self.files.append(file)
             if folder is not None and folder.solid:
                 pos += unpacksizes[obidx]
+                obidx += 1
             else:
                 src_pos += info['compressed']
-            obidx += 1
-            streamidx += 1
             if folder is not None and streamidx >= subinfo.numunpackstreams[fidx]:
                 pos = 0
                 for x in xrange(numinstreams):
