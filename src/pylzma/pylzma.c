@@ -228,16 +228,16 @@ pylzma_bcj2_decode(PyObject *self, PyObject *args)
     }
 
     memset(&dec, 0, sizeof(dec));
-    dec.bufs[BCJ2_STREAM_MAIN] = main_data;
-    dec.lims[BCJ2_STREAM_MAIN] = main_data + main_length;
-    dec.bufs[BCJ2_STREAM_CALL] = call_data;
-    dec.lims[BCJ2_STREAM_CALL] = call_data + call_length;
-    dec.bufs[BCJ2_STREAM_JUMP] = jump_data;
-    dec.lims[BCJ2_STREAM_JUMP] = jump_data + jump_length;
-    dec.bufs[BCJ2_STREAM_RC] = rc_data;
-    dec.lims[BCJ2_STREAM_RC] = rc_data + rc_length;
+    dec.bufs[BCJ2_STREAM_MAIN] = (const Byte *) main_data;
+    dec.lims[BCJ2_STREAM_MAIN] = (const Byte *) (main_data + main_length);
+    dec.bufs[BCJ2_STREAM_CALL] = (const Byte *) call_data;
+    dec.lims[BCJ2_STREAM_CALL] = (const Byte *) (call_data + call_length);
+    dec.bufs[BCJ2_STREAM_JUMP] = (const Byte *) jump_data;
+    dec.lims[BCJ2_STREAM_JUMP] = (const Byte *) (jump_data + jump_length);
+    dec.bufs[BCJ2_STREAM_RC] = (const Byte *) rc_data;
+    dec.lims[BCJ2_STREAM_RC] = (const Byte *) (rc_data + rc_length);
 
-    dec.dest = PyString_AS_STRING(result);
+    dec.dest = PyBytes_AS_STRING(result);
     dec.destLim = dec.dest + dest_len;
     Bcj2Dec_Init(&dec);
 
