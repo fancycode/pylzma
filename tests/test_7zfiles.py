@@ -310,6 +310,10 @@ class Test7ZipFiles(unittest.TestCase):
         self.assertEqual(sorted(archive.getnames()), ['test/test/archive7zip.py', 'test/test/mainPrg.py'])
         self._test_decode_all(archive)
 
+    def test_github_60(self):
+        # test loading file submitted by @miurahr
+        self._test_archive('github_60.7z')
+
 def suite():
     suite = unittest.TestSuite()
 

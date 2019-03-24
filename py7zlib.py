@@ -141,6 +141,7 @@ COMPRESSION_METHOD_MISC_ZIP      = unhexlify('0401')  # '\x04\x01'
 COMPRESSION_METHOD_MISC_BZIP     = unhexlify('0402')  # '\x04\x02'
 COMPRESSION_METHOD_7Z_AES256_SHA256 = unhexlify('06f10701')  # '\x06\xf1\x07\x01'
 COMPRESSION_METHOD_LZMA2         = unhexlify('21')  # '\x21'
+COMPRESSION_METHOD_BCJ2          = unhexlify('0303011B')  # '\x03\x03\x01\x1B'
 
 FILE_ATTRIBUTE_DIRECTORY = 0x10
 FILE_ATTRIBUTE_READONLY = 0x01
@@ -603,6 +604,7 @@ class ArchiveFile(Base):
             COMPRESSION_METHOD_MISC_ZIP: '_read_zip',
             COMPRESSION_METHOD_MISC_BZIP: '_read_bzip',
             COMPRESSION_METHOD_7Z_AES256_SHA256: '_read_7z_aes256_sha256',
+            COMPRESSION_METHOD_BCJ2: '_read_bcj2',
         }
 
     def _is_encrypted(self):
@@ -767,7 +769,21 @@ class ArchiveFile(Base):
             input = self._file.read(self.compressed)
         result = cipher.decrypt(input)
         return result
-    
+
+    def _read_bcj2(self, coder, input, level, num_coders):
+        size = self._uncompressed[level]
+        if not input:
+            self._file.seek(self._src_start)
+            input = self._file.read(size)
+        if len(self._packsizes) != 4:
+            raise DecompressionError('BCJ2 expects 4 streams, got %d' % (len(self._packsizes)))
+
+        main_data = input[self._start:self._start+size]
+        call_data = self._file.read(self._packsizes[1])
+        jump_data = self._file.read(self._packsizes[2])
+        rc_data = self._file.read(self._packsizes[3])
+        return pylzma.bcj2_decode(main_data, call_data, jump_data, rc_data, self.uncompressed)
+
     def checkcrc(self):
         if self.digest is None:
             return True
@@ -874,6 +890,7 @@ class Archive7z(Base):
         pos = 0
         folder_pos = src_pos
         maxsize = (self.solid and packinfo.packsizes[0]) or None
+        instreamindex = 0
         for info in files.files:
             # Skip all directory entries.
             attributes = info.get('attributes', None)
@@ -885,26 +902,32 @@ class Archive7z(Base):
                 if streamidx == 0:
                     folder.solid = subinfo.numunpackstreams[fidx] > 1
 
-                maxsize = (folder.solid and packinfo.packsizes[fidx]) or None
+                maxsize = (folder.solid and packinfo.packsizes[instreamindex]) or None
                 uncompressed = unpacksizes[obidx]
                 if not isinstance(uncompressed, (list, tuple)):
                     uncompressed = [uncompressed] * len(folder.coders)
                 if pos > 0:
                     # file is part of solid archive
-                    assert fidx < len(packsizes), 'Folder outside index for solid archive'
-                    info['compressed'] = packsizes[fidx]
-                elif fidx < len(packsizes):
+                    assert instreamindex < len(packsizes), 'Folder outside index for solid archive'
+                    info['compressed'] = packsizes[instreamindex]
+                elif instreamindex < len(packsizes):
                     # file is compressed
-                    info['compressed'] = packsizes[fidx]
+                    info['compressed'] = packsizes[instreamindex]
                 else:
                     # file is not compressed
                     info['compressed'] = uncompressed
                 info['_uncompressed'] = uncompressed
+                numinstreams = 1
+                for coder in folder.coders:
+                    numinstreams = max(numinstreams, coder.get('numinstreams', 1))
+                info['_packsizes'] = packinfo.packsizes[instreamindex:instreamindex+numinstreams]
             else:
                 info['compressed'] = 0
                 info['_uncompressed'] = [0]
+                info['_packsizes'] = [0]
                 folder = None
                 maxsize = 0
+                numinstreams = 1
 
             file = ArchiveFile(info, pos, src_pos, folder, self, maxsize=maxsize)
             if folder is not None and subinfo.digestsdefined[obidx]:
@@ -918,9 +941,11 @@ class Archive7z(Base):
             streamidx += 1
             if folder is not None and streamidx >= subinfo.numunpackstreams[fidx]:
                 pos = 0
-                folder_pos += packinfo.packsizes[fidx]
+                for x in xrange(numinstreams):
+                    folder_pos += packinfo.packsizes[instreamindex+x]
                 src_pos = folder_pos
                 fidx += 1
+                instreamindex += numinstreams
                 streamidx = 0
         
         self.numfiles = len(self.files)
