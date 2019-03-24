@@ -29,6 +29,7 @@
 #include "../sdk/C/Sha256.h"
 #include "../sdk/C/Aes.h"
 #include "../sdk/C/Bra.h"
+#include "../sdk/C/Bcj2.h"
 
 #include "pylzma.h"
 #include "pylzma_compress.h"
@@ -193,6 +194,81 @@ DEFINE_BCJ_CONVERTER(ppc, PPC);
 DEFINE_BCJ_CONVERTER(sparc, SPARC);
 DEFINE_BCJ_CONVERTER(ia64, IA64);
 
+const char
+doc_bcj2_decode[] =
+    "bcj2_decode(main_data, call_data, jump_data, rc_data[, dest_len]) -- Decode BCJ2 streams.";
+
+static PyObject *
+pylzma_bcj2_decode(PyObject *self, PyObject *args)
+{
+    char *main_data, *call_data, *jump_data, *rc_data;
+    PARSE_LENGTH_TYPE main_length, call_length, jump_length, rc_length;
+    PARSE_LENGTH_TYPE dest_len = -1;
+    CBcj2Dec dec;
+    SRes res;
+    PyObject *result;
+    int i;
+
+    if (!PyArg_ParseTuple(args, "s#s#s#s#|n", &main_data, &main_length,
+        &call_data, &call_length, &jump_data, &jump_length,
+        &rc_data, &rc_length, &dest_len)) {
+        return NULL;
+    }
+    if (dest_len == -1) {
+        dest_len = main_length;
+    }
+
+    if (!dest_len) {
+        return PyBytes_FromString("");
+    }
+
+    result = PyBytes_FromStringAndSize(NULL, dest_len);
+    if (!result) {
+        return NULL;
+    }
+
+    memset(&dec, 0, sizeof(dec));
+    dec.bufs[BCJ2_STREAM_MAIN] = main_data;
+    dec.lims[BCJ2_STREAM_MAIN] = main_data + main_length;
+    dec.bufs[BCJ2_STREAM_CALL] = call_data;
+    dec.lims[BCJ2_STREAM_CALL] = call_data + call_length;
+    dec.bufs[BCJ2_STREAM_JUMP] = jump_data;
+    dec.lims[BCJ2_STREAM_JUMP] = jump_data + jump_length;
+    dec.bufs[BCJ2_STREAM_RC] = rc_data;
+    dec.lims[BCJ2_STREAM_RC] = rc_data + rc_length;
+
+    dec.dest = PyString_AS_STRING(result);
+    dec.destLim = dec.dest + dest_len;
+    Bcj2Dec_Init(&dec);
+
+    Py_BEGIN_ALLOW_THREADS
+    res = Bcj2Dec_Decode(&dec);
+    Py_END_ALLOW_THREADS
+    if (res != SZ_OK) {
+        goto error;
+    }
+
+    // All input streams must have been processed.
+    for (i = 0; i < 4; i++) {
+        if (dec.bufs[i] != dec.lims[i]) {
+            goto error;
+        }
+    }
+
+    // Conversion must be finished and the output buffer filled completely.
+    if (!Bcj2Dec_IsFinished(&dec)) {
+        goto error;
+    } else if (dec.dest != dec.destLim || dec.state != BCJ2_STREAM_MAIN) {
+        goto error;
+    }
+    return result;
+
+error:
+    Py_DECREF(result);
+    PyErr_SetString(PyExc_TypeError, "bcj2 decoding failed");
+    return NULL;
+}
+
 PyMethodDef
 methods[] = {
     // exported functions
@@ -211,6 +287,7 @@ methods[] = {
     {"bcj_ppc_convert",     (PyCFunction)pylzma_bcj_ppc_convert,    METH_VARARGS,   (char *)&doc_bcj_ppc_convert},
     {"bcj_sparc_convert",   (PyCFunction)pylzma_bcj_sparc_convert,  METH_VARARGS,   (char *)&doc_bcj_sparc_convert},
     {"bcj_ia64_convert",    (PyCFunction)pylzma_bcj_ia64_convert,   METH_VARARGS,   (char *)&doc_bcj_ia64_convert},
+    {"bcj2_decode", (PyCFunction)pylzma_bcj2_decode,   METH_VARARGS,   (char *)&doc_bcj2_decode},
     {NULL, NULL},
 };
 

@@ -152,6 +152,7 @@ macros = [
 lzma_files = (
     'src/sdk/C/Aes.c',
     'src/sdk/C/AesOpt.c',
+    'src/sdk/C/Bcj2.c',
     'src/sdk/C/Bra.c',
     'src/sdk/C/Bra86.c',
     'src/sdk/C/BraIA64.c',
