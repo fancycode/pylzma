@@ -134,7 +134,7 @@ PROPERTY_START_POS               = unhexlify('18')  # '\x18'
 PROPERTY_DUMMY                   = unhexlify('19')  # '\x19'
 
 COMPRESSION_METHOD_COPY          = unhexlify('00')  # '\x00'
-COMPRESSION_METHOD_LZMA          = unhexlify('03')  # '\x03'
+COMPRESSION_METHOD_LZMA          = unhexlify('030101')  # '\x03\x01\x01'
 COMPRESSION_METHOD_CRYPTO        = unhexlify('06')  # '\x06'
 COMPRESSION_METHOD_MISC          = unhexlify('04')  # '\x04'
 COMPRESSION_METHOD_MISC_ZIP      = unhexlify('0401')  # '\x04\x01'
