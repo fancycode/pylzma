@@ -77,7 +77,7 @@ EXTERN_C_END
 
 SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqOutStream *outStream, ISeqInStream *inStream, ISzAllocPtr alloc, ISzAllocPtr allocBig);
 SRes LzmaEnc_CodeOneBlock(CLzmaEncHandle pp, UInt32 maxPackSize, UInt32 maxUnpackSize);
-Bool LzmaEnc_IsFinished(CLzmaEncHandle pp);
+BoolInt LzmaEnc_IsFinished(CLzmaEncHandle pp);
 void LzmaEnc_Finish(CLzmaEncHandle pp);
 
 #endif
