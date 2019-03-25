@@ -43,7 +43,7 @@ void CreateMemoryInStream(CMemoryInStream *stream, Byte *data, size_t size);
 typedef CMemoryInStream CMemoryInOutStream;
 
 void CreateMemoryInOutStream(CMemoryInOutStream *stream);
-Bool MemoryInOutStreamAppend(CMemoryInOutStream *stream, Byte *data, size_t size);
+BoolInt MemoryInOutStreamAppend(CMemoryInOutStream *stream, Byte *data, size_t size);
 
 typedef struct
 {

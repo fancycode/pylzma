@@ -2,7 +2,7 @@ Index: pylzma/src/sdk/C/LzmaEnc.c
 ===================================================================
 --- pylzma.orig/src/sdk/C/LzmaEnc.c
 +++ pylzma/src/sdk/C/LzmaEnc.c
-@@ -2092,8 +2092,9 @@ void LzmaEnc_Destroy(CLzmaEncHandle p, I
+@@ -2259,8 +2259,9 @@ void LzmaEnc_Destroy(CLzmaEncHandle p, I
  }
  
  
@@ -13,7 +13,7 @@ Index: pylzma/src/sdk/C/LzmaEnc.c
    UInt32 nowPos32, startPos32;
    if (p->needInit)
    {
-@@ -2526,7 +2527,7 @@ static SRes LzmaEnc_AllocAndInit(CLzmaEn
+@@ -2715,7 +2716,7 @@ static SRes LzmaEnc_AllocAndInit(CLzmaEn
    return SZ_OK;
  }
  
@@ -22,12 +22,12 @@ Index: pylzma/src/sdk/C/LzmaEnc.c
      ISzAllocPtr alloc, ISzAllocPtr allocBig)
  {
    CLzmaEnc *p = (CLzmaEnc *)pp;
-@@ -2785,3 +2786,9 @@ SRes LzmaEncode(Byte *dest, SizeT *destL
+@@ -2974,3 +2975,9 @@ SRes LzmaEncode(Byte *dest, SizeT *destL
    LzmaEnc_Destroy(p, alloc, allocBig);
    return res;
  }
 +
-+Bool LzmaEnc_IsFinished(CLzmaEncHandle pp)
++BoolInt LzmaEnc_IsFinished(CLzmaEncHandle pp)
 +{
 +  CLzmaEnc *p = (CLzmaEnc *)pp;
 +  return p->finished;
@@ -44,7 +44,7 @@ Index: pylzma/src/sdk/C/LzmaEnc.h
 +
 +SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqOutStream *outStream, ISeqInStream *inStream, ISzAllocPtr alloc, ISzAllocPtr allocBig);
 +SRes LzmaEnc_CodeOneBlock(CLzmaEncHandle pp, UInt32 maxPackSize, UInt32 maxUnpackSize);
-+Bool LzmaEnc_IsFinished(CLzmaEncHandle pp);
++BoolInt LzmaEnc_IsFinished(CLzmaEncHandle pp);
 +void LzmaEnc_Finish(CLzmaEncHandle pp);
 +
  #endif

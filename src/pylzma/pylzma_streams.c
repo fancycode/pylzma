@@ -89,7 +89,7 @@ CreateMemoryInOutStream(CMemoryInOutStream *stream)
     stream->avail = INITIAL_BLOCKSIZE;
 }
 
-Bool
+BoolInt
 MemoryInOutStreamAppend(CMemoryInOutStream *stream, Byte *data, size_t size)
 {
     if (!size) {
