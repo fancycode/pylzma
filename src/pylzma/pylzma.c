@@ -238,7 +238,7 @@ pylzma_bcj2_decode(PyObject *self, PyObject *args)
     dec.bufs[BCJ2_STREAM_RC] = (const Byte *) rc_data;
     dec.lims[BCJ2_STREAM_RC] = (const Byte *) (rc_data + rc_length);
 
-    dec.dest = PyBytes_AS_STRING(result);
+    dec.dest = (Byte *) PyBytes_AS_STRING(result);
     dec.destLim = dec.dest + dest_len;
     Bcj2Dec_Init(&dec);
 
