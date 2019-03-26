@@ -150,11 +150,20 @@ COMPRESSION_METHOD_BCJ_ARMT      = unhexlify('03030701')  # '\x03\x03\x07\x01'
 COMPRESSION_METHOD_BCJ_SPARC     = unhexlify('03030805')  # '\x03\x03\x08\x05'
 COMPRESSION_METHOD_BCJ2          = unhexlify('0303011B')  # '\x03\x03\x01\x1B'
 
-FILE_ATTRIBUTE_DIRECTORY = 0x10
 FILE_ATTRIBUTE_READONLY = 0x01
 FILE_ATTRIBUTE_HIDDEN = 0x02
 FILE_ATTRIBUTE_SYSTEM = 0x04
+FILE_ATTRIBUTE_DIRECTORY = 0x10
 FILE_ATTRIBUTE_ARCHIVE = 0x20
+FILE_ATTRIBUTE_DEVICE = 0x40
+FILE_ATTRIBUTE_NORMAL = 0x80
+FILE_ATTRIBUTE_TEMPORARY = 0x100
+FILE_ATTRIBUTE_SPARSE_FILE = 0x200
+FILE_ATTRIBUTE_REPARSE_POINT = 0x400
+FILE_ATTRIBUTE_COMPRESSED = 0x800
+FILE_ATTRIBUTE_OFFLINE = 0x1000
+FILE_ATTRIBUTE_ENCRYPTED = 0x4000
+FILE_ATTRIBUTE_UNIX_EXTENSION = 0x8000
 
 # number of seconds between 1601/01/01 and 1970/01/01 (UTC)
 # used to adjust 7z FILETIME to Python timestamp
@@ -475,7 +484,7 @@ class StreamsInfo(Base):
 
 class FilesInfo(Base):
     """ holds file properties """
-    
+
     def _readTimes(self, file, files, name):
         defined = self._readBoolean(file, len(files), checkall=1)
         
@@ -554,7 +563,7 @@ class FilesInfo(Base):
                         f['attributes'] = None
             else:
                 raise FormatError('invalid type %r' % (typ))
-        
+
 class Header(Base):
     """ the archive header """
     
@@ -624,6 +633,49 @@ class ArchiveFile(Base):
     def _is_encrypted(self):
         return self._folder.isEncrypted()
 
+    def _test_attribute(self, target_bit):
+        if not self.attributes:
+            return False
+        return self.attributes & target_bit == target_bit
+
+    def is_readonly(self):
+        return self._test_attribute(FILE_ATTRIBUTE_READONLY)
+
+    def is_sparse_file(self):
+        return self._test_attribute(FILE_ATTRIBUTE_SPARSE_FILE)
+
+    def is_compressed(self):
+        return self._test_attribute(FILE_ATTRIBUTE_COMPRESSED)
+
+    def is_system_file(self):
+        return self._test_attribute(FILE_ATTRIBUTE_SYSTEM)
+
+    def is_hidden(self):
+        return self._test_attribute(FILE_ATTRIBUTE_HIDDEN)
+
+    def is_archivable(self):
+        return self._test_attribute(FILE_ATTRIBUTE_ARCHIVE)
+
+    def is_executable(self):
+        """
+        :return: True if unix mode is read+exec, otherwise False
+        """
+        if self._test_attribute(FILE_ATTRIBUTE_UNIX_EXTENSION):
+            st_mode = self.attributes  >> 16
+            if (st_mode & 0b0101 == 0b0101):
+                return True
+        return False
+
+    def get_mode(self):
+        """
+        :return: Unix mode if exist, otherwise None
+        """
+        if self._test_attribute(FILE_ATTRIBUTE_UNIX_EXTENSION):
+            st_mode = self.attributes  >> 16
+            # XXX: is it need to mask lower 12bits?
+            return st_mode & 0b0000111111111111
+        return None
+
     def reset(self):
         self.pos = 0
     
@@ -631,7 +683,7 @@ class ArchiveFile(Base):
         if not self.size:
             return ''
         elif not self._folder.coders:
-            raise TypeError("file has no coder informations")
+            raise TypeError("file has no coder information")
         
         data = None
         num_coders = len(self._folder.coders)

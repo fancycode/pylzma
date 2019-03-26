@@ -338,6 +338,24 @@ class Test7ZipFiles(unittest.TestCase):
         # test loading file submitted by @miurahr
         self._test_archive('github_60.7z')
 
+    def test_file_mode(self):
+        # test file mode
+        fp = self._open_file(os.path.join(ROOT, 'data', 'lzma2_exe.7z'), 'rb')
+        archive = Archive7z(fp)
+        exe_f = archive.getmember('bin/executable')
+        self.assertTrue(exe_f.is_executable())
+        self.assertFalse(exe_f.is_readonly())
+        self.assertEqual(exe_f.get_mode(), 0b0000000111101101)
+        normal_f = archive.getmember('text.txt')
+        self.assertFalse(normal_f.is_executable())
+        self.assertTrue(normal_f.is_readonly())
+        self.assertTrue(normal_f.is_archivable())
+        self.assertFalse(normal_f.is_system_file())
+        self.assertFalse(normal_f.is_hidden())
+        self.assertFalse(normal_f.is_sparse_file())
+        self.assertFalse(normal_f.is_compressed())
+
+
 def suite():
     suite = unittest.TestSuite()
 
