@@ -666,7 +666,16 @@ class ArchiveFile(Base):
                 return True
         return False
 
-    def get_mode(self):
+    def get_file_attributes(self):
+        """
+        :return: file attribute if exist, otherwise None
+        """
+        if not self._test_attribute(FILE_ATTRIBUTE_UNIX_EXTENSION):
+            return self.attributes
+        else:
+            return self.attributes & 0b1111111111111111  # return lower 16bits
+
+    def get_posix_mode(self):
         """
         :return: Unix mode if exist, otherwise None
         """
