@@ -310,6 +310,46 @@ pylzma_delta_decode(PyObject *self, PyObject *args)
     return result;
 }
 
+const char
+doc_delta_encode[] =
+    "delta_encode(data, delta) -- Encode Delta streams.";
+
+static PyObject *
+pylzma_delta_encode(PyObject *self, PyObject *args)
+{
+    char *data;
+    PARSE_LENGTH_TYPE length;
+    unsigned int delta;
+    Byte state[DELTA_STATE_SIZE];
+    Byte *tmp;
+    PyObject *result;
+
+    if (!PyArg_ParseTuple(args, "s#I", &data, &length, &delta)) {
+        return NULL;
+    }
+
+    if (!delta) {
+        PyErr_SetString(PyExc_TypeError, "delta must be non-zero");
+        return NULL;
+    }
+
+    if (!length) {
+        return PyBytes_FromString("");
+    }
+
+    result = PyBytes_FromStringAndSize(data, length);
+    if (!result) {
+        return NULL;
+    }
+
+    Delta_Init(state);
+    tmp = (Byte *) PyBytes_AS_STRING(result);
+    Py_BEGIN_ALLOW_THREADS
+    Delta_Encode(state, delta, tmp, length);
+    Py_END_ALLOW_THREADS
+    return result;
+}
+
 PyMethodDef
 methods[] = {
     // exported functions
@@ -331,6 +371,7 @@ methods[] = {
     {"bcj2_decode", (PyCFunction)pylzma_bcj2_decode,   METH_VARARGS,   (char *)&doc_bcj2_decode},
     // Delta
     {"delta_decode", (PyCFunction)pylzma_delta_decode,   METH_VARARGS,   (char *)&doc_delta_decode},
+    {"delta_encode", (PyCFunction)pylzma_delta_encode,   METH_VARARGS,   (char *)&doc_delta_encode},
     {NULL, NULL},
 };
 

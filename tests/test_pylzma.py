@@ -245,6 +245,18 @@ class TestPyLZMA(unittest.TestCase):
         # prevent regression of github #10
         self.assertRaises(ValueError, pylzma.compress, bytes("foo", 'ascii'), dictionary=100)
 
+    def test_delta(self):
+        for i in range(8, 18):
+            size = 1 << i
+            original = generate_random(size)
+            delta = random.randint(1, 255)
+            encoded = pylzma.delta_encode(original, delta)
+            self.assertEqual(len(encoded), size)
+            self.assertNotEqual(md5(original).hexdigest(), md5(encoded).hexdigest())
+            result = pylzma.delta_decode(encoded, delta)
+            self.assertEqual(len(result), size)
+            self.assertEqual(md5(original).hexdigest(), md5(result).hexdigest())
+
 def suite():
     suite = unittest.TestSuite()
 
