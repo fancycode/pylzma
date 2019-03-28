@@ -629,7 +629,7 @@ class ArchiveFile(Base):
     
     def read(self):
         if not self.size:
-            return ''
+            return b''
         elif not self._folder.coders:
             raise TypeError("file has no coder informations")
         
