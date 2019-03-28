@@ -33,6 +33,7 @@ from zlib import crc32
 import zlib
 import bz2
 import os
+import stat
 import sys
 try:
     from io import BytesIO
@@ -666,9 +667,21 @@ class ArchiveFile(Base):
                 return True
         return False
 
+    def is_symlink(self):
+        if self._test_attribute(FILE_ATTRIBUTE_UNIX_EXTENSION):
+            st_mode = self.attributes  >> 16
+            return stat.S_ISLNK(st_mode)
+        return None
+
+    def is_socket(self):
+        if self._test_attribute(FILE_ATTRIBUTE_UNIX_EXTENSION):
+            st_mode = self.attributes  >> 16
+            return stat.S_ISSOCK(st_mode)
+        return None
+
     def get_file_attributes(self):
         """
-        :return: file attribute if exist, otherwise None
+        :return: Return file attribute
         """
         if not self._test_attribute(FILE_ATTRIBUTE_UNIX_EXTENSION):
             return self.attributes
@@ -677,12 +690,20 @@ class ArchiveFile(Base):
 
     def get_posix_mode(self):
         """
-        :return: Unix mode if exist, otherwise None
+        :return: Return file stat mode can be set by os.chmod()
         """
         if self._test_attribute(FILE_ATTRIBUTE_UNIX_EXTENSION):
             st_mode = self.attributes  >> 16
-            # XXX: is it need to mask lower 12bits?
-            return st_mode & 0b0000111111111111
+            return stat.S_IMODE(st_mode)
+        return None
+
+    def get_st_fmt(self):
+        """
+        :return: Return the portion of the file mode that describes the file type
+        """
+        if self._test_attribute(FILE_ATTRIBUTE_UNIX_EXTENSION):
+            st_mode = self.attributes  >> 16
+            return stat.S_IFMT(st_mode)
         return None
 
     def reset(self):

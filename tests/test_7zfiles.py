@@ -356,6 +356,27 @@ class Test7ZipFiles(unittest.TestCase):
         self.assertFalse(normal_f.is_sparse_file())
         self.assertFalse(normal_f.is_compressed())
 
+    def test_symlink(self):
+        fp = self._open_file(os.path.join(ROOT, 'data', 'symlink.7z'), 'rb')
+        archive = Archive7z(fp)
+        self.assertEqual(sorted(archive.getnames()), ['lib/libabc.so', 'lib/libabc.so.1', 'lib/libabc.so.1.2',
+                                                      'lib/libabc.so.1.2.3', 'lib64'])
+        # here is a symlinks as following
+        # lib/libabc.so -> lib/libabc.so.1
+        # lib/libabc.so.1 -> lib/libsbc.so.1.2
+        # lib/libabc.so.1.2 -> lib/libabc.so.1.2.3
+        # lib/libabc.so.1.2.3 is regular file.
+        # lib64 -> lib
+        lnk_dst = 'lib/libabc.so.1'
+        cf = archive.getmember(lnk_dst)
+        lnk_src = cf.read()
+        self.assertTrue(cf.is_symlink())  # py7zlib may have a public method to find symlink
+        self.assertEqual(lnk_src, b'libabc.so.1.2')
+        ## client may make symlink
+        # os.symlink(lnk_src, lnk_dst)
+        cf = archive.getmember('lib64')
+        self.assertTrue(cf.is_symlink())  # py7zlib may have a public method to find symlink
+        self.assertEqual(cf.read(), b'lib')  # symlink to directory
 
 def suite():
     suite = unittest.TestSuite()
