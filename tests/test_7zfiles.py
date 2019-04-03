@@ -225,6 +225,10 @@ class Test7ZipFiles(unittest.TestCase):
         # test loading of lzma compressed, filtered through bcj / SPARC
         self._test_archive('lzma_bcj_sparc.7z')
 
+    def test_ppmd(self):
+        # test loading of lzma compressed, filtered through bcj / SPARC
+        self._test_archive('ppmd.7z')
+
     def test_regress_1(self):
         # prevent regression bug #1 reported by mail
         fp = self._open_file(os.path.join(ROOT, 'data', 'regress_1.7z'), 'rb')

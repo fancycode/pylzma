@@ -31,6 +31,7 @@
 #include "../sdk/C/Bra.h"
 #include "../sdk/C/Bcj2.h"
 #include "../sdk/C/Delta.h"
+#include "../sdk/C/Ppmd7.h"
 
 #include "pylzma.h"
 #include "pylzma_compress.h"
@@ -45,6 +46,7 @@
 #include "pylzma_decompress_compat.h"
 #include "pylzma_decompressobj_compat.h"
 #endif
+#include "pylzma_streams.h"
 
 #if defined(WITH_THREAD) && !defined(PYLZMA_USE_GILSTATE)
 PyInterpreterState* _pylzma_interpreterState = NULL;
@@ -350,6 +352,137 @@ pylzma_delta_encode(PyObject *self, PyObject *args)
     return result;
 }
 
+const char
+doc_ppmd_decompress[] =
+    "ppmd_decompress(data, properties, outsize) -- Decompress PPMd stream.";
+
+typedef struct
+{
+    IByteIn vt;
+    const Byte *cur;
+    const Byte *end;
+    const Byte *begin;
+    UInt64 processed;
+    BoolInt extra;
+    SRes res;
+    const ILookInStream *inStream;
+} CByteInToLook;
+
+static Byte
+ReadByte(const IByteIn *pp) {
+    CByteInToLook *p = CONTAINER_FROM_VTBL(pp, CByteInToLook, vt);
+    if (p->cur != p->end) {
+        return *p->cur++;
+    }
+
+    if (p->res == SZ_OK) {
+        size_t size = p->cur - p->begin;
+        p->processed += size;
+        p->res = ILookInStream_Skip(p->inStream, size);
+        size = (1 << 25);
+        p->res = ILookInStream_Look(p->inStream, (const void **)&p->begin, &size);
+        p->cur = p->begin;
+        p->end = p->begin + size;
+        if (size != 0) {
+            return *p->cur++;;
+        }
+    }
+    p->extra = True;
+    return 0;
+}
+
+static PyObject *
+pylzma_ppmd_decompress(PyObject *self, PyObject *args)
+{
+    char *data;
+    PARSE_LENGTH_TYPE length;
+    char *props;
+    PARSE_LENGTH_TYPE propssize;
+    unsigned int outsize;
+    PyObject *result;
+    Byte *tmp;
+    unsigned order;
+    UInt32 memSize;
+    CPpmd7 ppmd;
+    CPpmd7z_RangeDec rc;
+    CByteInToLook s;
+    SRes res = SZ_OK;
+    CMemoryLookInStream stream;
+
+    if (!PyArg_ParseTuple(args, "s#s#I", &data, &length, &props, &propssize, &outsize)) {
+        return NULL;
+    }
+
+    if (propssize != 5) {
+        PyErr_Format(PyExc_TypeError, "properties must be exactly 5 bytes, got %ld", propssize);
+        return NULL;
+    }
+
+    order = props[0];
+    memSize = GetUi32(props + 1);
+    if (order < PPMD7_MIN_ORDER ||
+        order > PPMD7_MAX_ORDER ||
+        memSize < PPMD7_MIN_MEM_SIZE ||
+        memSize > PPMD7_MAX_MEM_SIZE) {
+        PyErr_SetString(PyExc_TypeError, "unsupporter compression properties");
+        return NULL;
+    }
+
+    if (!outsize) {
+        return PyBytes_FromString("");
+    }
+
+    Ppmd7_Construct(&ppmd);
+    if (!Ppmd7_Alloc(&ppmd, memSize, &allocator)) {
+        return PyErr_NoMemory();
+    }
+    Ppmd7_Init(&ppmd, order);
+
+    result = PyBytes_FromStringAndSize(NULL, outsize);
+    if (!result) {
+        return NULL;
+    }
+
+    CreateMemoryLookInStream(&stream, (Byte*) data, length);
+    tmp = (Byte *) PyBytes_AS_STRING(result);
+    Py_BEGIN_ALLOW_THREADS
+    Ppmd7z_RangeDec_CreateVTable(&rc);
+    s.vt.Read = ReadByte;
+    s.inStream = &stream.s;
+    s.begin = s.end = s.cur = NULL;
+    s.extra = False;
+    s.res = SZ_OK;
+    s.processed = 0;
+    rc.Stream = &s.vt;
+    if (!Ppmd7z_RangeDec_Init(&rc)) {
+        res = SZ_ERROR_DATA;
+    } else if (s.extra) {
+        res = (s.res != SZ_OK ? s.res : SZ_ERROR_DATA);
+    } else {
+        SizeT i;
+        for (i = 0; i < outsize; i++) {
+            int sym = Ppmd7_DecodeSymbol(&ppmd, &rc.vt);
+            if (s.extra || sym < 0) {
+                break;
+            }
+            tmp[i] = (Byte)sym;
+        }
+        if (i != outsize) {
+            res = (s.res != SZ_OK ? s.res : SZ_ERROR_DATA);
+        } else if (s.processed + (s.cur - s.begin) != length || !Ppmd7z_RangeDec_IsFinishedOK(&rc)) {
+            res = SZ_ERROR_DATA;
+        }
+    }
+    Py_END_ALLOW_THREADS
+    Ppmd7_Free(&ppmd, &allocator);
+    if (res != SZ_OK) {
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_TypeError, "error during decompression");
+        result = NULL;
+    }
+    return result;
+}
+
 PyMethodDef
 methods[] = {
     // exported functions
@@ -372,6 +505,8 @@ methods[] = {
     // Delta
     {"delta_decode", (PyCFunction)pylzma_delta_decode,   METH_VARARGS,   (char *)&doc_delta_decode},
     {"delta_encode", (PyCFunction)pylzma_delta_encode,   METH_VARARGS,   (char *)&doc_delta_encode},
+    // PPMd
+    {"ppmd_decompress", (PyCFunction)pylzma_ppmd_decompress,   METH_VARARGS,   (char *)&doc_ppmd_decompress},
     {NULL, NULL},
 };
 

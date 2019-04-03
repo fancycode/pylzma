@@ -164,6 +164,8 @@ lzma_files = (
     'src/sdk/C/Lzma2Dec.c',
     'src/sdk/C/Lzma2Enc.c',
     'src/sdk/C/Sha256.c',
+    'src/sdk/C/Ppmd7.c',
+    'src/sdk/C/Ppmd7Dec.c',
 )
 if ENABLE_COMPATIBILITY:
     c_files += (

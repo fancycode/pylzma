@@ -149,6 +149,7 @@ COMPRESSION_METHOD_BCJ_ARM       = unhexlify('03030501')  # '\x03\x03\x05\x01'
 COMPRESSION_METHOD_BCJ_ARMT      = unhexlify('03030701')  # '\x03\x03\x07\x01'
 COMPRESSION_METHOD_BCJ_SPARC     = unhexlify('03030805')  # '\x03\x03\x08\x05'
 COMPRESSION_METHOD_BCJ2          = unhexlify('0303011B')  # '\x03\x03\x01\x1B'
+COMPRESSION_METHOD_PPMD          = unhexlify('030401')  # '\x03\x03\x01'
 
 FILE_ATTRIBUTE_DIRECTORY = 0x10
 FILE_ATTRIBUTE_READONLY = 0x01
@@ -619,6 +620,7 @@ class ArchiveFile(Base):
             COMPRESSION_METHOD_BCJ_ARMT: '_read_bcj_armt',
             COMPRESSION_METHOD_BCJ_SPARC: '_read_bcj_sparc',
             COMPRESSION_METHOD_BCJ2: '_read_bcj2',
+            COMPRESSION_METHOD_PPMD: '_read_ppmd',
         }
 
     def _is_encrypted(self):
@@ -861,6 +863,15 @@ class ArchiveFile(Base):
         data = pylzma.bcj_sparc_convert(input)
         return data[self._start:self._start+size]
 
+    def _read_ppmd(self, coder, input, level, num_coders):
+        size = self._uncompressed[level]
+        if not input:
+            self._file.seek(self._src_start)
+            input = self._file.read(self.compressed)
+        total_out = sum(self._unpacksizes)
+        data = pylzma.ppmd_decompress(input, coder['properties'], total_out)
+        return data[self._start:self._start+size]
+
     def checkcrc(self):
         if self.digest is None:
             return True
@@ -998,11 +1009,13 @@ class Archive7z(Base):
                 for coder in folder.coders:
                     numinstreams = max(numinstreams, coder.get('numinstreams', 1))
                 info['_packsizes'] = packinfo.packsizes[instreamindex:instreamindex+numinstreams]
+                info['_unpacksizes'] = unpacksizes
                 streamidx += 1
             else:
                 info['compressed'] = 0
                 info['_uncompressed'] = [0]
                 info['_packsizes'] = [0]
+                info['_unpacksizes'] = [0]
                 folder = None
                 maxsize = 0
                 numinstreams = 1

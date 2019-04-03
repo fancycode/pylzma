@@ -64,4 +64,14 @@ typedef struct
 void CreateMemoryOutStream(CMemoryOutStream *stream);
 void MemoryOutStreamDiscard(CMemoryOutStream *stream, size_t size);
 
+typedef struct
+{
+    ILookInStream s;
+    Byte *data;
+    size_t size;
+    size_t avail;
+} CMemoryLookInStream;
+
+void CreateMemoryLookInStream(CMemoryLookInStream *stream, Byte *data, size_t size);
+
 #endif

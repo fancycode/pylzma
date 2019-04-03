@@ -177,3 +177,63 @@ MemoryOutStreamDiscard(CMemoryOutStream *stream, size_t size)
         stream->size -= size;
     }
 }
+
+static SRes
+MemoryLookInStream_Read(const ILookInStream *p, void *buf, size_t *size)
+{
+    CMemoryLookInStream *self = (CMemoryLookInStream *) p;
+    size_t toread = *size;
+    if (toread > self->avail) {
+        toread = self->avail;
+    }
+    memcpy(buf, self->data, toread);
+    self->data += toread;
+    self->avail -= toread;
+    *size = toread;
+    return SZ_OK;
+}
+
+static SRes
+MemoryLookInStream_Look(const ILookInStream *p, const void **buf, size_t *size)
+{
+    CMemoryLookInStream *self = (CMemoryLookInStream *) p;
+    size_t toread = *size;
+    if (toread > self->avail) {
+        toread = self->avail;
+    }
+    *buf = self->data;
+    *size = toread;
+    return SZ_OK;
+}
+
+static SRes
+MemoryLookInStream_Skip(const ILookInStream *p, size_t offset)
+{
+    CMemoryLookInStream *self = (CMemoryLookInStream *) p;
+    size_t toread = offset;
+    if (toread > self->avail) {
+        toread = self->avail;
+    }
+    self->data += toread;
+    self->avail -= toread;
+    return SZ_OK;
+}
+
+static SRes
+MemoryLookInStream_Seek(const ILookInStream *p, Int64 *pos, ESzSeek origin)
+{
+    CMemoryLookInStream *self = (CMemoryLookInStream *) p;
+    printf("XXX\n");
+    return SZ_ERROR_UNSUPPORTED;
+}
+
+void
+CreateMemoryLookInStream(CMemoryLookInStream *stream, Byte *data, size_t size)
+{
+    stream->s.Read = MemoryLookInStream_Read;
+    stream->s.Look = MemoryLookInStream_Look;
+    stream->s.Skip = MemoryLookInStream_Skip;
+    stream->s.Seek = MemoryLookInStream_Seek;
+    stream->data = data;
+    stream->avail = size;
+}
