@@ -270,7 +270,7 @@ class PackInfo(Base):
             id = file.read(1)
             
             if id == PROPERTY_CRC:
-                self.crcs = [self._read64Bit(file) for x in xrange(self.numstreams)]
+                digests = UnpackDigests(file, self.numstreams)
                 id = file.read(1)
             
         if id != PROPERTY_END:
