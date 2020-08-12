@@ -1068,7 +1068,7 @@ class Archive7z(Base):
             
         for f in self.files:
             extra = (f.compressed and '%10d ' % (f.compressed)) or ' '
-            file.write('%10d%s%.8x %s\n' % (f.size, extra, f.digest, f.filename))
+            file.write('%10d%s%.8x %s\n' % (f.size, extra, f.digest or 0, f.filename))
             
 if __name__ == '__main__':
     f = Archive7z(open('test.7z', 'rb'))
