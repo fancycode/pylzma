@@ -232,8 +232,12 @@ class Base(object):
                 value = (bytes and reduce(lambda x, y: x << 8 | y, bytes)) or 0
                 highpart = b & (mask - 1)
                 return value + (highpart << (i * 8))
-            
             mask >>= 1
+
+        bytes = array('B', file.read(8))
+        bytes.reverse()
+        value = (bytes and reduce(lambda x, y: x << 8 | y, bytes)) or 0
+        return value
 
     def _readBoolean(self, file, count, checkall=0):
         if checkall:
