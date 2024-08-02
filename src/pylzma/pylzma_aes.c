@@ -150,42 +150,40 @@ aesdecrypt_methods[] = {
 
 PyTypeObject
 CAESDecrypt_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "pylzma.AESDecrypt",                 /* char *tp_name; */
-    sizeof(CAESDecryptObject),           /* int tp_basicsize; */
-    0,                                   /* int tp_itemsize;       // not used much */
-    NULL,                                /* destructor tp_dealloc; */
-    NULL,                                /* printfunc  tp_print;   */
-    NULL,                                /* getattrfunc  tp_getattr; // __getattr__ */
-    NULL,                                /* setattrfunc  tp_setattr;  // __setattr__ */
-    NULL,                                /* cmpfunc  tp_compare;  // __cmp__ */
-    NULL,                                /* reprfunc  tp_repr;    // __repr__ */
-    NULL,                                /* PyNumberMethods *tp_as_number; */
-    NULL,                                /* PySequenceMethods *tp_as_sequence; */
-    NULL,                                /* PyMappingMethods *tp_as_mapping; */
-    NULL,                                /* hashfunc tp_hash;     // __hash__ */
-    NULL,                                /* ternaryfunc tp_call;  // __call__ */
-    NULL,                                /* reprfunc tp_str;      // __str__ */
-    0,                                   /* tp_getattro*/
-    0,                                   /* tp_setattro*/
-    0,                                   /* tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,  /*tp_flags*/
-    "AES decryption class",                 /* tp_doc */
-    0,                                   /* tp_traverse */
-    0,                                   /* tp_clear */
-    0,                                   /* tp_richcompare */
-    0,                                   /* tp_weaklistoffset */
-    0,                                   /* tp_iter */
-    0,                                   /* tp_iternext */
-    aesdecrypt_methods,                  /* tp_methods */
-    0,                                   /* tp_members */
-    0,                                   /* tp_getset */
-    0,                                   /* tp_base */
-    0,                                   /* tp_dict */
-    0,                                   /* tp_descr_get */
-    0,                                   /* tp_descr_set */
-    0,                                   /* tp_dictoffset */
-    (initproc)aesdecrypt_init,           /* tp_init */
-    0,                                   /* tp_alloc */
-    0,                                   /* tp_new */
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "pylzma.AESDecrypt",                 /* char *tp_name; */
+    .tp_basicsize = sizeof(CAESDecryptObject),           /* int tp_basicsize; */
+    .tp_itemsize = 0,                                   /* int tp_itemsize;       // not used much */
+    .tp_dealloc = NULL,                                /* destructor tp_dealloc; */
+    .tp_getattr = NULL,                                /* getattrfunc  tp_getattr; // __getattr__ */
+    .tp_setattr = NULL,                                /* setattrfunc  tp_setattr;  // __setattr__ */
+    .tp_repr = NULL,                                /* reprfunc  tp_repr;    // __repr__ */
+    .tp_as_number = NULL,                                /* PyNumberMethods *tp_as_number; */
+    .tp_as_sequence = NULL,                                /* PySequenceMethods *tp_as_sequence; */
+    .tp_as_mapping = NULL,                                /* PyMappingMethods *tp_as_mapping; */
+    .tp_hash = NULL,                                /* hashfunc tp_hash;     // __hash__ */
+    .tp_call = NULL,                                /* ternaryfunc tp_call;  // __call__ */
+    .tp_str = NULL,                                /* reprfunc tp_str;      // __str__ */
+    .tp_getattro = 0,                                   /* tp_getattro*/
+    .tp_setattro = 0,                                   /* tp_setattro*/
+    .tp_as_buffer = 0,                                   /* tp_as_buffer*/
+    .tp_flags = Py_TPFLAGS_DEFAULT,  /*tp_flags*/
+    .tp_doc = "AES decryption class",                 /* tp_doc */
+    .tp_traverse = 0,                                   /* tp_traverse */
+    .tp_clear = 0,                                   /* tp_clear */
+    .tp_richcompare = 0,                                   /* tp_richcompare */
+    .tp_weaklistoffset = 0,                                   /* tp_weaklistoffset */
+    .tp_iter = 0,                                   /* tp_iter */
+    .tp_iternext = 0,                                   /* tp_iternext */
+    .tp_methods = aesdecrypt_methods,                  /* tp_methods */
+    .tp_members = 0,                                   /* tp_members */
+    .tp_getset = 0,                                   /* tp_getset */
+    .tp_base = 0,                                   /* tp_base */
+    .tp_dict = 0,                                   /* tp_dict */
+    .tp_descr_get = 0,                                   /* tp_descr_get */
+    .tp_descr_set = 0,                                   /* tp_descr_set */
+    .tp_dictoffset = 0,                                   /* tp_dictoffset */
+    .tp_init = (initproc)aesdecrypt_init,           /* tp_init */
+    .tp_alloc = 0,                                   /* tp_alloc */
+    .tp_new = 0,                                   /* tp_new */
 };
