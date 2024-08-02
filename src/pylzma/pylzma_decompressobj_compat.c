@@ -197,44 +197,42 @@ PyMemberDef pylzma_decomp_compat_members[] = {
 };
 
 PyTypeObject CompatDecompressionObject_Type = {
-  PyVarObject_HEAD_INIT(NULL, 0)
-  "LZMACompatDecompress",              /* char *tp_name; */
-  sizeof(CCompatDecompressionObject),  /* int tp_basicsize; */
-  0,                                   /* int tp_itemsize;       // not used much */
-  (destructor)pylzma_decomp_dealloc,   /* destructor tp_dealloc; */
-  NULL,                                /* printfunc  tp_print;   */
-  NULL,                                /* getattrfunc  tp_getattr; // __getattr__ */
-  NULL,                                /* setattrfunc  tp_setattr;  // __setattr__ */
-  NULL,                                /* cmpfunc  tp_compare;  // __cmp__ */
-  NULL,                                /* reprfunc  tp_repr;    // __repr__ */
-  NULL,                                /* PyNumberMethods *tp_as_number; */
-  NULL,                                /* PySequenceMethods *tp_as_sequence; */
-  NULL,                                /* PyMappingMethods *tp_as_mapping; */
-  NULL,                                /* hashfunc tp_hash;     // __hash__ */
-  NULL,                                /* ternaryfunc tp_call;  // __call__ */
-  NULL,                                /* reprfunc tp_str;      // __str__ */
-  NULL,                                /* tp_getattro*/
-  NULL,                                /* tp_setattro*/
-  NULL,                                /* tp_as_buffer*/
-  Py_TPFLAGS_DEFAULT,                  /* tp_flags*/
-  "Compat decompression class",        /* tp_doc */
-  NULL,                                /* tp_traverse */
-  NULL,                                /* tp_clear */
-  NULL,                                /* tp_richcompare */
-  0,                                   /* tp_weaklistoffset */
-  NULL,                                /* tp_iter */
-  NULL,                                /* tp_iternext */
-  pylzma_decomp_compat_methods,        /* tp_methods */
-  pylzma_decomp_compat_members,        /* tp_members */
-  NULL,                                /* tp_getset */
-  NULL,                                /* tp_base */
-  NULL,                                /* tp_dict */
-  NULL,                                /* tp_descr_get */
-  NULL,                                /* tp_descr_set */
-  0,                                   /* tp_dictoffset */
-  NULL,                                /* tp_init */
-  NULL,                                /* tp_alloc */
-  NULL,                                /* tp_new */
+  .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
+  .tp_name = "LZMACompatDecompress",              /* char *tp_name; */
+  .tp_basicsize = sizeof(CCompatDecompressionObject),  /* int tp_basicsize; */
+  .tp_itemsize = 0,                                   /* int tp_itemsize;       // not used much */
+  .tp_dealloc = (destructor)pylzma_decomp_dealloc,   /* destructor tp_dealloc; */
+  .tp_getattr = NULL,                                /* getattrfunc  tp_getattr; // __getattr__ */
+  .tp_setattr = NULL,                                /* setattrfunc  tp_setattr;  // __setattr__ */
+  .tp_repr = NULL,                                /* reprfunc  tp_repr;    // __repr__ */
+  .tp_as_number = NULL,                                /* PyNumberMethods *tp_as_number; */
+  .tp_as_sequence = NULL,                                /* PySequenceMethods *tp_as_sequence; */
+  .tp_as_mapping = NULL,                                /* PyMappingMethods *tp_as_mapping; */
+  .tp_hash = NULL,                                /* hashfunc tp_hash;     // __hash__ */
+  .tp_call = NULL,                                /* ternaryfunc tp_call;  // __call__ */
+  .tp_str = NULL,                                /* reprfunc tp_str;      // __str__ */
+  .tp_getattro = NULL,                                /* tp_getattro*/
+  .tp_setattro = NULL,                                /* tp_setattro*/
+  .tp_as_buffer = NULL,                                /* tp_as_buffer*/
+  .tp_flags = Py_TPFLAGS_DEFAULT,                  /* tp_flags*/
+  .tp_doc = "Compat decompression class",        /* tp_doc */
+  .tp_traverse = NULL,                                /* tp_traverse */
+  .tp_clear = NULL,                                /* tp_clear */
+  .tp_richcompare = NULL,                                /* tp_richcompare */
+  .tp_weaklistoffset = 0,                                   /* tp_weaklistoffset */
+  .tp_iter = NULL,                                /* tp_iter */
+  .tp_iternext = NULL,                                /* tp_iternext */
+  .tp_methods = pylzma_decomp_compat_methods,        /* tp_methods */
+  .tp_members = pylzma_decomp_compat_members,        /* tp_members */
+  .tp_getset = NULL,                                /* tp_getset */
+  .tp_base = NULL,                                /* tp_base */
+  .tp_dict = NULL,                                /* tp_dict */
+  .tp_descr_get = NULL,                                /* tp_descr_get */
+  .tp_descr_set = NULL,                                /* tp_descr_set */
+  .tp_dictoffset = 0,                                   /* tp_dictoffset */
+  .tp_init = NULL,                                /* tp_init */
+  .tp_alloc = NULL,                                /* tp_alloc */
+  .tp_new = NULL,                                /* tp_new */
 };
 
 const char doc_decompressobj_compat[] = \
