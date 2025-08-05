@@ -1,0 +1,90 @@
+name: test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+permissions:
+  contents: read
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install test dependencies
+        run: ./scripts/ci-install.sh
+
+      - name: Upload test dependencies
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-dependencies
+          path: tests/data/ux.stackexchange.com.7z
+          if-no-files-found: error
+          compression-level: 0
+
+  python2:
+    needs: download
+
+    runs-on: ubuntu-latest
+    container:
+      image: python:2.7.18-buster
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "2.7"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build module
+        run: python setup.py build
+
+      - name: Download test dependencies
+        uses: actions/download-artifact@v4
+        with:
+          name: test-dependencies
+          path: tests/data
+
+      - name: Run tests
+        run: python setup.py test
+
+  python3:
+    needs: download
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Build module
+        run: python setup.py build
+
+      - name: Download test dependencies
+        uses: actions/download-artifact@v4
+        with:
+          name: test-dependencies
+          path: tests/data
+
+      - name: Run tests
+        run: python setup.py test
