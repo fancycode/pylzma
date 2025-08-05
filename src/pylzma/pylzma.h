@@ -104,6 +104,13 @@ PyInterpreterState* _pylzma_interpreterState;
 #define PARSE_LENGTH_FORMAT "%d"
 #endif
 
+// Handle tp_print -> tp_vectorcall_offset change in Python 3.8+
+#if PY_VERSION_HEX >= 0x03080000
+#define PYLZMA_TP_PRINT 0
+#else
+#define PYLZMA_TP_PRINT NULL
+#endif
+
 extern ISzAlloc allocator;
 
 #endif

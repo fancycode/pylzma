@@ -231,7 +231,7 @@ CCompressionFileObject_Type = {
     sizeof(CCompressionFileObject),      /* int tp_basicsize; */
     0,                                   /* int tp_itemsize;       // not used much */
     (destructor)pylzma_compfile_dealloc, /* destructor tp_dealloc; */
-    NULL,                                /* printfunc  tp_print;   */
+    PYLZMA_TP_PRINT,                     /* printfunc  tp_print;   */
     NULL,                                /* getattrfunc  tp_getattr; // __getattr__ */
     NULL,                                /* setattrfunc  tp_setattr;  // __setattr__ */
     NULL,                                /* cmpfunc  tp_compare;  // __cmp__ */
