@@ -24,8 +24,8 @@
 #
 import sys, os
 from warnings import warn
-from distutils import log
-from distutils.command.build_ext import build_ext as _build_ext
+from setuptools._distutils import log
+from setuptools.command.build_ext import build_ext as _build_ext
 from version import get_git_version
 
 try:
@@ -88,14 +88,6 @@ mt_platforms = (
     'win32',
 )
 
-if IS_WINDOWS:
-    # don't try to import MSVC compiler on non-windows platforms
-    # as this triggers unnecessary warnings
-    from distutils.msvccompiler import MSVCCompiler
-else:
-    class MSVCCompiler(object):
-        # dummy marker class
-        pass
 
 class build_ext(_build_ext):
 
@@ -119,7 +111,7 @@ please contact mail@joachim-bauch.de for more informations.""" % (sys.platform),
         else:
             ext.define_macros.append(('_7ZIP_ST', 1))
 
-        if isinstance(self.compiler, MSVCCompiler):
+        if getattr(self.compiler, "compiler_type", "") == "msvc":
             # set flags only available when using MSVC
             ext.extra_link_args.append('/MANIFEST')
             if COMPILE_DEBUG:
@@ -152,20 +144,16 @@ macros = [
 lzma_files = (
     'src/sdk/C/Aes.c',
     'src/sdk/C/AesOpt.c',
-    'src/sdk/C/Bcj2.c',
     'src/sdk/C/Bra.c',
     'src/sdk/C/Bra86.c',
     'src/sdk/C/BraIA64.c',
     'src/sdk/C/CpuArch.c',
-    'src/sdk/C/Delta.c',
     'src/sdk/C/LzFind.c',
     'src/sdk/C/LzmaDec.c',
     'src/sdk/C/LzmaEnc.c',
     'src/sdk/C/Lzma2Dec.c',
     'src/sdk/C/Lzma2Enc.c',
     'src/sdk/C/Sha256.c',
-    'src/sdk/C/Ppmd7.c',
-    'src/sdk/C/Ppmd7Dec.c',
 )
 if ENABLE_COMPATIBILITY:
     c_files += (
