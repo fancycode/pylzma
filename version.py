@@ -43,13 +43,13 @@ except ImportError:
 def call_git_describe(abbrev=4):
     try:
         p = Popen(['git', 'describe', '--abbrev=%d' % abbrev],
-                  stdout=PIPE, stderr=PIPE)
+                  stdout=PIPE, stderr=PIPE, text=True)
         p.stderr.close()
         line = p.stdout.readlines()[0]
         version = line.strip()
         if version[:1] == 'v':
             version = version[1:]
-        return version
+        return version.replace('-g', '+g')
 
     except:
         return None
