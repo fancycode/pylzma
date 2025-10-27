@@ -7,6 +7,10 @@ environment:
     - PYTHON: "C:\\Python35"
     - PYTHON: "C:\\Python36"
     - PYTHON: "C:\\Python37"
+    - PYTHON: "C:\\Python312"
+      image: Visual Studio 2022
+    - PYTHON: "C:\\Python313"
+      image: Visual Studio 2022
     - PYTHON: "C:\\Python26-x64"
     - PYTHON: "C:\\Python27-x64"
     - PYTHON: "C:\\Python33-x64"
@@ -16,6 +20,10 @@ environment:
     - PYTHON: "C:\\Python35-x64"
     - PYTHON: "C:\\Python36-x64"
     - PYTHON: "C:\\Python37-x64"
+    - PYTHON: "C:\\Python312-x64"
+      image: Visual Studio 2022
+    - PYTHON: "C:\\Python313-x64"
+      image: Visual Studio 2022
 
 build: off
 
