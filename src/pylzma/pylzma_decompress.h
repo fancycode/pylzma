@@ -29,6 +29,6 @@
 #include <Python.h>
 
 extern const char doc_decompress[];
-PyObject *pylzma_decompress(PyObject *self, PyObject *args);
+PyObject *pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs);
 
 #endif
