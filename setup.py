@@ -91,7 +91,10 @@ mt_platforms = (
 if IS_WINDOWS:
     # don't try to import MSVC compiler on non-windows platforms
     # as this triggers unnecessary warnings
-    from distutils.msvccompiler import MSVCCompiler
+    try:
+        from distutils._msvccompiler import MSVCCompiler
+    except:
+        from distutils.msvccompiler import MSVCCompiler
 else:
     class MSVCCompiler(object):
         # dummy marker class
