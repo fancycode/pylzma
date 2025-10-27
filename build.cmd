@@ -18,4 +18,9 @@ IF "%DISTUTILS_USE_SDK%"=="1" (
     ECHO Using default MSVC build environment
 )
 
+IF "%INSTALL_SETUPTOOLS%"=="1" (
+    ECHO Installing setuptools
+    %PYTHON%\\python.exe -m pip install "setuptools<72"
+)
+
 CALL %*
