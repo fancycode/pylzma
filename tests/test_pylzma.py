@@ -51,7 +51,7 @@ def generate_random(size, choice=random.choice, ALL_CHARS=ALL_CHARS):
     return s
 
 class TestPyLZMA(unittest.TestCase):
-    
+
     def setUp(self):
         self.plain = bytes('hello, this is a test string', 'ascii')
         self.plain_with_eos = unhexlify('5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c127731a214ff7031c000')
@@ -64,17 +64,17 @@ class TestPyLZMA(unittest.TestCase):
         # test compression with end of stream marker
         compressed = pylzma.compress(self.plain, eos=1)
         self.assertEqual(compressed, self.plain_with_eos)
-    
+
     def test_compression_no_eos(self):
         # test compression without end of stream marker
         compressed = pylzma.compress(self.plain, eos=0)
         self.assertEqual(compressed, self.plain_without_eos)
-        
+
     def test_decompression_eos(self):
         # test decompression with the end of stream marker
         decompressed = pylzma.decompress(self.plain_with_eos)
         self.assertEqual(decompressed, self.plain)
-        
+
     def test_decompression_noeos(self):
         # test decompression without the end of stream marker
         decompressed = pylzma.decompress(self.plain_without_eos, maxlength=28)
@@ -109,7 +109,7 @@ class TestPyLZMA(unittest.TestCase):
         data = decompress.decompress(self.plain_with_eos)
         data += decompress.flush()
         self.assertEqual(data, self.plain)
-    
+
     def test_decompression_stream_two(self):
         # test decompression in two steps
         decompress = pylzma.decompressobj()
@@ -187,7 +187,7 @@ class TestPyLZMA(unittest.TestCase):
         self.assertEqual(check, self.plain)
 
     if sys.version_info[:2] < (3, 0):
-        
+
         def test_compression_file_python(self):
             # test compressing from file-like object (Python class)
             from StringIO import StringIO as PyStringIO
@@ -265,7 +265,7 @@ def suite():
     ]
 
     for tc in test_cases:
-        suite.addTest(unittest.makeSuite(tc))
+        suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(tc))
 
     return suite
 

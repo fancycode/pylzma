@@ -39,6 +39,12 @@ except ImportError:
     import warnings
     warnings.warn("Can't import subprocess module, git version will not be available.")
 
+try:
+    bytes
+except NameError:
+    # Python 3
+    class bytes(object):
+        pass
 
 def call_git_describe(abbrev=4):
     try:
@@ -47,8 +53,14 @@ def call_git_describe(abbrev=4):
         p.stderr.close()
         line = p.stdout.readlines()[0]
         version = line.strip()
+        if isinstance(version, bytes):
+            version = version.decode('utf-8')
         if version[:1] == 'v':
             version = version[1:]
+        pos = version.find('-g')
+        if pos != -1:
+            version = version[:pos]
+        version = version.replace('-', '.post')
         return version
 
     except:

@@ -9,16 +9,16 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * $Id$
  *
  */
@@ -75,19 +75,19 @@ pylzma_calculate_key(PyObject *self, PyObject *args, PyObject *kwargs)
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#i|Os", kwlist, &password, &pwlen, &cycles, &pysalt, &digest))
         return NULL;
-    
+
     if (pysalt == Py_None) {
         pysalt = NULL;
     } else if (!PyBytes_Check(pysalt)) {
         PyErr_Format(PyExc_TypeError, "salt must be a string, got a %s", pysalt->ob_type->tp_name);
         return NULL;
     }
-    
+
     if (strcmp(digest, "sha256") != 0) {
         PyErr_Format(PyExc_TypeError, "digest %s is unsupported", digest);
         return NULL;
     }
-    
+
     if (pysalt != NULL) {
         salt = PyBytes_AS_STRING(pysalt);
         saltlen = PyBytes_Size(pysalt);
@@ -95,7 +95,7 @@ pylzma_calculate_key(PyObject *self, PyObject *args, PyObject *kwargs)
         salt = NULL;
         saltlen = 0;
     }
-    
+
     if (cycles == 0x3f) {
         int pos;
         int i;
@@ -124,7 +124,7 @@ pylzma_calculate_key(PyObject *self, PyObject *args, PyObject *kwargs)
         Sha256_Final(&sha, (Byte *) &key);
         Py_END_ALLOW_THREADS
     }
-    
+
     return PyBytes_FromStringAndSize(key, 32);
 }
 
@@ -139,15 +139,15 @@ pylzma_bcj_x86_convert(PyObject *self, PyObject *args)
     PARSE_LENGTH_TYPE length;
     int encoding=0;
     PyObject *result;
-    
+
     if (!PyArg_ParseTuple(args, "s#|i", &data, &length, &encoding)) {
         return NULL;
     }
-    
+
     if (!length) {
         return PyBytes_FromString("");
     }
-    
+
     result = PyBytes_FromStringAndSize(data, length);
     if (result != NULL) {
         UInt32 state;
@@ -156,7 +156,7 @@ pylzma_bcj_x86_convert(PyObject *self, PyObject *args)
         x86_Convert((Byte *) PyBytes_AS_STRING(result), length, 0, &state, encoding);
         Py_END_ALLOW_THREADS
     }
-    
+
     return result;
 }
 
@@ -564,7 +564,7 @@ initpylzma(void)
 #if 0
     Py_INCREF(&CCompressionObject_Type);
     PyModule_AddObject(m, "compressobj", (PyObject *)&CCompressionObject_Type);
-#endif   
+#endif
     Py_INCREF(&CCompressionFileObject_Type);
     PyModule_AddObject(m, "compressfile", (PyObject *)&CCompressionFileObject_Type);
 
@@ -589,7 +589,9 @@ initpylzma(void)
     pylzma_init_compfile();
 
 #if defined(WITH_THREAD)
+#if PY_VERSION_HEX < 0x03090000
     PyEval_InitThreads();
+#endif
 
 #if !defined(PYLZMA_USE_GILSTATE)
     /* Save the current interpreter, so compressing file objects works. */

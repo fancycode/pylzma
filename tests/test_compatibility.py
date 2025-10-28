@@ -51,12 +51,12 @@ def generate_random(size, choice=random.choice, ALL_CHARS=ALL_CHARS):
     return s
 
 class TestPyLZMACompability(unittest.TestCase):
-    
+
     def setUp(self):
         self.plain = bytes('hello, this is a test string', 'ascii')
         self.plain_with_eos = unhexlify('5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c127731a214ff7031c000')
         self.plain_without_eos = unhexlify('5d0000800000341949ee8def8c6b64909b1386e370bebeb1b656f5736d653c115edbe9')
-        
+
     def test_decompression_noeos(self):
         # test decompression without the end of stream marker
         decompressed = pylzma.decompress_compat(self.plain_without_eos)
@@ -83,7 +83,7 @@ def suite():
     ]
 
     for tc in test_cases:
-        suite.addTest(unittest.makeSuite(tc))
+        suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(tc))
 
     return suite
 

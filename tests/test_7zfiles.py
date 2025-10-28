@@ -48,7 +48,7 @@ except NameError:
 if sys.version_info[:2] < (3, 0):
     def bytes(s, encoding):
         return s
-    
+
     def unicode_string(s):
         return s.decode('latin-1')
 else:
@@ -122,7 +122,7 @@ class Test7ZipFiles(unittest.TestCase):
         self.assertEqual(cf.read(), bytes('This file contains a german umlaut in the filename.', 'ascii'))
         cf.reset()
         self.assertEqual(cf.read(), bytes('This file contains a german umlaut in the filename.', 'ascii'))
-        
+
     def test_non_solid_umlaut(self):
         # test loading of a non-solid archive containing files with umlauts
         self._test_umlaut_archive('umlaut-non_solid.7z')
@@ -350,7 +350,7 @@ def suite():
     ]
 
     for tc in test_cases:
-        suite.addTest(unittest.makeSuite(tc))
+        suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(tc))
 
     return suite
 
