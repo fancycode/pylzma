@@ -24,17 +24,19 @@
 #
 import sys, os
 from warnings import warn
-from distutils import log
-from distutils.command.build_ext import build_ext as _build_ext
-from version import get_git_version
+try:
+    from distutils import log
+except ImportError:
+    from setuptools._distutils import log
 
 try:
-    from setuptools import setup, Extension
+    from distutils.command.build_ext import build_ext as _build_ext
 except ImportError:
-    from ez_setup import use_setuptools
-    use_setuptools()
+    from setuptools.command.build_ext import build_ext as _build_ext
 
-    from setuptools import setup, Extension
+from version import get_git_version
+
+from setuptools import setup, Extension
 
 class UnsupportedPlatformWarning(Warning):
     pass
@@ -91,7 +93,12 @@ mt_platforms = (
 if IS_WINDOWS:
     # don't try to import MSVC compiler on non-windows platforms
     # as this triggers unnecessary warnings
-    from distutils.msvccompiler import MSVCCompiler
+    try:
+        from distutils.msvccompiler import MSVCCompiler
+    except ImportError:
+        class MSVCCompiler(object):
+            # dummy marker class
+            pass
 else:
     class MSVCCompiler(object):
         # dummy marker class
@@ -119,7 +126,7 @@ please contact mail@joachim-bauch.de for more informations.""" % (sys.platform),
         else:
             ext.define_macros.append(('_7ZIP_ST', 1))
 
-        if isinstance(self.compiler, MSVCCompiler):
+        if isinstance(self.compiler, MSVCCompiler) or getattr(self.compiler, 'compiler_type', '') == 'msvc':
             # set flags only available when using MSVC
             ext.extra_link_args.append('/MANIFEST')
             if COMPILE_DEBUG:
