@@ -140,7 +140,7 @@ int LZMACALL lzmaCompatDecode(lzma_stream *s)
 {
   UInt32 bound;
   UInt32 pos;
-  
+
   /* restore decoder state */
   lzma_stream _s = *s;
 
@@ -240,7 +240,7 @@ int LZMACALL lzmaCompatDecode(lzma_stream *s)
       while (numProbs--)
         p[numProbs] = kBitModelTotal >> 1;
 
-      
+
       //for (i = 0, newDictionarySize = 0; i < 4; i++)
       for (i = 0, _s.temp3 = 0; i < 4; i++)
       {
@@ -306,7 +306,7 @@ int LZMACALL lzmaCompatDecode(lzma_stream *s)
             }
           }
           while (symbol < 0x100);
-          previousByte = symbol;
+          previousByte = (Byte)symbol;
         }
         isPreviousMatch = 0;
       }
@@ -319,7 +319,7 @@ int LZMACALL lzmaCompatDecode(lzma_stream *s)
           RC_GET_BIT(LZMA_C_LITD, prob, symbol)
         }
         while (symbol < 0x100);
-        previousByte = symbol;
+        previousByte = (Byte)symbol;
       }
       NEED_OUT(LZMA_C_OUTPUT_1);
       PUT_BYTE(previousByte);
