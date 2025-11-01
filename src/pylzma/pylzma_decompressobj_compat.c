@@ -9,16 +9,16 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * $Id$
  *
  */
@@ -39,11 +39,11 @@ static PyObject *pylzma_decomp_decompress(CCompatDecompressionObject *self, PyOb
     PyObject *result=NULL;
     char *data;
     PARSE_LENGTH_TYPE length, old_length;
-    PY_LONG_LONG start_total_out;
+    UInt32 start_total_out;
     int res;
-    PY_LONG_LONG max_length=BLOCK_SIZE;
-    
-    if (!PyArg_ParseTuple(args, "s#|L", &data, &length, &max_length))
+    Py_ssize_t max_length=BLOCK_SIZE;
+
+    if (!PyArg_ParseTuple(args, "s#|n", &data, &length, &max_length))
         return NULL;
 
     if (max_length < 0)
@@ -51,7 +51,7 @@ static PyObject *pylzma_decomp_decompress(CCompatDecompressionObject *self, PyOb
         PyErr_SetString(PyExc_ValueError, "bufsize must be greater than zero");
         return NULL;
     }
-    
+
     start_total_out = self->stream.totalOut;
     if (self->unconsumed_length > 0) {
         self->unconsumed_tail = (char *)realloc(self->unconsumed_tail, self->unconsumed_length + length);
@@ -59,43 +59,43 @@ static PyObject *pylzma_decomp_decompress(CCompatDecompressionObject *self, PyOb
         memcpy(self->stream.next_in + self->unconsumed_length, data, length);
     } else
         self->stream.next_in = (Byte *)data;
-    
+
     self->stream.avail_in = self->unconsumed_length + length;
-    
+
     if (max_length && max_length < length)
         length = max_length;
-    
+
     if (!(result = PyBytes_FromStringAndSize(NULL, length)))
         return NULL;
-    
+
     self->stream.next_out = (unsigned char *) PyBytes_AS_STRING(result);
     self->stream.avail_out = length;
-    
+
     Py_BEGIN_ALLOW_THREADS
     res = lzmaCompatDecode(&self->stream);
     Py_END_ALLOW_THREADS
-    
+
     while (res == LZMA_OK && self->stream.avail_out == 0)
     {
         if (max_length && length >= max_length)
             break;
-        
+
         old_length = length;
         length <<= 1;
         if (max_length && length > max_length)
             length = max_length;
-        
+
         if (_PyBytes_Resize(&result, length) < 0)
             goto exit;
-        
+
         self->stream.avail_out = length - old_length;
         self->stream.next_out = (Byte *) PyBytes_AS_STRING(result) + old_length;
-        
+
         Py_BEGIN_ALLOW_THREADS
         res = lzmaCompatDecode(&self->stream);
         Py_END_ALLOW_THREADS
     }
-        
+
     if (res == LZMA_NOT_ENOUGH_MEM) {
         // out of memory during decompression
         PyErr_NoMemory();
@@ -118,7 +118,7 @@ static PyObject *pylzma_decomp_decompress(CCompatDecompressionObject *self, PyOb
         {
             if (self->stream.avail_in != self->unconsumed_length)
                 self->unconsumed_tail = (char *)realloc(self->unconsumed_tail, self->stream.avail_in);
-            
+
             if (!self->unconsumed_tail) {
                 PyErr_NoMemory();
                 DEC_AND_NULL(result);
@@ -145,11 +145,11 @@ static PyObject *pylzma_decomp_decompress(CCompatDecompressionObject *self, PyOb
             goto exit;
         }
     }
-    
+
     _PyBytes_Resize(&result, self->stream.totalOut - start_total_out);
-    
+
 exit:
-    return result;    
+    return result;
 }
 
 static const char doc_decomp_reset[] = \
@@ -158,21 +158,21 @@ static const char doc_decomp_reset[] = \
 static PyObject *pylzma_decomp_reset(CCompatDecompressionObject *self, PyObject *args)
 {
     PyObject *result=NULL;
-    
+
     if (!PyArg_ParseTuple(args, ""))
         return NULL;
-    
+
     lzmaCompatInit(&self->stream);
     FREE_AND_NULL(self->unconsumed_tail);
     self->unconsumed_length = 0;
-    
+
     Py_DECREF(self->unused_data);
     self->unused_data = PyBytes_FromString("");
     CHECK_NULL(self->unused_data);
-    
+
     result = Py_None;
     Py_XINCREF(result);
-    
+
 exit:
     return result;
 }
@@ -243,13 +243,13 @@ const char doc_decompressobj_compat[] = \
 PyObject *pylzma_decompressobj_compat(PyObject *self, PyObject *args)
 {
     CCompatDecompressionObject *result=NULL;
-    
+
     if (!PyArg_ParseTuple(args, ""))
         goto exit;
-    
+
     result = PyObject_New(CCompatDecompressionObject, &CompatDecompressionObject_Type);
     CHECK_NULL(result);
-    
+
     result->unconsumed_tail = NULL;
     result->unconsumed_length = 0;
 
@@ -260,12 +260,12 @@ PyObject *pylzma_decompressobj_compat(PyObject *self, PyObject *args)
         PyObject_Del(result);
         result = NULL;
         goto exit;
-    }    
-    
+    }
+
     memset(&result->stream, 0, sizeof(result->stream));
     lzmaCompatInit(&result->stream);
-    
+
 exit:
-    
+
     return (PyObject *)result;
 }

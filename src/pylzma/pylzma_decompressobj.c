@@ -9,16 +9,16 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * $Id$
  *
  */
@@ -33,18 +33,18 @@ pylzma_decomp_init(CDecompressionObject *self, PyObject *args, PyObject *kwargs)
 {
     PY_LONG_LONG max_length = -1;
     int lzma2 = 0;
-    
+
     // possible keywords for this function
     static char *kwlist[] = {"maxlength", "lzma2", NULL};
-    
+
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Li", kwlist, &max_length, &lzma2))
         return -1;
-    
+
     if (max_length == 0 || max_length < -1) {
         PyErr_SetString(PyExc_ValueError, "the decompressed size must be greater than zero");
         return -1;
     }
-    
+
     self->unconsumed_tail = NULL;
     self->unconsumed_length = 0;
     self->need_properties = 1;
@@ -72,12 +72,12 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
     Byte *next_in, *next_out;
     PARSE_LENGTH_TYPE length;
     int res;
-    PY_LONG_LONG bufsize=BLOCK_SIZE;
+    Py_ssize_t bufsize=BLOCK_SIZE;
     SizeT avail_in;
     SizeT inProcessed, outProcessed;
     ELzmaStatus status;
-    
-    if (!PyArg_ParseTuple(args, "s#|L", &data, &length, &bufsize)){
+
+    if (!PyArg_ParseTuple(args, "s#|n", &data, &length, &bufsize)){
         return NULL;
     }
 
@@ -85,7 +85,7 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "bufsize must be greater than zero");
         return NULL;
     }
-    
+
     if (self->unconsumed_length > 0) {
         self->unconsumed_tail = (unsigned char *) realloc(self->unconsumed_tail, self->unconsumed_length + length);
         next_in = (unsigned char *) self->unconsumed_tail;
@@ -93,9 +93,9 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
     } else {
         next_in = data;
     }
-    
+
     if (self->need_properties) {
-        int propertiesLength = self->lzma2 ? 1 : LZMA_PROPS_SIZE;
+        SizeT propertiesLength = self->lzma2 ? 1 : LZMA_PROPS_SIZE;
         if ((self->unconsumed_length + length) < propertiesLength) {
             // we need enough bytes to read the properties
             self->unconsumed_tail = (unsigned char *) realloc(self->unconsumed_tail, self->unconsumed_length + length);
@@ -118,7 +118,7 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
             PyErr_SetString(PyExc_TypeError, "Incorrect stream properties");
             return NULL;
         }
-        
+
         next_in += propertiesLength;
         self->unconsumed_length -= propertiesLength;
         if (self->unconsumed_length > 0) {
@@ -143,7 +143,7 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
         } else {
             FREE_AND_NULL(self->unconsumed_tail);
         }
-        
+
         self->need_properties = 0;
         if (self->lzma2) {
             Lzma2Dec_Init(&self->state.lzma2);
@@ -158,13 +158,13 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
         // no more bytes to decompress
         return PyBytes_FromString("");
     }
-    
+
     result = PyBytes_FromStringAndSize(NULL, bufsize);
     if (result == NULL) {
         PyErr_NoMemory();
         goto exit;
     }
-    
+
     next_out = (unsigned char *) PyBytes_AS_STRING(result);
     Py_BEGIN_ALLOW_THREADS
     // Decompress until EOS marker is reached
@@ -181,7 +181,7 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
     self->total_out += outProcessed;
     next_in += inProcessed;
     avail_in -= inProcessed;
-    
+
     if (res != SZ_OK) {
         DEC_AND_NULL(result);
         PyErr_SetString(PyExc_ValueError, "data error during decompression");
@@ -207,10 +207,10 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
     } else {
         FREE_AND_NULL(self->unconsumed_tail);
     }
-    
+
     self->unconsumed_length = avail_in;
     _PyBytes_Resize(&result, outProcessed);
-    
+
 exit:
     return result;
 }
@@ -224,27 +224,34 @@ pylzma_decomp_flush(CDecompressionObject *self, PyObject *args)
 {
     PyObject *result=NULL;
     int res;
-    SizeT avail_out, outsize;
+    SizeT avail_out;
+    Py_ssize_t outsize;
     unsigned char *tmp;
     SizeT inProcessed, outProcessed;
     ELzmaStatus status;
-    
+
     if (self->max_length != -1) {
-        avail_out = self->max_length - self->total_out;
+        PY_LONG_LONG available = self->max_length - self->total_out;
+#if LONG_MAX > PY_SIZE_MAX
+        if (available > (PY_LONG_LONG)PY_SIZE_MAX) {
+            available = PY_SIZE_MAX;
+        }
+#endif
+        avail_out = (SizeT)available;
     } else {
         avail_out = BLOCK_SIZE;
     }
-    
+
     if (avail_out == 0) {
         // no more remaining data
         return PyBytes_FromString("");
     }
-    
-    result = PyBytes_FromStringAndSize(NULL, avail_out);
+
+    result = PyBytes_FromStringAndSize(NULL, (Py_ssize_t)avail_out);
     if (result == NULL) {
         return NULL;
     }
-    
+
     tmp = (unsigned char *) PyBytes_AS_STRING(result);
     outsize = 0;
     while (1) {
@@ -278,46 +285,46 @@ pylzma_decomp_flush(CDecompressionObject *self, PyObject *args)
                 FREE_AND_NULL(self->unconsumed_tail);
         }
         Py_END_ALLOW_THREADS
-        
+
         if (res != SZ_OK) {
             PyErr_SetString(PyExc_ValueError, "data error during decompression");
             DEC_AND_NULL(result);
             goto exit;
         }
-        
+
         if (!outProcessed && self->max_length != -1 && self->total_out < self->max_length) {
             PyErr_SetString(PyExc_ValueError, "data error during decompression");
             DEC_AND_NULL(result);
             goto exit;
         }
-        
+
         self->total_out += outProcessed;
         outsize += outProcessed;
         if (outProcessed < avail_out || (outProcessed == avail_out && self->max_length != -1)) {
             break;
         }
-        
+
         if (self->max_length != -1) {
             PyErr_SetString(PyExc_ValueError, "not enough input data for decompression");
             DEC_AND_NULL(result);
             goto exit;
         }
-        
+
         avail_out -= outProcessed;
-        
+
         // Output buffer is full, might be more data for decompression
         if (_PyBytes_Resize(&result, outsize+BLOCK_SIZE) != 0) {
             goto exit;
         }
-        
+
         avail_out += BLOCK_SIZE;
         tmp = (unsigned char *) PyBytes_AS_STRING(result) + outsize;
     }
-    
+
     if (outsize != PyBytes_GET_SIZE(result)) {
         _PyBytes_Resize(&result, outsize);
     }
-    
+
 exit:
     return result;
 }
@@ -330,13 +337,13 @@ static PyObject *
 pylzma_decomp_reset(CDecompressionObject *self, PyObject *args, PyObject *kwargs)
 {
     PY_LONG_LONG max_length = -1;
-    
+
     // possible keywords for this function
     static char *kwlist[] = {"maxlength", NULL};
-    
+
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|L", kwlist, &max_length))
         return NULL;
-    
+
     if (self->lzma2) {
         Lzma2Dec_Free(&self->state.lzma2, &allocator);
         Lzma2Dec_Construct(&self->state.lzma2);
@@ -349,7 +356,7 @@ pylzma_decomp_reset(CDecompressionObject *self, PyObject *args, PyObject *kwargs
     self->need_properties = 1;
     self->total_out = 0;
     self->max_length = max_length;
-    
+
     Py_INCREF(Py_None);
     return Py_None;
 }

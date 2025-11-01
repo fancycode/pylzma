@@ -469,7 +469,7 @@ pylzma_ppmd_decompress(PyObject *self, PyObject *args)
         }
         if (i != outsize) {
             res = (s.res != SZ_OK ? s.res : SZ_ERROR_DATA);
-        } else if (s.processed + (s.cur - s.begin) != length || !Ppmd7z_RangeDec_IsFinishedOK(&rc)) {
+        } else if (s.processed + (s.cur - s.begin) != (UInt64)length || !Ppmd7z_RangeDec_IsFinishedOK(&rc)) {
             res = SZ_ERROR_DATA;
         }
     }

@@ -9,16 +9,16 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * $Id$
  *
  */
@@ -47,17 +47,17 @@ pylzma_comp_compress(CCompressionObject *self, PyObject *args)
     PyObject *result = NULL;
     char *data;
     PARSE_LENGTH_TYPE length;
-    PY_LONG_LONG bufsize=BLOCK_SIZE;
+    Py_ssize_t bufsize=BLOCK_SIZE;
     int res;
     size_t before;
-    
-    if (!PyArg_ParseTuple(args, "s#|L", &data, &length, &bufsize))
+
+    if (!PyArg_ParseTuple(args, "s#|n", &data, &length, &bufsize))
         return NULL;
-    
+
     if (!MemoryInOutStreamAppend(&self->inStream, (Byte *) data, length)) {
         return PyErr_NoMemory();
     }
-    
+
     Py_BEGIN_ALLOW_THREADS
     while (1) {
         before = self->inStream.avail;
@@ -71,17 +71,17 @@ pylzma_comp_compress(CCompressionObject *self, PyObject *args)
         PyErr_Format(PyExc_TypeError, "Error during compressing: %d", res);
         return NULL;
     }
-    
-    length = min(self->outStream.size, bufsize);
+
+    length = min(self->outStream.size, (size_t)bufsize);
     result = PyString_FromStringAndSize((const char *)self->outStream.data, length);
     if (result != NULL) {
         MemoryOutStreamDiscard(&self->outStream, length);
     }
-    
+
     return result;
 }
 
-static char 
+static char
 doc_comp_flush[] = \
     "flush() -- Finishes the compression and returns any remaining compressed data.";
 
@@ -90,7 +90,7 @@ pylzma_comp_flush(CCompressionObject *self, PyObject *args)
 {
     PyObject *result;
     int res;
-    
+
     Py_BEGIN_ALLOW_THREADS
     while (1) {
         res = LzmaEnc_CodeOneBlock(self->encoder, False, 0, 0);
@@ -103,13 +103,13 @@ pylzma_comp_flush(CCompressionObject *self, PyObject *args)
         PyErr_Format(PyExc_TypeError, "Error during compressing: %d", res);
         return NULL;
     }
-    
+
     LzmaEnc_Finish(self->encoder);
     result = PyString_FromStringAndSize((const char *) self->outStream.data, self->outStream.size);
     if (result != NULL) {
         MemoryOutStreamDiscard(&self->outStream, self->outStream.size);
     }
-    
+
     return result;
 }
 
@@ -140,7 +140,7 @@ pylzma_comp_init(CCompressionObject *self, PyObject *args, PyObject *kwargs)
     Byte header[LZMA_PROPS_SIZE];
     size_t headerSize = LZMA_PROPS_SIZE;
     int result=-1;
-    
+
     // possible keywords for this function
     static char *kwlist[] = {"dictionary", "fastBytes", "literalContextBits",
                              "literalPosBits", "posBits", "algorithm", "eos", "multithreading", "matchfinder", NULL};
@@ -154,11 +154,11 @@ pylzma_comp_init(CCompressionObject *self, PyObject *args, PyObject *kwargs)
     char *matchfinder = NULL;    // matchfinder algorithm
     int algorithm = 2;
     int res;
-    
+
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iiiiiiiis", kwlist, &dictionary, &fastBytes,
                                                                  &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos, &multithreading, &matchfinder))
         return -1;
-    
+
     CHECK_RANGE(dictionary,         0,  28, "dictionary must be between 0 and 28");
     CHECK_RANGE(fastBytes,          5, 255, "fastBytes must be between 5 and 255");
     CHECK_RANGE(literalContextBits, 0,   8, "literalContextBits must be between 0 and 8");
@@ -172,15 +172,15 @@ pylzma_comp_init(CCompressionObject *self, PyObject *args, PyObject *kwargs)
         PyErr_Warn(PyExc_DeprecationWarning, "matchfinder selection is deprecated and will be ignored");
 #endif
     }
-    
+
     self->encoder = LzmaEnc_Create(&allocator);
     if (self->encoder == NULL) {
         PyErr_NoMemory();
         return -1;
     }
-    
+
     LzmaEncProps_Init(&props);
-    
+
     props.dictSize = 1 << dictionary;
     props.lc = literalContextBits;
     props.lp = literalPosBits;
@@ -207,10 +207,10 @@ pylzma_comp_init(CCompressionObject *self, PyObject *args, PyObject *kwargs)
         PyErr_SetString(PyExc_TypeError, "could not generate stream header");
         goto exit;
     }
-    
+
     LzmaEnc_Prepare(self->encoder, &self->inStream.s, &self->outStream.s, &allocator, &allocator);
     result = 0;
-    
+
 exit:
     return result;
 }

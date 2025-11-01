@@ -9,16 +9,16 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * $Id$
  *
  */
@@ -33,7 +33,7 @@ void free_lzma_stream(lzma_stream *stream)
     if (stream->dynamicData)
         lzmafree(stream->dynamicData);
     stream->dynamicData = NULL;
-    
+
     if (stream->dictionary)
         lzmafree(stream->dictionary);
     stream->dictionary = NULL;
@@ -47,35 +47,40 @@ PyObject *pylzma_decompress_compat(PyObject *self, PyObject *args)
 {
     char *data;
     PARSE_LENGTH_TYPE length;
-    PY_LONG_LONG blocksize=BLOCK_SIZE;
+    Py_ssize_t blocksize=BLOCK_SIZE;
     PyObject *result = NULL;
     lzma_stream stream;
     int res;
     char *output;
-    
-    if (!PyArg_ParseTuple(args, "s#|L", &data, &length, &blocksize))
+
+    if (!PyArg_ParseTuple(args, "s#|n", &data, &length, &blocksize))
         return NULL;
-    
+
+    if (blocksize <= 0) {
+        PyErr_SetString(PyExc_ValueError, "bufsize must be greater than zero");
+        return NULL;
+    }
+
     memset(&stream, 0, sizeof(stream));
     if (!(output = (char *)malloc(blocksize)))
     {
         PyErr_NoMemory();
         goto exit;
     }
-    
+
     lzmaCompatInit(&stream);
     stream.next_in = (Byte *)data;
     stream.avail_in = length;
     stream.next_out = (Byte *)output;
     stream.avail_out = blocksize;
-    
+
     // decompress data
     while (1)
     {
         Py_BEGIN_ALLOW_THREADS
         res = lzmaCompatDecode(&stream);
         Py_END_ALLOW_THREADS
-        
+
         if (res == LZMA_STREAM_END) {
             break;
         } else if (res == LZMA_NOT_ENOUGH_MEM) {
@@ -98,7 +103,7 @@ PyObject *pylzma_decompress_compat(PyObject *self, PyObject *args)
             PyErr_Format(PyExc_ValueError, "unknown return code from lzmaDecode: %d", res);
             goto exit;
         }
-        
+
         // if we exit here, decompression finished without returning LZMA_STREAM_END
         // XXX: why is this sometimes?
         if (stream.avail_in == 0)
@@ -106,11 +111,11 @@ PyObject *pylzma_decompress_compat(PyObject *self, PyObject *args)
     }
 
     result = PyBytes_FromStringAndSize(output, stream.totalOut);
-    
+
 exit:
     free_lzma_stream(&stream);
     if (output != NULL)
         free(output);
-    
+
     return result;
 }

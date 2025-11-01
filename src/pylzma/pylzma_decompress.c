@@ -9,16 +9,16 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * $Id$
  *
  */
@@ -45,7 +45,7 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
     Byte *tmp;
     PARSE_LENGTH_TYPE length;
     int bufsize=BLOCK_SIZE;
-    PY_LONG_LONG totallength=-1;
+    Py_ssize_t totallength=-1;
     int lzma2 = 0;
     PARSE_LENGTH_TYPE avail;
     PyObject *result=NULL;
@@ -60,8 +60,8 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
     int propertiesLength;
     // possible keywords for this function
     static char *kwlist[] = {"data", "bufsize", "maxlength", "lzma2", NULL};
-    
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iLi", kwlist, &data, &length, &bufsize, &totallength, &lzma2))
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|ini", kwlist, &data, &length, &bufsize, &totallength, &lzma2))
         return NULL;
 
     propertiesLength = lzma2 ? 1 : LZMA_PROPS_SIZE;
@@ -72,10 +72,10 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
         if (result == NULL) {
             return NULL;
         }
-        
+
         tmp = (Byte *) PyBytes_AS_STRING(result);
         srcLen = length - propertiesLength;
-        destLen = totallength;
+        destLen = (size_t)totallength;
         Py_BEGIN_ALLOW_THREADS
         if (lzma2) {
             res = Lzma2Decode(tmp, &destLen, (Byte *) (data + propertiesLength), &srcLen, data[0], LZMA_FINISH_ANY, &status, &allocator);
@@ -92,7 +92,7 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
         }
         return result;
     }
-    
+
     CreateMemoryOutStream(&outStream);
     tmp = (Byte *) malloc(bufsize);
     if (tmp == NULL) {
@@ -126,7 +126,7 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
     for (;;) {
         srcLen = avail;
         destLen = bufsize;
-        
+
         if (lzma2) {
             res = Lzma2Dec_DecodeToBuf(&state.lzma2, tmp, &destLen, data, &srcLen, LZMA_FINISH_ANY, &status);
         } else {
@@ -140,10 +140,10 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
         if (res != SZ_OK || status == LZMA_STATUS_FINISHED_WITH_MARK || status == LZMA_STATUS_NEEDS_MORE_INPUT) {
             break;
         }
-        
+
     }
     Py_END_ALLOW_THREADS
-    
+
     if (status == LZMA_STATUS_NEEDS_MORE_INPUT) {
         PyErr_SetString(PyExc_ValueError, "data error during decompression");
     } else if (res != SZ_OK) {
@@ -151,7 +151,7 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
     } else {
         result = PyBytes_FromStringAndSize((const char *) outStream.data, outStream.size);
     }
-    
+
 exit:
     if (outStream.data != NULL) {
         free(outStream.data);
@@ -162,6 +162,6 @@ exit:
         LzmaDec_Free(&state.lzma, &allocator);
     }
     free(tmp);
-    
+
     return result;
 }
