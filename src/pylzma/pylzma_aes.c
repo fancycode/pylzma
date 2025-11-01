@@ -9,16 +9,16 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * $Id$
  *
  */
@@ -43,16 +43,16 @@ int
 aesdecrypt_init(CAESDecryptObject *self, PyObject *args, PyObject *kwargs)
 {
     char *key=NULL;
-    PARSE_LENGTH_TYPE keylength=0;
+    Py_ssize_t keylength=0;
     char *iv=NULL;
-    PARSE_LENGTH_TYPE ivlength=0;
+    Py_ssize_t ivlength=0;
     int offset;
-    
+
     // possible keywords for this function
     static char *kwlist[] = {"key", "iv", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|s#s#", kwlist, &key, &keylength, &iv, &ivlength))
         return -1;
-    
+
     memset(&self->aesBuf, 0, sizeof(self->aesBuf));
     self->aes = (UInt32 *) self->aesBuf;
     // AES code expects aligned memory
@@ -64,15 +64,15 @@ aesdecrypt_init(CAESDecryptObject *self, PyObject *args, PyObject *kwargs)
 
     if (keylength > 0) {
         if (keylength != 16 && keylength != 24 && keylength != 32) {
-            PyErr_Format(PyExc_TypeError, "key must be 16, 24 or 32 bytes, got " PARSE_LENGTH_FORMAT, keylength);
+            PyErr_Format(PyExc_TypeError, "key must be 16, 24 or 32 bytes, got %zd", keylength);
             return -1;
         }
 
-        Aes_SetKey_Dec(self->aes + 4, (Byte *) key, keylength);
+        Aes_SetKey_Dec(self->aes + 4, (Byte *) key, (unsigned)keylength);
     }
     if (ivlength > 0) {
         if (ivlength != AES_BLOCK_SIZE) {
-            PyErr_Format(PyExc_TypeError, "iv must be %d bytes, got " PARSE_LENGTH_FORMAT, AES_BLOCK_SIZE, ivlength);
+            PyErr_Format(PyExc_TypeError, "iv must be %d bytes, got %zd", AES_BLOCK_SIZE, ivlength);
             return -1;
         }
 
@@ -81,7 +81,7 @@ aesdecrypt_init(CAESDecryptObject *self, PyObject *args, PyObject *kwargs)
     return 0;
 }
 
-static char 
+static char
 doc_aesdecrypt_decrypt[] = \
     "decrypt(data) -- Decrypt given data.";
 
@@ -89,20 +89,20 @@ static PyObject *
 aesdecrypt_decrypt(CAESDecryptObject *self, PyObject *args)
 {
     char *data;
-    PARSE_LENGTH_TYPE length;
+    Py_ssize_t length;
     PyObject *result;
     char *out;
-    PARSE_LENGTH_TYPE outlength;
+    Py_ssize_t outlength;
     char *tmpdata = NULL;
-    
+
     if (!PyArg_ParseTuple(args, "s#", &data, &length))
         return NULL;
-    
+
     if (length % AES_BLOCK_SIZE) {
-        PyErr_Format(PyExc_TypeError, "data must be a multiple of %d bytes, got " PARSE_LENGTH_FORMAT, AES_BLOCK_SIZE, length);
+        PyErr_Format(PyExc_TypeError, "data must be a multiple of %d bytes, got %zd", AES_BLOCK_SIZE, length);
         return NULL;
     }
-    
+
     result = PyBytes_FromStringAndSize(NULL, length);
     if (result == NULL) {
         return NULL;

@@ -70,7 +70,7 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
     PyObject *result=NULL;
     unsigned char *data;
     Byte *next_in, *next_out;
-    PARSE_LENGTH_TYPE length;
+    Py_ssize_t length;
     int res;
     Py_ssize_t bufsize=BLOCK_SIZE;
     SizeT avail_in;
@@ -112,7 +112,7 @@ pylzma_decomp_decompress(CDecompressionObject *self, PyObject *args)
         if (self->lzma2) {
             res = Lzma2Dec_Allocate(&self->state.lzma2, next_in[0], &allocator);
         } else {
-            res = LzmaDec_Allocate(&self->state.lzma, next_in, propertiesLength, &allocator);
+            res = LzmaDec_Allocate(&self->state.lzma, next_in, (unsigned)propertiesLength, &allocator);
         }
         if (res != SZ_OK) {
             PyErr_SetString(PyExc_TypeError, "Incorrect stream properties");

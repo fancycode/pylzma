@@ -38,7 +38,7 @@ static PyObject *pylzma_decomp_decompress(CCompatDecompressionObject *self, PyOb
 {
     PyObject *result=NULL;
     char *data;
-    PARSE_LENGTH_TYPE length, old_length;
+    Py_ssize_t length, old_length;
     UInt32 start_total_out;
     int res;
     Py_ssize_t max_length=BLOCK_SIZE;
@@ -60,7 +60,7 @@ static PyObject *pylzma_decomp_decompress(CCompatDecompressionObject *self, PyOb
     } else
         self->stream.next_in = (Byte *)data;
 
-    self->stream.avail_in = self->unconsumed_length + length;
+    self->stream.avail_in = (UInt32)(self->unconsumed_length + length);
 
     if (max_length && max_length < length)
         length = max_length;
@@ -68,8 +68,8 @@ static PyObject *pylzma_decomp_decompress(CCompatDecompressionObject *self, PyOb
     if (!(result = PyBytes_FromStringAndSize(NULL, length)))
         return NULL;
 
-    self->stream.next_out = (unsigned char *) PyBytes_AS_STRING(result);
-    self->stream.avail_out = length;
+    self->stream.next_out = (Byte *) PyBytes_AS_STRING(result);
+    self->stream.avail_out = (UInt32)length;
 
     Py_BEGIN_ALLOW_THREADS
     res = lzmaCompatDecode(&self->stream);
@@ -88,7 +88,7 @@ static PyObject *pylzma_decomp_decompress(CCompatDecompressionObject *self, PyOb
         if (_PyBytes_Resize(&result, length) < 0)
             goto exit;
 
-        self->stream.avail_out = length - old_length;
+        self->stream.avail_out = (UInt32)(length - old_length);
         self->stream.next_out = (Byte *) PyBytes_AS_STRING(result) + old_length;
 
         Py_BEGIN_ALLOW_THREADS

@@ -43,11 +43,11 @@ pylzma_decompress(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     unsigned char *data;
     Byte *tmp;
-    PARSE_LENGTH_TYPE length;
+    Py_ssize_t length;
     int bufsize=BLOCK_SIZE;
     Py_ssize_t totallength=-1;
     int lzma2 = 0;
-    PARSE_LENGTH_TYPE avail;
+    Py_ssize_t avail;
     PyObject *result=NULL;
     union {
         CLzmaDec lzma;
