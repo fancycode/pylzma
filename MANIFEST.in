@@ -1,4 +1,4 @@
-include ez_setup.py *.md LICENSE
+include *.md LICENSE
 recursive-include doc *.*
 recursive-include scripts *.sh *.spec
 recursive-include src *.c *.h *.txt
