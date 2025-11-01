@@ -129,12 +129,18 @@ please contact mail@joachim-bauch.de for more informations.""" % (sys.platform),
         if isinstance(self.compiler, MSVCCompiler) or getattr(self.compiler, 'compiler_type', '') == 'msvc':
             # set flags only available when using MSVC
             ext.extra_link_args.append('/MANIFEST')
+            # conversion from '__int64' to 'Py_ssize_t', possible loss of data
+            ext.extra_compile_args.append('/we4244')
+            # conversion from 'size_t' to 'int', possible loss of data
+            ext.extra_compile_args.append('/we4267')
             if COMPILE_DEBUG:
                 ext.extra_compile_args.append('/Zi')
                 ext.extra_compile_args.append('/MTd')
                 ext.extra_link_args.append('/DEBUG')
             else:
                 ext.extra_compile_args.append('/MT')
+        else:
+            ext.extra_compile_args.append('-Werror=sign-compare')
 
         _build_ext.build_extension(self, ext)
 
