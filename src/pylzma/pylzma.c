@@ -63,7 +63,7 @@ static PyObject *
 pylzma_calculate_key(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     char *password;
-    PARSE_LENGTH_TYPE pwlen;
+    Py_ssize_t pwlen;
     int cycles;
     PyObject *pysalt=NULL;
     char *salt;
@@ -136,7 +136,7 @@ static PyObject *
 pylzma_bcj_x86_convert(PyObject *self, PyObject *args)
 {
     char *data;
-    PARSE_LENGTH_TYPE length;
+    Py_ssize_t length;
     int encoding=0;
     PyObject *result;
 
@@ -169,7 +169,7 @@ static PyObject * \
 pylzma_bcj_##id##_convert(PyObject *self, PyObject *args) \
 { \
     char *data; \
-    PARSE_LENGTH_TYPE length; \
+    Py_ssize_t length; \
     int encoding=0; \
     PyObject *result; \
      \
@@ -205,8 +205,8 @@ static PyObject *
 pylzma_bcj2_decode(PyObject *self, PyObject *args)
 {
     char *main_data, *call_data, *jump_data, *rc_data;
-    PARSE_LENGTH_TYPE main_length, call_length, jump_length, rc_length;
-    PARSE_LENGTH_TYPE dest_len = -1;
+    Py_ssize_t main_length, call_length, jump_length, rc_length;
+    Py_ssize_t dest_len = -1;
     CBcj2Dec dec;
     SRes res;
     PyObject *result;
@@ -280,7 +280,7 @@ static PyObject *
 pylzma_delta_decode(PyObject *self, PyObject *args)
 {
     char *data;
-    PARSE_LENGTH_TYPE length;
+    Py_ssize_t length;
     unsigned int delta;
     Byte state[DELTA_STATE_SIZE];
     Byte *tmp;
@@ -320,7 +320,7 @@ static PyObject *
 pylzma_delta_encode(PyObject *self, PyObject *args)
 {
     char *data;
-    PARSE_LENGTH_TYPE length;
+    Py_ssize_t length;
     unsigned int delta;
     Byte state[DELTA_STATE_SIZE];
     Byte *tmp;
@@ -395,9 +395,9 @@ static PyObject *
 pylzma_ppmd_decompress(PyObject *self, PyObject *args)
 {
     char *data;
-    PARSE_LENGTH_TYPE length;
+    Py_ssize_t length;
     char *props;
-    PARSE_LENGTH_TYPE propssize;
+    Py_ssize_t propssize;
     unsigned int outsize;
     PyObject *result;
     Byte *tmp;
@@ -469,7 +469,7 @@ pylzma_ppmd_decompress(PyObject *self, PyObject *args)
         }
         if (i != outsize) {
             res = (s.res != SZ_OK ? s.res : SZ_ERROR_DATA);
-        } else if (s.processed + (s.cur - s.begin) != length || !Ppmd7z_RangeDec_IsFinishedOK(&rc)) {
+        } else if (s.processed + (s.cur - s.begin) != (UInt64)length || !Ppmd7z_RangeDec_IsFinishedOK(&rc)) {
             res = SZ_ERROR_DATA;
         }
     }

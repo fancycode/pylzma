@@ -9,16 +9,16 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * $Id$
  *
  */
@@ -44,7 +44,7 @@ pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
     CMemoryInStream inStream;
     Byte header[LZMA_PROPS_SIZE];
     size_t headerSize = LZMA_PROPS_SIZE;
-    int res;    
+    int res;
     // possible keywords for this function
     static char *kwlist[] = {"data", "dictionary", "fastBytes", "literalContextBits",
                              "literalPosBits", "posBits", "algorithm", "eos", "multithreading", "matchfinder", NULL};
@@ -58,12 +58,12 @@ pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
     char *matchfinder = NULL;    // matchfinder algorithm
     int algorithm = 2;
     char *data;
-    PARSE_LENGTH_TYPE length;
+    Py_ssize_t length;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iiiiiiiis", kwlist, &data, &length, &dictionary, &fastBytes,
                                                                   &literalContextBits, &literalPosBits, &posBits, &algorithm, &eos, &multithreading, &matchfinder))
         return NULL;
-    
+
     outStream.data = NULL;
     CHECK_RANGE(dictionary,         0,  27, "dictionary must be between 0 and 27");
     CHECK_RANGE(fastBytes,          5, 273, "fastBytes must be between 5 and 273");
@@ -71,7 +71,7 @@ pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
     CHECK_RANGE(literalPosBits,     0,   4, "literalPosBits must be between 0 and 4");
     CHECK_RANGE(posBits,            0,   4, "posBits must be between 0 and 4");
     CHECK_RANGE(algorithm,          0,   2, "algorithm must be between 0 and 2");
-    
+
     if (matchfinder != NULL) {
 #if (PY_VERSION_HEX >= 0x02050000)
         PyErr_WarnEx(PyExc_DeprecationWarning, "matchfinder selection is deprecated and will be ignored", 1);
@@ -79,16 +79,16 @@ pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
         PyErr_Warn(PyExc_DeprecationWarning, "matchfinder selection is deprecated and will be ignored");
 #endif
     }
-    
+
     encoder = LzmaEnc_Create(&allocator);
     if (encoder == NULL)
         return PyErr_NoMemory();
-    
+
     CreateMemoryInStream(&inStream, (Byte *) data, length);
     CreateMemoryOutStream(&outStream);
-    
+
     LzmaEncProps_Init(&props);
-    
+
     props.dictSize = 1 << dictionary;
     props.lc = literalContextBits;
     props.lp = literalPosBits;
@@ -119,9 +119,9 @@ pylzma_compress(PyObject *self, PyObject *args, PyObject *kwargs)
         PyErr_Format(PyExc_TypeError, "Error during compressing: %d", res);
         goto exit;
     }
-    
+
     result = PyBytes_FromStringAndSize((const char *) outStream.data, outStream.size);
-    
+
 exit:
     if (encoder != NULL) {
         LzmaEnc_Destroy(encoder, &allocator, &allocator);
@@ -129,6 +129,6 @@ exit:
     if (outStream.data != NULL) {
         free(outStream.data);
     }
-    
+
     return result;
 }

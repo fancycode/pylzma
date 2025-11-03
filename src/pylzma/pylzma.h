@@ -9,16 +9,16 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * $Id$
  *
  */
@@ -94,14 +94,6 @@ PyInterpreterState* _pylzma_interpreterState;
 #define PyVarObject_HEAD_INIT(ob, size)    \
     PyObject_HEAD_INIT(NULL) \
     0,
-#endif
-
-#if defined(PY_SSIZE_T_CLEAN) && (PY_VERSION_HEX >= 0x02040000)
-#define PARSE_LENGTH_TYPE   Py_ssize_t
-#define PARSE_LENGTH_FORMAT "%zd"
-#else
-#define PARSE_LENGTH_TYPE   int
-#define PARSE_LENGTH_FORMAT "%d"
 #endif
 
 // Handle tp_print -> tp_vectorcall_offset change in Python 3.8+
