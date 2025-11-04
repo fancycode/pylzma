@@ -200,7 +200,9 @@ pylzma_bcj_##id##_convert(PyObject *self, PyObject *args) \
 
 DEFINE_BCJ_CONVERTER(arm, ARM);
 DEFINE_BCJ_CONVERTER(armt, ARMT);
+DEFINE_BCJ_CONVERTER(arm64, ARM64);
 DEFINE_BCJ_CONVERTER(ppc, PPC);
+DEFINE_BCJ_CONVERTER(riscv, RISCV);
 DEFINE_BCJ_CONVERTER(sparc, SPARC);
 DEFINE_BCJ_CONVERTER(ia64, IA64);
 
@@ -503,7 +505,9 @@ methods[] = {
     {"bcj_x86_convert",     (PyCFunction)pylzma_bcj_x86_convert,    METH_VARARGS,   (char *)&doc_bcj_x86_convert},
     {"bcj_arm_convert",     (PyCFunction)pylzma_bcj_arm_convert,    METH_VARARGS,   (char *)&doc_bcj_arm_convert},
     {"bcj_armt_convert",    (PyCFunction)pylzma_bcj_armt_convert,   METH_VARARGS,   (char *)&doc_bcj_armt_convert},
+    {"bcj_arm64_convert",   (PyCFunction)pylzma_bcj_arm64_convert,  METH_VARARGS,   (char *)&doc_bcj_arm64_convert},
     {"bcj_ppc_convert",     (PyCFunction)pylzma_bcj_ppc_convert,    METH_VARARGS,   (char *)&doc_bcj_ppc_convert},
+    {"bcj_riscv_convert",   (PyCFunction)pylzma_bcj_riscv_convert,  METH_VARARGS,   (char *)&doc_bcj_riscv_convert},
     {"bcj_sparc_convert",   (PyCFunction)pylzma_bcj_sparc_convert,  METH_VARARGS,   (char *)&doc_bcj_sparc_convert},
     {"bcj_ia64_convert",    (PyCFunction)pylzma_bcj_ia64_convert,   METH_VARARGS,   (char *)&doc_bcj_ia64_convert},
     {"bcj2_decode", (PyCFunction)pylzma_bcj2_decode,   METH_VARARGS,   (char *)&doc_bcj2_decode},
