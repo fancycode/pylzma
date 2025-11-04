@@ -4,6 +4,7 @@ dist
 *.pyc
 *.egg-info
 *.so
+*.patch~
 *.pyd
 RELEASE-VERSION
 /.pc

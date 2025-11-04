@@ -130,7 +130,7 @@ pylzma_calculate_key(PyObject *self, PyObject *args, PyObject *kwargs)
 
 const char
 doc_bcj_x86_convert[] = \
-    "bcj_x86_convert(data) -- Perform BCJ x86 conversion.";
+    "bcj_x86_convert(data, [encoding]) -- Perform BCJ x86 conversion.";
 
 static PyObject *
 pylzma_bcj_x86_convert(PyObject *self, PyObject *args)
@@ -150,10 +150,13 @@ pylzma_bcj_x86_convert(PyObject *self, PyObject *args)
 
     result = PyBytes_FromStringAndSize(data, length);
     if (result != NULL) {
-        UInt32 state;
+        UInt32 state = Z7_BRANCH_CONV_ST_X86_STATE_INIT_VAL;
         Py_BEGIN_ALLOW_THREADS
-        x86_Convert_Init(state);
-        x86_Convert((Byte *) PyBytes_AS_STRING(result), length, 0, &state, encoding);
+        if (encoding) {
+            Z7_BRANCH_CONV_ST_ENC(X86)((Byte *) PyBytes_AS_STRING(result), length, 0, &state);
+        } else {
+            Z7_BRANCH_CONV_ST_DEC(X86)((Byte *) PyBytes_AS_STRING(result), length, 0, &state);
+        }
         Py_END_ALLOW_THREADS
     }
 
@@ -163,7 +166,7 @@ pylzma_bcj_x86_convert(PyObject *self, PyObject *args)
 #define DEFINE_BCJ_CONVERTER(id, name) \
 const char \
 doc_bcj_##id##_convert[] = \
-    "bcj_" #id "_convert(data) -- Perform BCJ " #name " conversion."; \
+    "bcj_" #id "_convert(data, [encoding]) -- Perform BCJ " #name " conversion."; \
 \
 static PyObject * \
 pylzma_bcj_##id##_convert(PyObject *self, PyObject *args) \
@@ -184,7 +187,11 @@ pylzma_bcj_##id##_convert(PyObject *self, PyObject *args) \
     result = PyBytes_FromStringAndSize(data, length); \
     if (result != NULL) { \
         Py_BEGIN_ALLOW_THREADS \
-        name##_Convert((Byte *) PyBytes_AS_STRING(result), length, 0, encoding); \
+        if (encoding) { \
+            Z7_BRANCH_CONV_ENC(name)((Byte *) PyBytes_AS_STRING(result), length, 0); \
+        } else { \
+            Z7_BRANCH_CONV_DEC(name)((Byte *) PyBytes_AS_STRING(result), length, 0); \
+        } \
         Py_END_ALLOW_THREADS \
     } \
      \
@@ -259,7 +266,7 @@ pylzma_bcj2_decode(PyObject *self, PyObject *args)
     }
 
     // Conversion must be finished and the output buffer filled completely.
-    if (!Bcj2Dec_IsFinished(&dec)) {
+    if (!Bcj2Dec_IsMaybeFinished(&dec)) {
         goto error;
     } else if (dec.dest != dec.destLim || dec.state != BCJ2_STREAM_MAIN) {
         goto error;
@@ -370,7 +377,7 @@ typedef struct
 
 static Byte
 ReadByte(const IByteIn *pp) {
-    CByteInToLook *p = CONTAINER_FROM_VTBL(pp, CByteInToLook, vt);
+    CByteInToLook *p = Z7_CONTAINER_FROM_VTBL(pp, CByteInToLook, vt);
     if (p->cur != p->end) {
         return *p->cur++;
     }
@@ -404,7 +411,6 @@ pylzma_ppmd_decompress(PyObject *self, PyObject *args)
     unsigned order;
     UInt32 memSize;
     CPpmd7 ppmd;
-    CPpmd7z_RangeDec rc;
     CByteInToLook s;
     SRes res = SZ_OK;
     CMemoryLookInStream stream;
@@ -446,22 +452,21 @@ pylzma_ppmd_decompress(PyObject *self, PyObject *args)
     CreateMemoryLookInStream(&stream, (Byte*) data, length);
     tmp = (Byte *) PyBytes_AS_STRING(result);
     Py_BEGIN_ALLOW_THREADS
-    Ppmd7z_RangeDec_CreateVTable(&rc);
     s.vt.Read = ReadByte;
     s.inStream = &stream.s;
     s.begin = s.end = s.cur = NULL;
     s.extra = False;
     s.res = SZ_OK;
     s.processed = 0;
-    rc.Stream = &s.vt;
-    if (!Ppmd7z_RangeDec_Init(&rc)) {
+    ppmd.rc.dec.Stream = &s.vt;
+    if (!Ppmd7z_RangeDec_Init(&ppmd.rc.dec)) {
         res = SZ_ERROR_DATA;
     } else if (s.extra) {
         res = (s.res != SZ_OK ? s.res : SZ_ERROR_DATA);
     } else {
         SizeT i;
         for (i = 0; i < outsize; i++) {
-            int sym = Ppmd7_DecodeSymbol(&ppmd, &rc.vt);
+            int sym = Ppmd7z_DecodeSymbol(&ppmd);
             if (s.extra || sym < 0) {
                 break;
             }
@@ -469,7 +474,7 @@ pylzma_ppmd_decompress(PyObject *self, PyObject *args)
         }
         if (i != outsize) {
             res = (s.res != SZ_OK ? s.res : SZ_ERROR_DATA);
-        } else if (s.processed + (s.cur - s.begin) != (UInt64)length || !Ppmd7z_RangeDec_IsFinishedOK(&rc)) {
+        } else if (s.processed + (s.cur - s.begin) != (UInt64)length || !Ppmd7z_RangeDec_IsFinishedOK(&ppmd.rc.dec)) {
             res = SZ_ERROR_DATA;
         }
     }

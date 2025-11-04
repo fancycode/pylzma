@@ -2,10 +2,11 @@ Index: pylzma/src/sdk/C/LzmaEnc.c
 ===================================================================
 --- pylzma.orig/src/sdk/C/LzmaEnc.c
 +++ pylzma/src/sdk/C/LzmaEnc.c
-@@ -2259,8 +2259,9 @@ void LzmaEnc_Destroy(CLzmaEncHandle p, I
+@@ -2385,9 +2385,9 @@ void LzmaEnc_Destroy(CLzmaEncHandle p, I
  }
  
  
+-Z7_NO_INLINE
 -static SRes LzmaEnc_CodeOneBlock(CLzmaEnc *p, UInt32 maxPackSize, UInt32 maxUnpackSize)
 +SRes LzmaEnc_CodeOneBlock(CLzmaEncHandle pp, UInt32 maxPackSize, UInt32 maxUnpackSize)
  {
@@ -13,36 +14,39 @@ Index: pylzma/src/sdk/C/LzmaEnc.c
    UInt32 nowPos32, startPos32;
    if (p->needInit)
    {
-@@ -2715,7 +2716,7 @@ static SRes LzmaEnc_AllocAndInit(CLzmaEn
+@@ -2872,7 +2872,7 @@ static SRes LzmaEnc_AllocAndInit(CLzmaEn
    return SZ_OK;
  }
  
--static SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqOutStream *outStream, ISeqInStream *inStream,
-+SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqOutStream *outStream, ISeqInStream *inStream,
+-static SRes LzmaEnc_Prepare(CLzmaEncHandle p,
++SRes LzmaEnc_Prepare(CLzmaEncHandle p,
+     ISeqOutStreamPtr outStream,
+     ISeqInStreamPtr inStream,
      ISzAllocPtr alloc, ISzAllocPtr allocBig)
- {
-   CLzmaEnc *p = (CLzmaEnc *)pp;
-@@ -2974,3 +2975,9 @@ SRes LzmaEncode(Byte *dest, SizeT *destL
-   LzmaEnc_Destroy(p, alloc, allocBig);
-   return res;
+@@ -2883,6 +2883,12 @@ static SRes LzmaEnc_Prepare(CLzmaEncHand
+   return LzmaEnc_AllocAndInit(p, 0, alloc, allocBig);
  }
-+
+ 
 +BoolInt LzmaEnc_IsFinished(CLzmaEncHandle pp)
 +{
 +  CLzmaEnc *p = (CLzmaEnc *)pp;
 +  return p->finished;
 +}
++
+ SRes LzmaEnc_PrepareForLzma2(CLzmaEncHandle p,
+     ISeqInStreamPtr inStream, UInt32 keepWindowSize,
+     ISzAllocPtr alloc, ISzAllocPtr allocBig)
 Index: pylzma/src/sdk/C/LzmaEnc.h
 ===================================================================
 --- pylzma.orig/src/sdk/C/LzmaEnc.h
 +++ pylzma/src/sdk/C/LzmaEnc.h
-@@ -73,4 +73,11 @@ SRes LzmaEncode(Byte *dest, SizeT *destL
+@@ -82,4 +82,11 @@ SRes LzmaEncode(Byte *dest, SizeT *destL
  
  EXTERN_C_END
  
 +/* ---------- Streaming Interface ---------- */
 +
-+SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqOutStream *outStream, ISeqInStream *inStream, ISzAllocPtr alloc, ISzAllocPtr allocBig);
++SRes LzmaEnc_Prepare(CLzmaEncHandle pp, ISeqOutStreamPtr outStream, ISeqInStreamPtr inStream, ISzAllocPtr alloc, ISzAllocPtr allocBig);
 +SRes LzmaEnc_CodeOneBlock(CLzmaEncHandle pp, UInt32 maxPackSize, UInt32 maxUnpackSize);
 +BoolInt LzmaEnc_IsFinished(CLzmaEncHandle pp);
 +void LzmaEnc_Finish(CLzmaEncHandle pp);

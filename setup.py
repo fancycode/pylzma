@@ -85,11 +85,6 @@ if sys.platform == 'darwin':
 
 library_dirs = []
 
-# platforms that multithreaded compression is supported on
-mt_platforms = (
-    'win32',
-)
-
 if IS_WINDOWS:
     # don't try to import MSVC compiler on non-windows platforms
     # as this triggers unnecessary warnings
@@ -107,14 +102,7 @@ else:
 class build_ext(_build_ext):
 
     def build_extension(self, ext):
-        self.with_mt = ENABLE_MULTITHREADING
-        if self.with_mt and not sys.platform in mt_platforms:
-            warn("""\
-Multithreading is not supported on the platform "%s",
-please contact mail@joachim-bauch.de for more informations.""" % (sys.platform), UnsupportedPlatformWarning)
-            self.with_mt = False
-
-        if self.with_mt:
+        if ENABLE_MULTITHREADING:
             log.info('adding support for multithreaded compression')
             ext.define_macros.append(('COMPRESS_MF_MT', 1))
             ext.sources += (
@@ -124,7 +112,7 @@ please contact mail@joachim-bauch.de for more informations.""" % (sys.platform),
                 'src/sdk/C/Threads.c',
             )
         else:
-            ext.define_macros.append(('_7ZIP_ST', 1))
+            ext.define_macros.append(('Z7_ST', 1))
 
         if isinstance(self.compiler, MSVCCompiler) or getattr(self.compiler, 'compiler_type', '') == 'msvc':
             # set flags only available when using MSVC
@@ -163,6 +151,7 @@ macros = [
     ('PY_SSIZE_T_CLEAN', 1),
 ]
 lzma_files = (
+    'src/sdk/C/7zStream.c',
     'src/sdk/C/Aes.c',
     'src/sdk/C/AesOpt.c',
     'src/sdk/C/Bcj2.c',
@@ -172,11 +161,14 @@ lzma_files = (
     'src/sdk/C/CpuArch.c',
     'src/sdk/C/Delta.c',
     'src/sdk/C/LzFind.c',
+    'src/sdk/C/LzFindOpt.c',
     'src/sdk/C/LzmaDec.c',
     'src/sdk/C/LzmaEnc.c',
     'src/sdk/C/Lzma2Dec.c',
     'src/sdk/C/Lzma2Enc.c',
     'src/sdk/C/Sha256.c',
+    'src/sdk/C/Sha256Opt.c',
+    'src/sdk/C/SwapBytes.c',
     'src/sdk/C/Ppmd7.c',
     'src/sdk/C/Ppmd7Dec.c',
 )
