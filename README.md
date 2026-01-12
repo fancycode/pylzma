@@ -5,8 +5,7 @@
 * **LZMA SDK** Copyright (C) 1999-2025 Igor Pavlov
 
 [![Linux Build Status](https://github.com/fancycode/pylzma/workflows/test/badge.svg)](https://github.com/fancycode/pylzma/actions)
-[![Windows Build Status](https://ci.appveyor.com/api/projects/status/5a7k7v9k2a0eiuom/branch/master?svg=true
-)](https://ci.appveyor.com/project/fancycode/pylzma)
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/5a7k7v9k2a0eiuom/branch/master?svg=true)](https://ci.appveyor.com/project/fancycode/pylzma)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
