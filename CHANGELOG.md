@@ -1,5 +1,19 @@
 # pylzma
 
+## 0.6.0
+
+- Add support for BCJ2 streams.
+- Fix compilation with Python 3.
+- Improve handling of empty files.
+- Support Delta streams in .7z files.
+- Update to LZMA SDK 19.00
+- Add support for PPMd compression.
+- CI: Switch to GitHub actions.
+- Support Python 3.12+
+- Update to LZMA SDK 25.01 and always enable multithreading.
+- Add ARM64 / RISCV converters.
+
+
 ## 0.5.0
 
 - Update to LZMA SDK 18.05.
