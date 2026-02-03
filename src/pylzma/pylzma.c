@@ -198,6 +198,10 @@ pylzma_bcj_##id##_convert(PyObject *self, PyObject *args) \
     return result; \
 }
 
+// Some PowerPC compilers have a builtin define "PPC" that generates invalid
+// code from the "DEFINE_BCJ_CONVERTER" macro.
+#undef PPC
+
 DEFINE_BCJ_CONVERTER(arm, ARM);
 DEFINE_BCJ_CONVERTER(armt, ARMT);
 DEFINE_BCJ_CONVERTER(arm64, ARM64);
