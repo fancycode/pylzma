@@ -1,5 +1,10 @@
 # pylzma
 
+## 0.6.1
+
+- Fix compiler errors on PowerPC.
+
+
 ## 0.6.0
 
 - Add support for BCJ2 streams.
