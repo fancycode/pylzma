@@ -232,8 +232,12 @@ class Base(object):
                 value = (bytes and reduce(lambda x, y: x << 8 | y, bytes)) or 0
                 highpart = b & (mask - 1)
                 return value + (highpart << (i * 8))
-            
             mask >>= 1
+
+        bytes = array('B', file.read(8))
+        bytes.reverse()
+        value = (bytes and reduce(lambda x, y: x << 8 | y, bytes)) or 0
+        return value
 
     def _readBoolean(self, file, count, checkall=0):
         if checkall:
@@ -270,7 +274,7 @@ class PackInfo(Base):
             id = file.read(1)
             
             if id == PROPERTY_CRC:
-                self.crcs = [self._read64Bit(file) for x in xrange(self.numstreams)]
+                digests = UnpackDigests(file, self.numstreams)
                 id = file.read(1)
             
         if id != PROPERTY_END:
@@ -1068,7 +1072,7 @@ class Archive7z(Base):
             
         for f in self.files:
             extra = (f.compressed and '%10d ' % (f.compressed)) or ' '
-            file.write('%10d%s%.8x %s\n' % (f.size, extra, f.digest, f.filename))
+            file.write('%10d%s%.8x %s\n' % (f.size, extra, f.digest or 0, f.filename))
             
 if __name__ == '__main__':
     f = Archive7z(open('test.7z', 'rb'))
